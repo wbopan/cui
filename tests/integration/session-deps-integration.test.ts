@@ -77,10 +77,15 @@ describe('Session Dependencies Integration', () => {
         sessionId: 'session-1',
         parentUuid: 'msg-1',
         timestamp: '2024-01-01T00:01:00Z',
-        message: { 
-          role: 'assistant', 
+        message: {
+          id: 'msg_01Example123',
+          type: 'message',
+          role: 'assistant',
+          model: 'claude-3-sonnet-20240229',
           content: [{ type: 'text', text: 'Hi there!' }],
-          model: 'claude-3-sonnet'
+          stop_reason: 'end_turn',
+          stop_sequence: null,
+          usage: { input_tokens: 10, output_tokens: 5 }
         },
         costUSD: 0.01,
         durationMs: 1000
@@ -108,10 +113,15 @@ describe('Session Dependencies Integration', () => {
         sessionId: 'session-2',
         parentUuid: 'msg-1',
         timestamp: '2024-01-01T00:01:00Z',
-        message: { 
-          role: 'assistant', 
+        message: {
+          id: 'msg_01Example123',
+          type: 'message',
+          role: 'assistant',
+          model: 'claude-3-sonnet-20240229',
           content: [{ type: 'text', text: 'Hi there!' }],
-          model: 'claude-3-sonnet'
+          stop_reason: 'end_turn',
+          stop_sequence: null,
+          usage: { input_tokens: 10, output_tokens: 5 }
         },
         costUSD: 0.01,
         durationMs: 1000
@@ -132,10 +142,15 @@ describe('Session Dependencies Integration', () => {
         sessionId: 'session-2',
         parentUuid: 'msg-3',
         timestamp: '2024-01-01T00:03:00Z',
-        message: { 
-          role: 'assistant', 
+        message: {
+          id: 'msg_01Example456',
+          type: 'message',
+          role: 'assistant',
+          model: 'claude-3-sonnet-20240229',
           content: [{ type: 'text', text: 'I am doing well, thank you!' }],
-          model: 'claude-3-sonnet'
+          stop_reason: 'end_turn',
+          stop_sequence: null,
+          usage: { input_tokens: 15, output_tokens: 10 }
         },
         costUSD: 0.02,
         durationMs: 1500
@@ -177,6 +192,26 @@ describe('Session Dependencies Integration', () => {
     expect(session1.hash).toBeTruthy();
     expect(session2.hash).toBeTruthy();
     expect(session1.hash).not.toBe(session2.hash);
+    
+    // Verify that session-2's hash is built on top of session-1's messages
+    // Since session-2 has the same first 2 messages, it should have session-1's hash as a prefix
+    const dbPath = path.join(testHomeDir, '.ccui', 'session-deps.json');
+    const dbContent = JSON.parse(fs.readFileSync(dbPath, 'utf-8'));
+    
+    const session1Info = dbContent.sessions['session-1'];
+    const session2Info = dbContent.sessions['session-2'];
+    
+    // Session-1 has 2 messages, so 2 prefix hashes
+    expect(session1Info.prefix_hashes).toHaveLength(2);
+    // Session-2 has 4 messages, so 4 prefix hashes
+    expect(session2Info.prefix_hashes).toHaveLength(4);
+    
+    // The first 2 prefix hashes of session-2 should match session-1's hashes
+    expect(session2Info.prefix_hashes[0]).toBe(session1Info.prefix_hashes[0]);
+    expect(session2Info.prefix_hashes[1]).toBe(session1Info.prefix_hashes[1]);
+    
+    // And session-1's end_hash should be session-2's second prefix hash
+    expect(session1Info.end_hash).toBe(session2Info.prefix_hashes[1]);
 
     // Verify session-2's hash is based on more messages
     expect(session2.messageCount).toBe(4);
@@ -184,42 +219,129 @@ describe('Session Dependencies Integration', () => {
   });
 
   it('should persist dependencies across service restarts', async () => {
-    // Create initial session data
+    // Create a tree of related sessions to test relationship persistence
     const projectDir = path.join(testHomeDir, '.claude', 'projects', 'test-project');
     fs.mkdirSync(projectDir, { recursive: true });
 
-    const sessionData = [
+    // Root session
+    const rootData = [
       {
         type: 'user',
         uuid: 'msg-1',
-        sessionId: 'persist-test',
+        sessionId: 'persist-root',
         timestamp: '2024-01-01T00:00:00Z',
-        message: { role: 'user', content: 'Persistence test' },
+        message: { role: 'user', content: 'Root message' },
         cwd: '/test/project'
       }
     ];
 
-    fs.writeFileSync(
-      path.join(projectDir, 'persist-test.jsonl'), 
-      sessionData.map(item => JSON.stringify(item)).join('\n')
-    );
+    // Child session (continuation of root)
+    const childData = [
+      {
+        type: 'user',
+        uuid: 'msg-1',
+        sessionId: 'persist-child',
+        timestamp: '2024-01-01T00:00:00Z',
+        message: { role: 'user', content: 'Root message' },
+        cwd: '/test/project'
+      },
+      {
+        type: 'assistant',
+        uuid: 'msg-2',
+        sessionId: 'persist-child',
+        parentUuid: 'msg-1',
+        timestamp: '2024-01-01T00:01:00Z',
+        message: {
+          id: 'msg_01PersistChild',
+          type: 'message',
+          role: 'assistant',
+          model: 'claude-3-sonnet-20240229',
+          content: [{ type: 'text', text: 'Child response' }],
+          stop_reason: 'end_turn',
+          stop_sequence: null,
+          usage: { input_tokens: 10, output_tokens: 5 }
+        }
+      }
+    ];
+
+    // Grandchild session (continuation of child)
+    const grandchildData = [
+      {
+        type: 'user',
+        uuid: 'msg-1',
+        sessionId: 'persist-grandchild',
+        timestamp: '2024-01-01T00:00:00Z',
+        message: { role: 'user', content: 'Root message' },
+        cwd: '/test/project'
+      },
+      {
+        type: 'assistant',
+        uuid: 'msg-2',
+        sessionId: 'persist-grandchild',
+        parentUuid: 'msg-1',
+        timestamp: '2024-01-01T00:01:00Z',
+        message: {
+          id: 'msg_01PersistChild',
+          type: 'message',
+          role: 'assistant',
+          model: 'claude-3-sonnet-20240229',
+          content: [{ type: 'text', text: 'Child response' }],
+          stop_reason: 'end_turn',
+          stop_sequence: null,
+          usage: { input_tokens: 10, output_tokens: 5 }
+        }
+      },
+      {
+        type: 'user',
+        uuid: 'msg-3',
+        sessionId: 'persist-grandchild',
+        parentUuid: 'msg-2',
+        timestamp: '2024-01-01T00:02:00Z',
+        message: { role: 'user', content: 'Grandchild question' }
+      }
+    ];
+
+    fs.writeFileSync(path.join(projectDir, 'persist-root.jsonl'), rootData.map(item => JSON.stringify(item)).join('\n'));
+    fs.writeFileSync(path.join(projectDir, 'persist-child.jsonl'), childData.map(item => JSON.stringify(item)).join('\n'));
+    fs.writeFileSync(path.join(projectDir, 'persist-grandchild.jsonl'), grandchildData.map(item => JSON.stringify(item)).join('\n'));
 
     // First API call to trigger dependency calculation
     const response1 = await request(server['app'])
       .get('/api/conversations')
       .expect(200);
 
-    const session1 = response1.body.conversations.find((c: ConversationSummary) => c.sessionId === 'persist-test');
-    expect(session1).toBeDefined();
-    expect(session1.hash).toBeTruthy();
-    const originalHash = session1.hash;
+    // Find all sessions and verify initial relationships
+    const root1 = response1.body.conversations.find((c: ConversationSummary) => c.sessionId === 'persist-root');
+    const child1 = response1.body.conversations.find((c: ConversationSummary) => c.sessionId === 'persist-child');
+    const grandchild1 = response1.body.conversations.find((c: ConversationSummary) => c.sessionId === 'persist-grandchild');
 
-    // Verify the database file was created
+    expect(root1).toBeDefined();
+    expect(child1).toBeDefined();
+    expect(grandchild1).toBeDefined();
+
+    // Verify relationships before restart
+    expect(root1.leaf_session).toBe('persist-grandchild');
+    expect(child1.leaf_session).toBe('persist-grandchild');
+    expect(grandchild1.leaf_session).toBe('persist-grandchild');
+
+    // Store original database content
     const dbPath = path.join(testHomeDir, '.ccui', 'session-deps.json');
     expect(fs.existsSync(dbPath)).toBe(true);
+    const originalDbContent = JSON.parse(fs.readFileSync(dbPath, 'utf-8'));
+
+    // Verify internal relationships
+    expect(originalDbContent.sessions['persist-root'].children_sessions).toContain('persist-child');
+    expect(originalDbContent.sessions['persist-child'].parent_session).toBe('persist-root');
+    expect(originalDbContent.sessions['persist-child'].children_sessions).toContain('persist-grandchild');
+    expect(originalDbContent.sessions['persist-grandchild'].parent_session).toBe('persist-child');
 
     // Stop the server
     await server.stop();
+
+    // Reset singleton to simulate fresh start
+    SessionDepsService.resetInstance();
+    sessionDepsService = SessionDepsService.getInstance();
+    sessionDepsService.reinitializePaths();
 
     // Create a new server instance (simulating restart)
     server = new CCUIServer({ 
@@ -228,81 +350,171 @@ describe('Session Dependencies Integration', () => {
       logLevel: 'silent'
     });
     await server.start();
+    
+    // Manually initialize SessionDepsService again
+    await sessionDepsService.initialize();
 
     // Make another API call
     const response2 = await request(server['app'])
       .get('/api/conversations')
       .expect(200);
 
-    const session2 = response2.body.conversations.find((c: ConversationSummary) => c.sessionId === 'persist-test');
-    expect(session2).toBeDefined();
-    expect(session2.hash).toBe(originalHash); // Hash should be the same
+    // Find all sessions after restart
+    const root2 = response2.body.conversations.find((c: ConversationSummary) => c.sessionId === 'persist-root');
+    const child2 = response2.body.conversations.find((c: ConversationSummary) => c.sessionId === 'persist-child');
+    const grandchild2 = response2.body.conversations.find((c: ConversationSummary) => c.sessionId === 'persist-grandchild');
 
-    // Verify no unnecessary recalculation occurred by checking the database wasn't modified
-    const dbContent = JSON.parse(fs.readFileSync(dbPath, 'utf-8'));
-    expect(dbContent.sessions['persist-test']).toBeDefined();
-    expect(dbContent.sessions['persist-test'].end_hash).toBe(originalHash);
+    // Verify relationships are preserved after restart
+    expect(root2.leaf_session).toBe('persist-grandchild');
+    expect(child2.leaf_session).toBe('persist-grandchild');
+    expect(grandchild2.leaf_session).toBe('persist-grandchild');
+
+    // Verify hashes are the same
+    expect(root2.hash).toBe(root1.hash);
+    expect(child2.hash).toBe(child1.hash);
+    expect(grandchild2.hash).toBe(grandchild1.hash);
+
+    // Verify database relationships are still intact
+    const newDbContent = JSON.parse(fs.readFileSync(dbPath, 'utf-8'));
+    expect(newDbContent.sessions['persist-root'].children_sessions).toContain('persist-child');
+    expect(newDbContent.sessions['persist-child'].parent_session).toBe('persist-root');
+    expect(newDbContent.sessions['persist-child'].children_sessions).toContain('persist-grandchild');
+    expect(newDbContent.sessions['persist-grandchild'].parent_session).toBe('persist-child');
   });
 
   it('should handle concurrent updates safely', async () => {
-    // Create multiple sessions
+    // Create a base session tree that will be extended concurrently
     const projectDir = path.join(testHomeDir, '.claude', 'projects', 'test-project');
     fs.mkdirSync(projectDir, { recursive: true });
 
-    const sessionCount = 10;
-    for (let i = 0; i < sessionCount; i++) {
-      const sessionData = [
-        {
-          type: 'user',
-          uuid: `msg-${i}`,
-          sessionId: `concurrent-${i}`,
-          timestamp: `2024-01-01T00:0${i}:00Z`,
-          message: { role: 'user', content: `Message ${i}` },
-          cwd: '/test/project'
-        }
-      ];
-
-      fs.writeFileSync(
-        path.join(projectDir, `concurrent-${i}.jsonl`),
-        sessionData.map(item => JSON.stringify(item)).join('\n')
-      );
-    }
-
-    // Make multiple concurrent requests
-    const requests = [];
-    for (let i = 0; i < 5; i++) {
-      requests.push(
-        request(server['app'])
-          .get('/api/conversations')
-          .expect(200)
-      );
-    }
-
-    const responses = await Promise.all(requests);
-
-    // All responses should be successful and contain the same data
-    const firstResponse = responses[0].body;
-    expect(firstResponse.conversations.length).toBeGreaterThanOrEqual(sessionCount);
-
-    // Verify all responses are consistent
-    for (let i = 1; i < responses.length; i++) {
-      expect(responses[i].body.conversations.length).toBe(firstResponse.conversations.length);
-      
-      // Check that the same sessions have the same hashes
-      for (const conv of firstResponse.conversations) {
-        const matchingConv = responses[i].body.conversations.find(
-          (c: ConversationSummary) => c.sessionId === conv.sessionId
-        );
-        if (matchingConv) {
-          expect(matchingConv.hash).toBe(conv.hash);
-        }
+    // Base session
+    const baseData = [
+      {
+        type: 'user',
+        uuid: 'msg-1',
+        sessionId: 'concurrent-base',
+        timestamp: '2024-01-01T00:00:00Z',
+        message: { role: 'user', content: 'Base message' },
+        cwd: '/test/project'
       }
+    ];
+
+    fs.writeFileSync(
+      path.join(projectDir, 'concurrent-base.jsonl'),
+      baseData.map(item => JSON.stringify(item)).join('\n')
+    );
+
+    // Initial request to set up base session
+    await request(server['app'])
+      .get('/api/conversations')
+      .expect(200);
+
+    // Now create multiple branches concurrently
+    const branchPromises = [];
+    const branchCount = 5;
+
+    for (let i = 0; i < branchCount; i++) {
+      branchPromises.push((async () => {
+        // Each branch extends the base session
+        const branchData = [
+          {
+            type: 'user',
+            uuid: 'msg-1',
+            sessionId: `concurrent-branch-${i}`,
+            timestamp: '2024-01-01T00:00:00Z',
+            message: { role: 'user', content: 'Base message' },
+            cwd: '/test/project'
+          },
+          {
+            type: 'assistant',
+            uuid: `msg-branch-${i}`,
+            sessionId: `concurrent-branch-${i}`,
+            parentUuid: 'msg-1',
+            timestamp: `2024-01-01T00:0${i+1}:00Z`,
+            message: {
+              id: `msg_01Branch${i}`,
+              type: 'message',
+              role: 'assistant',
+              model: 'claude-3-sonnet-20240229',
+              content: [{ type: 'text', text: `Branch ${i} response` }],
+              stop_reason: 'end_turn',
+              stop_sequence: null,
+              usage: { input_tokens: 10, output_tokens: 5 }
+            }
+          }
+        ];
+
+        // Write file
+        await fs.promises.writeFile(
+          path.join(projectDir, `concurrent-branch-${i}.jsonl`),
+          branchData.map(item => JSON.stringify(item)).join('\n')
+        );
+
+        // Make API request to trigger dependency calculation
+        return request(server['app'])
+          .get('/api/conversations')
+          .expect(200);
+      })());
     }
 
-    // Verify the database is in a consistent state
+    // Execute all branch creations concurrently
+    const responses = await Promise.all(branchPromises);
+
+    // All responses should be successful
+    expect(responses.length).toBe(branchCount);
+    responses.forEach(response => {
+      expect(response.status).toBe(200);
+    });
+
+    // Final request to get the complete state
+    const finalResponse = await request(server['app'])
+      .get('/api/conversations')
+      .expect(200);
+
+    const finalConversations = finalResponse.body.conversations;
+    
+    // Find base and all branches
+    const base = finalConversations.find((c: ConversationSummary) => c.sessionId === 'concurrent-base');
+    const branches = [];
+    for (let i = 0; i < branchCount; i++) {
+      const branch = finalConversations.find((c: ConversationSummary) => c.sessionId === `concurrent-branch-${i}`);
+      if (branch) branches.push(branch);
+    }
+
+    // Verify all sessions exist
+    expect(base).toBeDefined();
+    expect(branches.length).toBe(branchCount);
+
+    // Verify the base session's leaf is one of the branches
+    expect(base.leaf_session).toMatch(/^concurrent-branch-\d$/);
+
+    // Verify all branches are their own leaves
+    branches.forEach(branch => {
+      expect(branch.leaf_session).toBe(branch.sessionId);
+    });
+
+    // Verify database consistency
     const dbPath = path.join(testHomeDir, '.ccui', 'session-deps.json');
     const dbContent = JSON.parse(fs.readFileSync(dbPath, 'utf-8'));
-    expect(Object.keys(dbContent.sessions).length).toBeGreaterThanOrEqual(sessionCount);
+
+    // Base should have all branches as children
+    expect(dbContent.sessions['concurrent-base'].children_sessions.length).toBe(branchCount);
+    
+    // Each branch should have base as parent
+    for (let i = 0; i < branchCount; i++) {
+      const branchSession = dbContent.sessions[`concurrent-branch-${i}`];
+      expect(branchSession).toBeDefined();
+      expect(branchSession.parent_session).toBe('concurrent-base');
+    }
+
+    // Verify no data corruption - all sessions should have valid structure
+    Object.values(dbContent.sessions).forEach((session: any) => {
+      expect(session.session_id).toBeDefined();
+      expect(Array.isArray(session.prefix_hashes)).toBe(true);
+      expect(session.end_hash).toBeDefined();
+      expect(session.leaf_session).toBeDefined();
+      expect(Array.isArray(session.children_sessions)).toBe(true);
+    });
   });
 
   it('should gracefully degrade on corruption', async () => {
@@ -379,7 +591,16 @@ describe('Session Dependencies Integration', () => {
         sessionId: 'branch-1',
         parentUuid: 'msg-1',
         timestamp: '2024-01-01T00:01:00Z',
-        message: { role: 'assistant', content: 'Branch 1 response' }
+        message: {
+          id: 'msg_01Branch1',
+          type: 'message',
+          role: 'assistant',
+          model: 'claude-3-sonnet-20240229',
+          content: [{ type: 'text', text: 'Branch 1 response' }],
+          stop_reason: 'end_turn',
+          stop_sequence: null,
+          usage: { input_tokens: 10, output_tokens: 5 }
+        }
       }
     ];
 
@@ -399,7 +620,16 @@ describe('Session Dependencies Integration', () => {
         sessionId: 'branch-2',
         parentUuid: 'msg-1',
         timestamp: '2024-01-01T00:02:00Z',
-        message: { role: 'assistant', content: 'Branch 2 response' }
+        message: {
+          id: 'msg_01Branch2',
+          type: 'message',
+          role: 'assistant',
+          model: 'claude-3-sonnet-20240229',
+          content: [{ type: 'text', text: 'Branch 2 response' }],
+          stop_reason: 'end_turn',
+          stop_sequence: null,
+          usage: { input_tokens: 10, output_tokens: 5 }
+        }
       }
     ];
 
@@ -439,6 +669,98 @@ describe('Session Dependencies Integration', () => {
     expect(uniqueHashes.size).toBe(3);
   });
 
+  it('should verify hash calculations are deterministic and correct', async () => {
+    // Test that hash calculations are deterministic
+    const projectDir = path.join(testHomeDir, '.claude', 'projects', 'test-project');
+    fs.mkdirSync(projectDir, { recursive: true });
+
+    // Create session with known content
+    const sessionData = [
+      {
+        type: 'user',
+        uuid: 'msg-1',
+        sessionId: 'hash-test',
+        timestamp: '2024-01-01T00:00:00Z',
+        message: { role: 'user', content: 'Test message for hashing' },
+        cwd: '/test/project'
+      },
+      {
+        type: 'assistant',
+        uuid: 'msg-2',
+        sessionId: 'hash-test',
+        parentUuid: 'msg-1',
+        timestamp: '2024-01-01T00:01:00Z',
+        message: {
+          id: 'msg_01HashTest',
+          type: 'message',
+          role: 'assistant',
+          model: 'claude-3-sonnet-20240229',
+          content: [{ type: 'text', text: 'Response for hash test' }],
+          stop_reason: 'end_turn',
+          stop_sequence: null,
+          usage: { input_tokens: 10, output_tokens: 5 }
+        }
+      },
+      {
+        type: 'summary',
+        leafUuid: 'msg-2',
+        summary: 'Hash test conversation'
+      }
+    ];
+
+    fs.writeFileSync(
+      path.join(projectDir, 'hash-test.jsonl'),
+      sessionData.map(item => JSON.stringify(item)).join('\n')
+    );
+
+    // Make multiple API calls to verify hashes are deterministic
+    const hashes = [];
+    for (let i = 0; i < 3; i++) {
+      if (i > 0) {
+        // For subsequent iterations, clear the database to force recalculation
+        const dbPath = path.join(testHomeDir, '.ccui', 'session-deps.json');
+        if (fs.existsSync(dbPath)) {
+          fs.unlinkSync(dbPath);
+        }
+      }
+
+      const response = await request(server['app'])
+        .get('/api/conversations')
+        .expect(200);
+
+      const session = response.body.conversations.find((c: ConversationSummary) => c.sessionId === 'hash-test');
+      expect(session).toBeDefined();
+      hashes.push(session.hash);
+    }
+
+    // All hashes should be identical
+    expect(hashes[0]).toBe(hashes[1]);
+    expect(hashes[1]).toBe(hashes[2]);
+
+    // Verify the hash is not empty
+    expect(hashes[0]).toBeTruthy();
+    expect(hashes[0].length).toBe(64); // SHA256 produces 64-character hex string
+
+    // Now verify incremental hashing by checking the database
+    const dbPath = path.join(testHomeDir, '.ccui', 'session-deps.json');
+    const dbContent = JSON.parse(fs.readFileSync(dbPath, 'utf-8'));
+    const sessionInfo = dbContent.sessions['hash-test'];
+
+    // Should have 2 prefix hashes for 2 messages
+    expect(sessionInfo.prefix_hashes).toHaveLength(2);
+    
+    // Each prefix hash should be a valid SHA256 hash
+    sessionInfo.prefix_hashes.forEach((hash: string) => {
+      expect(hash).toMatch(/^[a-f0-9]{64}$/);
+    });
+
+    // The second hash should be different from the first (incremental)
+    expect(sessionInfo.prefix_hashes[0]).not.toBe(sessionInfo.prefix_hashes[1]);
+    
+    // The end_hash should be the last prefix hash
+    expect(sessionInfo.end_hash).toBe(sessionInfo.prefix_hashes[1]);
+  });
+
   it('should calculate correct dependencies for gap scenarios', async () => {
     // Test the specific gap scenario: A(1) -> B(1,2,3) where no session with (1,2) exists
     const projectDir = path.join(testHomeDir, '.claude', 'projects', 'test-project');
@@ -472,7 +794,16 @@ describe('Session Dependencies Integration', () => {
         sessionId: 'gap-B',
         parentUuid: 'msg-1',
         timestamp: '2024-01-01T00:01:00Z',
-        message: { role: 'assistant', content: 'Response 1' }
+        message: {
+          id: 'msg_01Gap1',
+          type: 'message',
+          role: 'assistant',
+          model: 'claude-3-sonnet-20240229',
+          content: [{ type: 'text', text: 'Response 1' }],
+          stop_reason: 'end_turn',
+          stop_sequence: null,
+          usage: { input_tokens: 10, output_tokens: 5 }
+        }
       },
       {
         type: 'user',
