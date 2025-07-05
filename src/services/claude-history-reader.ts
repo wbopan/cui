@@ -4,6 +4,7 @@ import * as os from 'os';
 import { ConversationSummary, ConversationMessage, ConversationListQuery, CCUIError } from '@/types';
 import { createLogger } from './logger';
 import { SessionInfoService } from './session-info-service';
+import { SessionDepsService } from './session-deps-service';
 import type { Logger } from 'pino';
 import Anthropic from '@anthropic-ai/sdk';
 
@@ -43,11 +44,13 @@ export class ClaudeHistoryReader {
   private claudeHomePath: string;
   private logger: Logger;
   private sessionInfoService: SessionInfoService;
+  private sessionDepsService: SessionDepsService;
   
   constructor() {
     this.claudeHomePath = path.join(os.homedir(), '.claude');
     this.logger = createLogger('ClaudeHistoryReader');
     this.sessionInfoService = SessionInfoService.getInstance();
+    this.sessionDepsService = SessionDepsService.getInstance();
   }
 
   get homePath(): string {
@@ -92,13 +95,18 @@ export class ClaudeHistoryReader {
             totalCost: chain.totalCost,
             totalDuration: chain.totalDuration,
             model: chain.model,
-            status: 'completed' as const // Default status, will be updated by server
+            status: 'completed' as const, // Default status, will be updated by server
+            leaf_session: '', // Default value, will be enhanced by SessionDepsService
+            hash: '' // Default value, will be enhanced by SessionDepsService
           };
         })
       );
       
+      // Enhance conversations with dependency information
+      const enhancedConversations = await this.sessionDepsService.getEnhancedConversations(allConversations);
+      
       // Apply filters and pagination
-      const filtered = this.applyFilters(allConversations, filter);
+      const filtered = this.applyFilters(enhancedConversations, filter);
       const paginated = this.applyPagination(filtered, filter);
       
       return {
@@ -157,6 +165,44 @@ export class ClaudeHistoryReader {
     } catch (error) {
       this.logger.error('Error getting metadata for conversation', error, { sessionId });
       return null;
+    }
+  }
+
+  /**
+   * Get full conversation details including messages
+   * Used by SessionDepsService to get messages for hash calculation
+   */
+  async getConversationDetails(sessionId: string): Promise<{
+    messages: ConversationMessage[];
+    summary: string;
+    projectPath: string;
+    metadata: {
+      totalCost: number;
+      totalDuration: number;
+      model: string;
+    };
+  }> {
+    try {
+      const conversationChains = await this.parseAllConversations();
+      const conversation = conversationChains.find(chain => chain.sessionId === sessionId);
+      
+      if (!conversation) {
+        throw new CCUIError('CONVERSATION_NOT_FOUND', `Conversation ${sessionId} not found`, 404);
+      }
+
+      return {
+        messages: conversation.messages,
+        summary: conversation.summary,
+        projectPath: conversation.projectPath,
+        metadata: {
+          totalCost: conversation.totalCost,
+          totalDuration: conversation.totalDuration,
+          model: conversation.model
+        }
+      };
+    } catch (error) {
+      if (error instanceof CCUIError) throw error;
+      throw new CCUIError('CONVERSATION_READ_FAILED', `Failed to read conversation: ${error}`, 500);
     }
   }
 

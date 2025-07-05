@@ -91,6 +91,7 @@ The backend follows a service-oriented architecture with these key components:
 - **FileSystemService** (`src/services/file-system-service.ts`) - Secure file system access with validation and sandboxing
 - **LogStreamBuffer** (`src/services/log-stream-buffer.ts`) - Circular buffer for capturing and streaming server logs
 - **SessionInfoService** (`src/services/session-info-service.ts`) - Manages session metadata including custom names using lowdb for fast local storage
+- **SessionDepsService** (`src/services/session-deps-service.ts`) - Tracks session dependency relationships using SHA256 prefix hashing
 
 > For detailed service architecture and implementation patterns, see `src/services/CLAUDE.md`
 
@@ -122,6 +123,28 @@ Key types include:
 - **Configuration Types**: ConversationConfig
 - **Stream Event Types**: StreamEvent union type
 - **Tool Definitions**: FileOperationTools, SearchTools, ExecutionTools, etc.
+
+## Session Dependencies System
+
+CCUI includes an advanced session dependencies tracking system that:
+- **Tracks prefix hash relationships** between Claude sessions to build dependency trees
+- **Calculates "leaf sessions"** (nearest continuation) for each session
+- **Uses SHA256 prefix hashing** to identify session relationships
+- **Handles gaps in session chains** (e.g., A(1) → B(1,2,3) where no session with messages 1,2 exists)
+- **Optimizes for performance** with incremental updates and caching
+
+### Key Features:
+- Deterministic hash calculation based on message content
+- Tree building algorithm with direct parent identification
+- Topological sorting for efficient leaf session calculation  
+- Persistent storage in `~/.ccui/session-deps.json`
+- Graceful degradation when database is corrupted
+- Skip initialization in test mode for faster test execution
+
+### API Enhancement:
+- All conversation endpoints include `leaf_session` and `hash` fields
+- `leaf_session`: ID of the nearest leaf session in the dependency tree
+- `hash`: SHA256 hash of the session's complete message sequence
 
 ## Key Implementation Details
 

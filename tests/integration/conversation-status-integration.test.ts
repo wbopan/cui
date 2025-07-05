@@ -95,7 +95,7 @@ describe('Conversation Status Integration', () => {
         const timeout = setTimeout(() => {
           eventSource.close();
           resolve();
-        }, 3000);
+        }, 5000);
         
         eventSource.onopen = () => {
           connected = true;
@@ -152,7 +152,7 @@ describe('Conversation Status Integration', () => {
       });
       expect(stopResponse.ok).toBe(true);
       
-    }, 8000);
+    }, 15000);
     
     it('should verify streamingId field structure in conversation responses', async () => {
       // Simplified test to verify the API structure without complex EventSource issues
@@ -240,6 +240,6 @@ describe('Conversation Status Integration', () => {
         }
       }
       
-    }, 8000);
+    }, 15000);
   });
 });

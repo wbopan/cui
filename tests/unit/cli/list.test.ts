@@ -54,7 +54,9 @@ describe('CLI List Command', () => {
       totalCost: 0.0023,
       totalDuration: 1500,
       model: 'claude-sonnet-3-5-20241022',
-      status: 'completed'
+      status: 'completed',
+      leaf_session: 'session-1',
+      hash: 'hash1'
     },
     {
       sessionId: 'session-2',
@@ -67,7 +69,9 @@ describe('CLI List Command', () => {
       totalCost: 0.0045,
       totalDuration: 3000,
       model: 'claude-opus-20240229',
-      status: 'completed'
+      status: 'completed',
+      leaf_session: 'session-2',
+      hash: 'hash2'
     },
     {
       sessionId: 'session-3',
@@ -80,7 +84,9 @@ describe('CLI List Command', () => {
       totalCost: 0.0067,
       totalDuration: 4500,
       model: 'claude-sonnet-3-5-20241022',
-      status: 'completed'
+      status: 'completed',
+      leaf_session: 'session-3',
+      hash: 'hash3'
     }
   ];
 
@@ -170,7 +176,9 @@ describe('CLI List Command', () => {
         totalCost: 0.001,
         totalDuration: 1000,
         model: 'claude-sonnet-3-5-20241022',
-        status: 'completed'
+        status: 'completed',
+        leaf_session: 'session-long',
+        hash: 'hash-long'
       };
 
       mockReader.listConversations.mockResolvedValue({
@@ -221,7 +229,9 @@ describe('CLI List Command', () => {
         totalCost: 0,
         totalDuration: 0,
         model: 'claude-sonnet-3-5-20241022',
-        status: 'completed'
+        status: 'completed',
+        leaf_session: 'session-empty-path',
+        hash: 'hash-empty'
       };
 
       mockReader.listConversations.mockResolvedValue({
@@ -409,7 +419,9 @@ describe('CLI List Command', () => {
         totalCost: 0.567,
         totalDuration: 25000,
         model: 'claude-opus-20240229',
-        status: 'completed'
+        status: 'completed',
+        leaf_session: 'session-large',
+        hash: 'hash-large'
       };
 
       mockReader.listConversations.mockResolvedValue({
@@ -460,7 +472,9 @@ describe('CLI List Command', () => {
         totalCost: 0,
         totalDuration: 0,
         model: 'claude-sonnet-3-5-20241022',
-        status: 'completed'
+        status: 'completed',
+        leaf_session: 'session-date',
+        hash: 'hash-date'
       };
 
       mockReader.listConversations.mockResolvedValue({

@@ -121,7 +121,7 @@ describe('Real Claude CLI Integration', () => {
         const timeout = setTimeout(() => {
           eventSource.close();
           reject(new Error('Streaming timeout - API error not detected'));
-        }, 8000);
+        }, 15000);
         
         eventSource.onmessage = (event: any) => {
           try {

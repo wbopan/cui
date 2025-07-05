@@ -15,6 +15,8 @@ export interface ConversationSummary {
   model: string;
   status: 'completed' | 'ongoing' | 'pending'; // Conversation status based on active streams
   streamingId?: string; // CCUI's internal streaming ID (only present when status is 'ongoing')
+  leaf_session: string; // Nearest leaf session descendant from SessionDepsService
+  hash: string; // This session's end hash from SessionDepsService
 }
 
 export interface ConversationMessage {
@@ -267,4 +269,31 @@ export interface SessionRenameResponse {
   success: boolean;
   sessionId: string;
   customName: string;
+}
+
+// Session Dependencies Database types
+export interface SessionDepsDatabase {
+  sessions: Record<string, SessionDepsInfo>;
+  metadata: {
+    schema_version: number;
+    created_at: string;
+    last_updated: string;
+    total_sessions: number;
+  };
+}
+
+export interface SessionDepsInfo {
+  session_id: string;
+  prefix_hashes: string[];          // Each message's prefix hash
+  end_hash: string;                 // Last message's prefix hash
+  leaf_session: string;             // Nearest leaf descendant
+  parent_session?: string;          // Direct parent session
+  children_sessions: string[];      // Direct child sessions
+  created_at: string;
+  updated_at: string;
+  message_count: number;            // For validation
+  
+  // Optimization fields
+  depth?: number;                   // Tree depth cache
+  last_leaf_update?: string;        // Last leaf calculation time
 }

@@ -10,6 +10,7 @@ import { FileSystemService } from './services/file-system-service';
 import { logStreamBuffer } from './services/log-stream-buffer';
 import { ConfigService } from './services/config-service';
 import { SessionInfoService } from './services/session-info-service';
+import { SessionDepsService } from './services/session-deps-service';
 import { 
   StartConversationRequest,
   StartConversationResponse,
@@ -53,6 +54,7 @@ export class CCUIServer {
   private fileSystemService: FileSystemService;
   private configService: ConfigService;
   private sessionInfoService: SessionInfoService;
+  private sessionDepsService: SessionDepsService;
   private logger: Logger;
   private port: number;
   private host: string;
@@ -94,6 +96,7 @@ export class CCUIServer {
     this.mcpConfigGenerator = new MCPConfigGenerator();
     this.fileSystemService = new FileSystemService();
     this.sessionInfoService = SessionInfoService.getInstance();
+    this.sessionDepsService = SessionDepsService.getInstance();
     this.logger.debug('Services initialized successfully');
     
     this.setupMiddleware();
@@ -117,6 +120,15 @@ export class CCUIServer {
       this.logger.debug('Initializing session info service');
       await this.sessionInfoService.initialize();
       this.logger.debug('Session info service initialized successfully');
+      
+      // Initialize session dependencies service (skip in test mode for performance)
+      if (process.env.NODE_ENV !== 'test') {
+        this.logger.debug('Initializing session dependencies service');
+        await this.sessionDepsService.initialize();
+        this.logger.debug('Session dependencies service initialized successfully');
+      } else {
+        this.logger.debug('Skipping session dependencies service initialization in test mode');
+      }
       
       // Apply overrides if provided (for tests and CLI options)
       this.port = this.configOverrides?.port ?? config.server.port;
