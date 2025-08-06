@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach, spyOn } from 'bun:test';
+import { describe, it, expect, beforeEach, afterEach } from 'bun:test';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
@@ -6,61 +6,50 @@ import { SessionInfoService } from '@/services/session-info-service';
 import type { SessionInfo, SessionInfoDatabase } from '@/types';
 
 describe('SessionInfoService', () => {
-  let testConfigDir: string;
-  let originalHome: string;
-
-  beforeAll(() => {
-    // Create temporary config directory for tests
-    testConfigDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cui-session-test-'));
-    
-    // Mock the home directory to use our test directory
-    originalHome = os.homedir();
-    spyOn(os, 'homedir').mockReturnValue(testConfigDir);
-  });
-
-  afterAll(() => {
-    // Restore original home directory
-    (os.homedir as any).mockRestore();
-    
-    // Clean up test config directory
-    if (fs.existsSync(testConfigDir)) {
-      fs.rmSync(testConfigDir, { recursive: true, force: true });
-    }
-  });
+  let testDir: string;
 
   beforeEach(() => {
-    // Clear any existing config directory
-    const cuiDir = path.join(testConfigDir, '.cui');
-    if (fs.existsSync(cuiDir)) {
-      fs.rmSync(cuiDir, { recursive: true, force: true });
+    // Create a fresh isolated directory for each test
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substring(7);
+    const threadId = Math.random().toString(36).substring(7);
+    const pid = process.pid;
+    testDir = fs.mkdtempSync(path.join(os.tmpdir(), `cui-session-test-${timestamp}-${pid}-${threadId}-${random}-`));
+  });
+
+  afterEach(() => {
+    // Clean up test directory after each test
+    if (fs.existsSync(testDir)) {
+      try {
+        fs.rmSync(testDir, { recursive: true, force: true });
+      } catch (error) {
+        console.warn('Failed to cleanup test directory:', error);
+      }
     }
-    
-    // Reset SessionInfoService singleton
-    SessionInfoService.resetInstance();
   });
 
   describe('initialization', () => {
     it('should create database file on first write operation', async () => {
-      const service = SessionInfoService.getInstance();
+      const service = new SessionInfoService(testDir);
       
       // Config directory should not exist initially
-      expect(fs.existsSync(path.join(testConfigDir, '.cui'))).toBe(false);
+      expect(fs.existsSync(path.join(testDir, '.cui'))).toBe(false);
       
       await service.initialize();
       
       // Config directory should be created
-      expect(fs.existsSync(path.join(testConfigDir, '.cui'))).toBe(true);
+      expect(fs.existsSync(path.join(testDir, '.cui'))).toBe(true);
       
       // File should be created when there's a write operation
       await service.updateCustomName('test-session', 'Test Name');
       
-      const dbPath = path.join(testConfigDir, '.cui', 'session-info.json');
+      const dbPath = path.join(testDir, '.cui', 'session-info.json');
       expect(fs.existsSync(dbPath)).toBe(true);
     });
 
     it('should create config directory if it does not exist', async () => {
-      const service = SessionInfoService.getInstance();
-      const cuiDir = path.join(testConfigDir, '.cui');
+      const service = new SessionInfoService(testDir);
+      const cuiDir = path.join(testDir, '.cui');
       
       expect(fs.existsSync(cuiDir)).toBe(false);
       
@@ -70,14 +59,14 @@ describe('SessionInfoService', () => {
     });
 
     it('should initialize with default database structure', async () => {
-      const service = SessionInfoService.getInstance();
+      const service = new SessionInfoService(testDir);
       
       await service.initialize();
       
       // Trigger a write to create the file
       await service.updateCustomName('test-session', 'Test Name');
       
-      const dbPath = path.join(testConfigDir, '.cui', 'session-info.json');
+      const dbPath = path.join(testDir, '.cui', 'session-info.json');
       const dbContent = fs.readFileSync(dbPath, 'utf-8');
       const dbData: SessionInfoDatabase = JSON.parse(dbContent);
       
@@ -90,15 +79,14 @@ describe('SessionInfoService', () => {
     });
 
     it('should not overwrite existing database', async () => {
-      const service = SessionInfoService.getInstance();
+      const service = new SessionInfoService(testDir);
       
       // Create initial database
       await service.initialize();
       await service.updateCustomName('test-session-1', 'Test Name');
       
-      // Reset and reinitialize
-      SessionInfoService.resetInstance();
-      const newService = SessionInfoService.getInstance();
+      // Create new service with same directory
+      const newService = new SessionInfoService(testDir);
       await newService.initialize();
       
       const sessionInfo = await newService.getSessionInfo('test-session-1');
@@ -106,7 +94,7 @@ describe('SessionInfoService', () => {
     });
 
     it('should throw error if initialization fails', async () => {
-      const service = SessionInfoService.getInstance();
+      const service = new SessionInfoService(testDir);
       
       // Mock fs to throw error
       spyOn(fs, 'mkdirSync').mockImplementation(() => {
@@ -122,11 +110,10 @@ describe('SessionInfoService', () => {
       
       // Restore mock
       (fs.mkdirSync as any).mockRestore();
-      spyOn(os, 'homedir').mockReturnValue(testConfigDir);
     });
 
     it('should prevent multiple initializations', async () => {
-      const service = SessionInfoService.getInstance();
+      const service = new SessionInfoService(testDir);
       
       await service.initialize();
       
@@ -139,7 +126,7 @@ describe('SessionInfoService', () => {
     let service: SessionInfoService;
 
     beforeEach(async () => {
-      service = SessionInfoService.getInstance();
+      service = new SessionInfoService(testDir);
       await service.initialize();
     });
 
@@ -203,8 +190,6 @@ describe('SessionInfoService', () => {
       expect(sessionInfo.initial_commit_head).toBe('');
       
       // Restore mock
-      // Mocks restored individually
-      spyOn(os, 'homedir').mockReturnValue(testConfigDir);
     });
 
     it('should return default values when creation fails', async () => {
@@ -236,8 +221,6 @@ describe('SessionInfoService', () => {
       expect(sessionInfo.updated_at).toBeDefined();
       
       // Restore mocks
-      // Mocks restored individually
-      spyOn(os, 'homedir').mockReturnValue(testConfigDir);
     });
   });
 
@@ -245,7 +228,7 @@ describe('SessionInfoService', () => {
     let service: SessionInfoService;
 
     beforeEach(async () => {
-      service = SessionInfoService.getInstance();
+      service = new SessionInfoService(testDir);
       await service.initialize();
     });
 
@@ -310,7 +293,7 @@ describe('SessionInfoService', () => {
       await service.updateCustomName(testSessionId, testCustomName);
       
       // Read database directly to check metadata
-      const dbPath = path.join(testConfigDir, '.cui', 'session-info.json');
+      const dbPath = path.join(testDir, '.cui', 'session-info.json');
       const dbContent = fs.readFileSync(dbPath, 'utf-8');
       const dbData: SessionInfoDatabase = JSON.parse(dbContent);
       
@@ -333,8 +316,6 @@ describe('SessionInfoService', () => {
       }
       
       // Restore mock
-      // Mocks restored individually
-      spyOn(os, 'homedir').mockReturnValue(testConfigDir);
     });
   });
 
@@ -342,7 +323,7 @@ describe('SessionInfoService', () => {
     let service: SessionInfoService;
 
     beforeEach(async () => {
-      service = SessionInfoService.getInstance();
+      service = new SessionInfoService(testDir);
       await service.initialize();
     });
 
@@ -430,8 +411,6 @@ describe('SessionInfoService', () => {
       }
       
       // Restore mock
-      // Mocks restored individually
-      spyOn(os, 'homedir').mockReturnValue(testConfigDir);
     });
   });
 
@@ -439,7 +418,7 @@ describe('SessionInfoService', () => {
     let service: SessionInfoService;
 
     beforeEach(async () => {
-      service = SessionInfoService.getInstance();
+      service = new SessionInfoService(testDir);
       await service.initialize();
     });
 
@@ -479,8 +458,6 @@ describe('SessionInfoService', () => {
       }
       
       // Restore mock
-      // Mocks restored individually
-      spyOn(os, 'homedir').mockReturnValue(testConfigDir);
     });
   });
 
@@ -488,7 +465,7 @@ describe('SessionInfoService', () => {
     let service: SessionInfoService;
 
     beforeEach(async () => {
-      service = SessionInfoService.getInstance();
+      service = new SessionInfoService(testDir);
       await service.initialize();
     });
 
@@ -529,8 +506,6 @@ describe('SessionInfoService', () => {
       expect(allSessionInfo).toEqual({});
       
       // Restore mock
-      // Mocks restored individually
-      spyOn(os, 'homedir').mockReturnValue(testConfigDir);
     });
   });
 
@@ -538,7 +513,7 @@ describe('SessionInfoService', () => {
     let service: SessionInfoService;
 
     beforeEach(async () => {
-      service = SessionInfoService.getInstance();
+      service = new SessionInfoService(testDir);
       await service.initialize();
     });
 
@@ -556,7 +531,7 @@ describe('SessionInfoService', () => {
 
     it('should handle non-existent database file', async () => {
       // Don't initialize or create any sessions
-      const freshService = SessionInfoService.getInstance();
+      const freshService = new SessionInfoService(testDir);
       const stats = await freshService.getStats();
       
       expect(stats.sessionCount).toBe(0);
@@ -577,8 +552,6 @@ describe('SessionInfoService', () => {
       expect(stats.lastUpdated).toBeDefined();
       
       // Restore mock
-      // Mocks restored individually
-      spyOn(os, 'homedir').mockReturnValue(testConfigDir);
     });
   });
 
@@ -586,7 +559,7 @@ describe('SessionInfoService', () => {
     let service: SessionInfoService;
 
     beforeEach(async () => {
-      service = SessionInfoService.getInstance();
+      service = new SessionInfoService(testDir);
       await service.initialize();
     });
 
@@ -705,27 +678,17 @@ describe('SessionInfoService', () => {
       }
 
       // Restore mock
-      // Mocks restored individually
-      spyOn(os, 'homedir').mockReturnValue(testConfigDir);
     });
   });
 
-  describe('singleton behavior', () => {
-    it('should return the same instance across multiple calls', () => {
-      const instance1 = SessionInfoService.getInstance();
-      const instance2 = SessionInfoService.getInstance();
-      
-      expect(instance1).toBe(instance2);
-    });
-
-    it('should use the same database path across instances', async () => {
-      const service1 = SessionInfoService.getInstance();
+  describe('multiple instances behavior', () => {
+    it('should allow multiple instances with the same directory', async () => {
+      const service1 = new SessionInfoService(testDir);
       await service1.initialize();
       await service1.updateCustomName('test-session', 'Test Name');
       
-      // Reset and get new instance
-      SessionInfoService.resetInstance();
-      const service2 = SessionInfoService.getInstance();
+      // Create second instance using same directory
+      const service2 = new SessionInfoService(testDir);
       await service2.initialize();
       
       const sessionInfo = await service2.getSessionInfo('test-session');
@@ -735,10 +698,10 @@ describe('SessionInfoService', () => {
 
   describe('schema migrations', () => {
     it('should create missing metadata', async () => {
-      const service = SessionInfoService.getInstance();
+      const service = new SessionInfoService(testDir);
       
       // Create database file without metadata
-      const dbPath = path.join(testConfigDir, '.cui', 'session-info.json');
+      const dbPath = path.join(testDir, '.cui', 'session-info.json');
       fs.mkdirSync(path.dirname(dbPath), { recursive: true });
       fs.writeFileSync(dbPath, JSON.stringify({
         sessions: {
@@ -765,10 +728,10 @@ describe('SessionInfoService', () => {
     });
 
     it('should migrate from schema version 1 to 3', async () => {
-      const service = SessionInfoService.getInstance();
+      const service = new SessionInfoService(testDir);
       
       // Create database file with schema version 1
-      const dbPath = path.join(testConfigDir, '.cui', 'session-info.json');
+      const dbPath = path.join(testDir, '.cui', 'session-info.json');
       fs.mkdirSync(path.dirname(dbPath), { recursive: true });
       fs.writeFileSync(dbPath, JSON.stringify({
         sessions: {
@@ -822,10 +785,10 @@ describe('SessionInfoService', () => {
     });
 
     it('should migrate from schema version 2 to 3', async () => {
-      const service = SessionInfoService.getInstance();
+      const service = new SessionInfoService(testDir);
       
       // Create database file with schema version 2
-      const dbPath = path.join(testConfigDir, '.cui', 'session-info.json');
+      const dbPath = path.join(testDir, '.cui', 'session-info.json');
       fs.mkdirSync(path.dirname(dbPath), { recursive: true });
       fs.writeFileSync(dbPath, JSON.stringify({
         sessions: {
@@ -869,10 +832,10 @@ describe('SessionInfoService', () => {
     });
 
     it('should handle migration errors gracefully', async () => {
-      const service = SessionInfoService.getInstance();
+      const service = new SessionInfoService(testDir);
       
       // Create database file with schema version 1
-      const dbPath = path.join(testConfigDir, '.cui', 'session-info.json');
+      const dbPath = path.join(testDir, '.cui', 'session-info.json');
       fs.mkdirSync(path.dirname(dbPath), { recursive: true });
       fs.writeFileSync(dbPath, JSON.stringify({
         sessions: {},
@@ -896,8 +859,6 @@ describe('SessionInfoService', () => {
       }
       
       // Restore mock
-      // Mocks restored individually
-      spyOn(os, 'homedir').mockReturnValue(testConfigDir);
     });
   });
 
@@ -905,7 +866,7 @@ describe('SessionInfoService', () => {
     let service: SessionInfoService;
 
     beforeEach(async () => {
-      service = SessionInfoService.getInstance();
+      service = new SessionInfoService(testDir);
       await service.initialize();
     });
 
@@ -922,23 +883,20 @@ describe('SessionInfoService', () => {
       expect(stats.lastUpdated).toBeDefined();
       
       // Restore mock
-      // Mocks restored individually
-      spyOn(os, 'homedir').mockReturnValue(testConfigDir);
     });
   });
 
   describe('testing helper methods', () => {
-    it('should reinitialize paths after mocking homedir', () => {
-      const service = SessionInfoService.getInstance();
+    it('should reinitialize paths with custom config directory', () => {
+      const service = new SessionInfoService(testDir);
       const originalDbPath = service.getDbPath();
       const originalConfigDir = service.getConfigDir();
       
-      // Mock homedir to a different path
+      // Create a different test directory
       const newTestDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cui-new-test-'));
-      spyOn(os, 'homedir').mockReturnValue(newTestDir);
       
-      // Reinitialize paths
-      service.reinitializePaths();
+      // Reinitialize paths with new directory
+      service.reinitializePaths(newTestDir);
       
       // Verify paths have changed
       const newDbPath = service.getDbPath();
@@ -951,19 +909,17 @@ describe('SessionInfoService', () => {
       
       // Clean up
       fs.rmSync(newTestDir, { recursive: true, force: true });
-      // Mocks restored individually
-      spyOn(os, 'homedir').mockReturnValue(testConfigDir);
     });
 
     it('should return correct database and config paths', async () => {
-      const service = SessionInfoService.getInstance();
+      const service = new SessionInfoService(testDir);
       await service.initialize();
       
       const dbPath = service.getDbPath();
       const configDir = service.getConfigDir();
       
-      expect(dbPath).toBe(path.join(testConfigDir, '.cui', 'session-info.json'));
-      expect(configDir).toBe(path.join(testConfigDir, '.cui'));
+      expect(dbPath).toBe(path.join(testDir, '.cui', 'session-info.json'));
+      expect(configDir).toBe(path.join(testDir, '.cui'));
     });
   });
 
@@ -971,7 +927,7 @@ describe('SessionInfoService', () => {
     let service: SessionInfoService;
 
     beforeEach(async () => {
-      service = SessionInfoService.getInstance();
+      service = new SessionInfoService(testDir);
       await service.initialize();
     });
 
@@ -1039,7 +995,7 @@ describe('SessionInfoService', () => {
     let service: SessionInfoService;
 
     beforeEach(async () => {
-      service = SessionInfoService.getInstance();
+      service = new SessionInfoService(testDir);
       await service.initialize();
     });
 
@@ -1060,8 +1016,6 @@ describe('SessionInfoService', () => {
       expect(sessionInfo.pinned).toBe(false);
       
       // Restore mock
-      // Mocks restored individually
-      spyOn(os, 'homedir').mockReturnValue(testConfigDir);
     });
 
     it('should handle write errors during updateSessionInfo', async () => {
@@ -1076,14 +1030,11 @@ describe('SessionInfoService', () => {
       ).rejects.toThrow('Failed to update session info: Write failed');
       
       // Restore mock
-      // Mocks restored individually
-      spyOn(os, 'homedir').mockReturnValue(testConfigDir);
     });
 
     it('should handle permission errors during initialization', async () => {
-      // Reset service
-      SessionInfoService.resetInstance();
-      const freshService = SessionInfoService.getInstance();
+      // Create fresh service
+      const freshService = new SessionInfoService(testDir);
       
       // Mock existsSync to return false so mkdirSync is called
       spyOn(fs, 'existsSync').mockReturnValue(false);
@@ -1102,8 +1053,6 @@ describe('SessionInfoService', () => {
       }
       
       // Restore mock
-      // Mocks restored individually
-      spyOn(os, 'homedir').mockReturnValue(testConfigDir);
     });
   });
 });

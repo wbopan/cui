@@ -12,24 +12,27 @@ import { JsonFileManager } from './json-file-manager';
  * Provides fast lookups and updates for session-specific data with race condition protection
  */
 export class SessionInfoService {
-  private static instance: SessionInfoService;
   private jsonManager!: JsonFileManager<SessionInfoDatabase>;
   private logger: Logger;
   private dbPath!: string;
   private configDir!: string;
   private isInitialized = false;
 
-  private constructor() {
+  constructor(customConfigDir?: string) {
     this.logger = createLogger('SessionInfoService');
-    this.initializePaths();
+    this.initializePaths(customConfigDir);
   }
 
   /**
    * Initialize file paths and JsonFileManager
    * Separated to allow re-initialization during testing
    */
-  private initializePaths(): void {
-    this.configDir = path.join(os.homedir(), '.cui');
+  private initializePaths(customConfigDir?: string): void {
+    if (customConfigDir) {
+      this.configDir = path.join(customConfigDir, '.cui');
+    } else {
+      this.configDir = path.join(os.homedir(), '.cui');
+    }
     this.dbPath = path.join(this.configDir, 'session-info.json');
     
     this.logger.debug('Initializing paths', { 
@@ -49,16 +52,6 @@ export class SessionInfoService {
     };
     
     this.jsonManager = new JsonFileManager<SessionInfoDatabase>(this.dbPath, defaultData);
-  }
-
-  /**
-   * Get singleton instance
-   */
-  static getInstance(): SessionInfoService {
-    if (!SessionInfoService.instance) {
-      SessionInfoService.instance = new SessionInfoService();
-    }
-    return SessionInfoService.instance;
   }
 
   /**
@@ -340,21 +333,11 @@ export class SessionInfoService {
   }
 
   /**
-   * Reset singleton instance (for testing)
-   */
-  static resetInstance(): void {
-    if (SessionInfoService.instance) {
-      SessionInfoService.instance.isInitialized = false;
-    }
-    SessionInfoService.instance = null as unknown as SessionInfoService;
-  }
-
-  /**
    * Re-initialize paths and JsonFileManager (for testing)
    * Call this after mocking os.homedir() to use test paths
    */
-  reinitializePaths(): void {
-    this.initializePaths();
+  reinitializePaths(customConfigDir?: string): void {
+    this.initializePaths(customConfigDir);
   }
 
   /**
