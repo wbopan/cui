@@ -1,8 +1,21 @@
 import React, { useState, useRef, useEffect, useCallback, forwardRef } from 'react';
-import { createPortal } from 'react-dom';
 import { Check, ArrowUp } from 'lucide-react';
-import styles from './DropdownSelector.module.css';
 import { useDropdownPosition } from '../hooks/useDropdownPosition';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 export interface DropdownOption<T = string> {
   value: T;
@@ -68,7 +81,8 @@ export const DropdownSelector = forwardRef<HTMLDivElement, DropdownSelectorProps
     
     const containerRef = useRef<HTMLDivElement>(null);
     const filterInputRef = useRef<HTMLInputElement>(null);
-    const optionRefs = useRef<(HTMLButtonElement | null)[]>([]);
+    const optionRefs = useRef<(HTMLDivElement | null)[]>([]);
+    const commandRef = useRef<HTMLDivElement>(null);
 
     // Use controlled open state if provided
     const isOpen = controlledIsOpen !== undefined ? controlledIsOpen : internalIsOpen;
@@ -207,29 +221,6 @@ export const DropdownSelector = forwardRef<HTMLDivElement, DropdownSelectorProps
       return filteredOptions.slice(0, maxVisibleItems);
     })();
 
-    // Handle click outside
-    useEffect(() => {
-      const handleClickOutside = (event: MouseEvent) => {
-        const target = event.target as Node;
-        if (
-          containerRef.current && 
-          !containerRef.current.contains(target) &&
-          dropdownRef.current &&
-          !dropdownRef.current.contains(target)
-        ) {
-          setIsOpen(false);
-        }
-      };
-
-      if (isOpen) {
-        document.addEventListener('mousedown', handleClickOutside);
-      }
-
-      return () => {
-        document.removeEventListener('mousedown', handleClickOutside);
-      };
-    }, [isOpen, setIsOpen]);
-
     // Focus management
     useEffect(() => {
       if (isOpen && showFilterInput && filterInputRef.current && !visualFocusOnly) {
@@ -324,59 +315,52 @@ export const DropdownSelector = forwardRef<HTMLDivElement, DropdownSelectorProps
       }
     };
 
-    return (
-      <>
-        {renderTrigger ? (
-          <div ref={combinedContainerRef} className={className}>
-            {renderTrigger({
-              isOpen,
-              value,
-              onClick: () => setIsOpen(!isOpen)
-            })}
-          </div>
-        ) : (
-          <div 
-            ref={combinedContainerRef} 
-            className={`${styles.container} ${className || ''}`}
-          >
-            {/* Children can be the trigger element */}
-          </div>
-        )}
-
-        {isOpen && createPortal(
-          <div 
-            ref={dropdownRef}
-            className={`${styles.dropdown} ${dropdownClassName || ''}`}
-            style={{
-              position: 'fixed',
-              ...dropdownPosition,
-              zIndex: 9999,
-            }}
-            onKeyDown={handleKeyDown}
-          >
-            {/* Filter input section */}
+    // For autocomplete usage without renderTrigger - render dropdown directly
+    if (!renderTrigger && isOpen) {
+      return (
+        <div
+          ref={combinedContainerRef}
+          className={cn(
+            "absolute z-50 w-80 p-0 rounded-[18px] border border-black/15 bg-white shadow-lg",
+            "dark:border-white/10 dark:bg-neutral-900 dark:shadow-2xl mt-2",
+            dropdownClassName,
+            className
+          )}
+          onKeyDown={handleKeyDown}
+          style={{
+            maxHeight: `${maxHeight}px`,
+            ...dropdownPosition
+          }}
+          role="listbox"
+          aria-label="Autocomplete suggestions"
+          aria-expanded={isOpen}
+        >
+          <Command className="bg-transparent" ref={commandRef}>
             {customFilterInput ? (
               <>
                 {customFilterInput}
-                <div className={styles.divider} />
+                <div className="h-px bg-black/15 dark:bg-white/10 w-full" />
               </>
             ) : (
               showFilterInput && !filterTextRef && (
                 <>
-                  <div className={styles.inputSection}>
-                    <input
+                  <div className="flex items-center gap-2 px-2 py-1.5 bg-transparent">
+                    <CommandInput
                       ref={filterInputRef}
-                      type="text"
-                      className={styles.filterInput}
                       placeholder={placeholder}
                       value={filterText}
-                      onChange={(e) => setFilterText(e.target.value)}
+                      onValueChange={setFilterText}
+                      className="flex-1 bg-transparent border-none rounded-lg px-2 py-1 text-sm text-neutral-900 dark:text-neutral-100 outline-none transition-all placeholder:text-neutral-500 dark:placeholder:text-neutral-400"
                       aria-label="Filter options"
+                      aria-autocomplete="list"
+                      aria-controls="dropdown-options"
                     />
                     {filterText.trim() && (
-                      <button
+                      <Button
                         type="button"
-                        className={styles.selectTextButton}
+                        variant="ghost"
+                        size="sm"
+                        className="p-1 h-auto rounded-full hover:bg-transparent"
                         onClick={() => {
                           onChange(filterText.trim() as T);
                           setIsOpen(false);
@@ -384,51 +368,191 @@ export const DropdownSelector = forwardRef<HTMLDivElement, DropdownSelectorProps
                         aria-label="Select input text"
                       >
                         <ArrowUp size={18} />
-                      </button>
+                      </Button>
                     )}
                   </div>
-                  <div className={styles.divider} />
+                  <div className="h-px bg-black/15 dark:bg-white/10 w-full" />
                 </>
               )
             )}
-
-            {/* Options list */}
-            <div className={styles.optionsList}>
-              {visibleOptions.length === 0 ? (
-                <div className={styles.noOptions}>No options found</div>
-              ) : (
-                visibleOptions.map((option, index) => (
-                  <button
+            
+            <CommandList 
+              id="dropdown-options"
+              className="overflow-y-auto p-1.5 scrollbar-thin scrollbar-thumb-black/20 dark:scrollbar-thumb-white/20 scrollbar-track-transparent"
+              role="listbox"
+              aria-label="Available options"
+            >
+              <CommandEmpty className="py-6 text-center text-sm text-neutral-500 dark:text-neutral-400" role="status">
+                No options found
+              </CommandEmpty>
+              <CommandGroup>
+                {visibleOptions.map((option, index) => (
+                  <CommandItem
                     key={String(option.value)}
                     ref={(el) => { optionRefs.current[index] = el; }}
-                    type="button"
-                    className={`${styles.optionItem} ${
-                      value === option.value ? styles.selected : ''
-                    } ${focusedIndex === index ? styles.focused : ''} ${
-                      option.disabled ? styles.disabled : ''
-                    }`}
-                    onClick={() => handleOptionClick(option)}
+                    value={option.label}
+                    onSelect={() => handleOptionClick(option)}
                     disabled={option.disabled}
-                    tabIndex={-1}
+                    className={cn(
+                      "flex items-center justify-between w-full px-3 py-2.5 rounded-[10px] cursor-pointer transition-all gap-4 text-left text-sm text-neutral-900 dark:text-neutral-100 mb-px",
+                      "hover:bg-black/5 dark:hover:bg-white/5",
+                      "focus:bg-black/5 dark:focus:bg-white/5 focus:outline-none",
+                      "disabled:opacity-50 disabled:cursor-not-allowed",
+                      value === option.value && "bg-transparent dark:bg-transparent",
+                      focusedIndex === index && "bg-black/5 dark:bg-white/5"
+                    )}
+                    role="option"
+                    aria-selected={value === option.value}
+                    aria-disabled={option.disabled}
                   >
-                    <div className={styles.optionContent}>
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
                       {renderOption ? renderOption(option) : (
-                        <span className={styles.optionText}>{option.label}</span>
+                        <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap direction-rtl text-left">
+                          {option.label}
+                        </span>
                       )}
                     </div>
                     {value === option.value && (
-                      <div className={styles.checkmark}>
+                      <div className="flex items-center justify-center min-w-[20px] text-neutral-900 dark:text-neutral-100">
                         <Check size={16} />
                       </div>
                     )}
-                  </button>
-                ))
-              )}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </div>
+      );
+    }
+
+    // With renderTrigger - use Popover
+    if (renderTrigger) {
+      return (
+        <Popover open={isOpen} onOpenChange={setIsOpen}>
+          <PopoverTrigger asChild>
+            <div ref={combinedContainerRef} className={className}>
+              {renderTrigger({
+                isOpen,
+                value,
+                onClick: () => setIsOpen(!isOpen)
+              })}
             </div>
-          </div>,
-          document.body
-        )}
-      </>
+          </PopoverTrigger>
+          <PopoverContent
+            className={cn(
+              "w-80 p-0 rounded-[18px] border border-black/15 bg-white shadow-lg",
+              "dark:border-white/10 dark:bg-neutral-900 dark:shadow-2xl",
+              dropdownClassName
+            )}
+            align="start"
+            sideOffset={5}
+            onKeyDown={handleKeyDown}
+            ref={dropdownRef}
+            style={{
+              maxHeight: `${maxHeight}px`,
+              ...dropdownPosition
+            }}
+          >
+            <Command className="bg-transparent" ref={commandRef}>
+              {customFilterInput ? (
+                <>
+                  {customFilterInput}
+                  <div className="h-px bg-black/15 dark:bg-white/10 w-full" />
+                </>
+              ) : (
+                showFilterInput && !filterTextRef && (
+                  <>
+                    <div className="flex items-center gap-2 px-2 py-1.5 bg-transparent">
+                      <CommandInput
+                        ref={filterInputRef}
+                        placeholder={placeholder}
+                        value={filterText}
+                        onValueChange={setFilterText}
+                        className="flex-1 bg-transparent border-none rounded-lg px-2 py-1 text-sm text-neutral-900 dark:text-neutral-100 outline-none transition-all placeholder:text-neutral-500 dark:placeholder:text-neutral-400"
+                        aria-label="Filter options"
+                        aria-autocomplete="list"
+                        aria-controls="dropdown-options"
+                      />
+                      {filterText.trim() && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="p-1 h-auto rounded-full hover:bg-transparent"
+                          onClick={() => {
+                            onChange(filterText.trim() as T);
+                            setIsOpen(false);
+                          }}
+                          aria-label="Select input text"
+                        >
+                          <ArrowUp size={18} />
+                        </Button>
+                      )}
+                    </div>
+                    <div className="h-px bg-black/15 dark:bg-white/10 w-full" />
+                  </>
+                )
+              )}
+              
+              <CommandList 
+                id="dropdown-options"
+                className="overflow-y-auto p-1.5 scrollbar-thin scrollbar-thumb-black/20 dark:scrollbar-thumb-white/20 scrollbar-track-transparent"
+                role="listbox"
+                aria-label="Available options"
+              >
+                <CommandEmpty className="py-6 text-center text-sm text-neutral-500 dark:text-neutral-400" role="status">
+                  No options found
+                </CommandEmpty>
+                <CommandGroup>
+                  {visibleOptions.map((option, index) => (
+                    <CommandItem
+                      key={String(option.value)}
+                      ref={(el) => { optionRefs.current[index] = el; }}
+                      value={option.label}
+                      onSelect={() => handleOptionClick(option)}
+                      disabled={option.disabled}
+                      className={cn(
+                        "flex items-center justify-between w-full px-3 py-2.5 rounded-[10px] cursor-pointer transition-all gap-4 text-left text-sm text-neutral-900 dark:text-neutral-100 mb-px",
+                        "hover:bg-black/5 dark:hover:bg-white/5",
+                        "focus:bg-black/5 dark:focus:bg-white/5 focus:outline-none",
+                        "disabled:opacity-50 disabled:cursor-not-allowed",
+                        value === option.value && "bg-transparent dark:bg-transparent",
+                        focusedIndex === index && "bg-black/5 dark:bg-white/5"
+                      )}
+                      role="option"
+                      aria-selected={value === option.value}
+                      aria-disabled={option.disabled}
+                    >
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        {renderOption ? renderOption(option) : (
+                          <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap direction-rtl text-left">
+                            {option.label}
+                          </span>
+                        )}
+                      </div>
+                      {value === option.value && (
+                        <div className="flex items-center justify-center min-w-[20px] text-neutral-900 dark:text-neutral-100">
+                          <Check size={16} />
+                        </div>
+                      )}
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
+      );
+    }
+
+    return (
+      <div 
+        ref={combinedContainerRef} 
+        className={cn("relative", className)}
+      >
+        {/* Children can be the trigger element */}
+      </div>
     );
   }
 );

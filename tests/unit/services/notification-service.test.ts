@@ -1,18 +1,8 @@
 import { describe, it, expect, beforeEach, mock } from 'bun:test';
 
-// Mock dependencies
-mock.module('@/services/preferences-service', () => ({
-  PreferencesService: mock()
-}));
+// Don't mock the entire module - just create mock instances as needed
 
-mock.module('@/services/logger', () => ({
-  createLogger: mock(() => ({
-    debug: mock(),
-    info: mock(),
-    error: mock(),
-    warn: mock()
-  }))
-}));
+// Don't mock logger globally - create mock logger instances only when needed
 
 // Mock the machine-id module before importing the service
 mock.module('@/utils/machine-id', () => ({
@@ -20,7 +10,6 @@ mock.module('@/utils/machine-id', () => ({
 }));
 
 import { NotificationService } from '@/services/notification-service';
-import { PreferencesService } from '@/services/preferences-service';
 import { PermissionRequest } from '@/types';
 import { generateMachineId } from '@/utils/machine-id';
 

@@ -1,20 +1,4 @@
-// Mock all dependencies BEFORE importing anything
-// Need to mock the actual paths that CUIServer imports (relative paths)
-jest.mock('@/services/claude-process-manager', () => ({
-  ClaudeProcessManager: jest.fn()
-}));
-jest.mock('@/services/claude-history-reader', () => ({
-  ClaudeHistoryReader: jest.fn()
-}));
-jest.mock('@/services/stream-manager', () => ({
-  StreamManager: jest.fn()
-}));
-jest.mock('@/services/conversation-status-manager', () => ({
-  ConversationStatusManager: jest.fn()
-}));
-
-// Mock web-push
-
+import { describe, it, expect, beforeEach, afterEach, afterAll, mock, spyOn } from 'bun:test';
 import { CUIServer } from '@/cui-server';
 import { ClaudeProcessManager } from '@/services/claude-process-manager';
 import { ClaudeHistoryReader } from '@/services/claude-history-reader';
@@ -25,19 +9,33 @@ import request from 'supertest';
 import { TestHelpers } from '../utils/test-helpers';
 import * as path from 'path';
 
+// Mock all dependencies BEFORE the describe block
+mock.module('@/services/claude-process-manager', () => ({
+  ClaudeProcessManager: mock()
+}));
+mock.module('@/services/claude-history-reader', () => ({
+  ClaudeHistoryReader: mock()
+}));
+mock.module('@/services/stream-manager', () => ({
+  StreamManager: mock()
+}));
+mock.module('@/services/conversation-status-manager', () => ({
+  ConversationStatusManager: mock()
+}));
+
 // Mock child_process for execSync and exec calls
-jest.mock('child_process', () => ({
-  execSync: jest.fn(),
-  exec: jest.fn((cmd, callback) => {
+mock.module('child_process', () => ({
+  execSync: mock(),
+  exec: mock((cmd: any, callback: any) => {
     // Default mock implementation for exec
     callback(null, '', '');
   })
 }));
 
-const MockedClaudeProcessManager = ClaudeProcessManager as jest.MockedClass<typeof ClaudeProcessManager>;
-const MockedClaudeHistoryReader = ClaudeHistoryReader as jest.MockedClass<typeof ClaudeHistoryReader>;
-const MockedStreamManager = StreamManager as jest.MockedClass<typeof StreamManager>;
-const MockedConversationStatusManager = ConversationStatusManager as jest.MockedClass<typeof ConversationStatusManager>;
+const MockedClaudeProcessManager = ClaudeProcessManager as any;
+const MockedClaudeHistoryReader = ClaudeHistoryReader as any;
+const MockedStreamManager = StreamManager as any;
+const MockedConversationStatusManager = ConversationStatusManager as any;
 
 // Get mock Claude executable path
 function getMockClaudeExecutablePath(): string {
@@ -46,63 +44,65 @@ function getMockClaudeExecutablePath(): string {
 
 // Mock execSync for system status tests
 const { execSync } = require('child_process');
-const mockExecSync = execSync as jest.MockedFunction<typeof execSync>;
+const mockExecSync = execSync as any;
 
 describe('CUIServer', () => {
   let server: CUIServer;
-  let mockProcessManager: jest.Mocked<ClaudeProcessManager>;
-  let mockHistoryReader: jest.Mocked<ClaudeHistoryReader>;
-  let mockStreamManager: jest.Mocked<StreamManager>;
-  let mockStatusTracker: jest.Mocked<ConversationStatusManager>;
+  let mockProcessManager: any;
+  let mockHistoryReader: any;
+  let mockStreamManager: any;
+  let mockStatusTracker: any;
 
   // Track any running servers for cleanup
   const runningServers: CUIServer[] = [];
 
   beforeEach(() => {
+    mock.restore();
+    
     // Setup mock implementations
     mockProcessManager = {
-      startConversation: jest.fn(),
-      stopConversation: jest.fn(),
-      getActiveSessions: jest.fn(),
-      isSessionActive: jest.fn(),
-      setMCPConfigPath: jest.fn(),
-      setStreamManager: jest.fn(),
-      setPermissionTracker: jest.fn(),
-      setConversationStatusManager: jest.fn(),
-      on: jest.fn(),
-      emit: jest.fn()
-    } as any;
+      startConversation: mock(),
+      stopConversation: mock(),
+      getActiveSessions: mock(),
+      isSessionActive: mock(),
+      setMCPConfigPath: mock(),
+      setStreamManager: mock(),
+      setPermissionTracker: mock(),
+      setConversationStatusManager: mock(),
+      on: mock(),
+      emit: mock()
+    };
 
     mockHistoryReader = {
-      listConversations: jest.fn(),
-      fetchConversation: jest.fn(),
-      getConversationMetadata: jest.fn(),
+      listConversations: mock(),
+      fetchConversation: mock(),
+      getConversationMetadata: mock(),
       homePath: '/test/home/.claude'
-    } as any;
+    };
 
     mockStreamManager = {
-      addClient: jest.fn(),
-      broadcast: jest.fn(),
-      closeSession: jest.fn(),
-      disconnectAll: jest.fn(),
-      on: jest.fn()
-    } as any;
+      addClient: mock(),
+      broadcast: mock(),
+      closeSession: mock(),
+      disconnectAll: mock(),
+      on: mock()
+    };
 
     mockStatusTracker = {
-      registerActiveSession: jest.fn(),
-      unregisterActiveSession: jest.fn(),
-      getConversationContext: jest.fn(),
-      getConversationStatus: jest.fn(),
-      isSessionActive: jest.fn(),
-      getStreamingId: jest.fn(),
-      getSessionId: jest.fn(),
-      getActiveSessionIds: jest.fn(),
-      getActiveStreamingIds: jest.fn(),
-      clear: jest.fn(),
-      getStats: jest.fn(),
-      on: jest.fn(),
-      emit: jest.fn()
-    } as any;
+      registerActiveSession: mock(),
+      unregisterActiveSession: mock(),
+      getConversationContext: mock(),
+      getConversationStatus: mock(),
+      isSessionActive: mock(),
+      getStreamingId: mock(),
+      getSessionId: mock(),
+      getActiveSessionIds: mock(),
+      getActiveStreamingIds: mock(),
+      clear: mock(),
+      getStats: mock(),
+      on: mock(),
+      emit: mock()
+    };
 
     // Clear and reset mock constructors
     MockedClaudeProcessManager.mockClear();
@@ -135,7 +135,7 @@ describe('CUIServer', () => {
     );
     // Clear the array
     runningServers.length = 0;
-    jest.clearAllMocks();
+    mock.restore();
   });
 
   // Helper function to generate random test ports in a safe range
@@ -228,13 +228,13 @@ describe('CUIServer', () => {
   describe('request validation', () => {
     let mockReq: any;
     let mockRes: any;
-    let mockNext: jest.Mock;
+    let mockNext: any;
 
     beforeEach(() => {
-      mockNext = jest.fn();
+      mockNext = mock();
       mockRes = {
-        json: jest.fn(),
-        status: jest.fn().mockReturnThis()
+        json: mock(),
+        status: mock().mockReturnThis()
       };
     });
 

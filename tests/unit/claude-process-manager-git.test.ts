@@ -1,28 +1,35 @@
+import { describe, it, expect, beforeEach, mock } from 'bun:test';
 import { ClaudeProcessManager } from '@/services/claude-process-manager';
 import { SessionInfoService } from '@/services/session-info-service';
 import { FileSystemService } from '@/services/file-system-service';
 
-jest.mock('@/services/logger');
+mock.module('@/services/logger', () => ({
+  createLogger: mock(() => ({
+    debug: mock(),
+    info: mock(),
+    error: mock()
+  }))
+}));
 
 describe('ClaudeProcessManager - Git Integration', () => {
-  let mockSessionInfoService: jest.Mocked<SessionInfoService>;
-  let mockFileSystemService: jest.Mocked<FileSystemService>;
+  let mockSessionInfoService: any;
+  let mockFileSystemService: any;
 
   beforeEach(() => {
     mockSessionInfoService = {
-      updateSessionInfo: jest.fn(),
+      updateSessionInfo: mock(),
     } as any;
 
     mockFileSystemService = {
-      isGitRepository: jest.fn(),
-      getCurrentGitHead: jest.fn(),
+      isGitRepository: mock(),
+      getCurrentGitHead: mock(),
     } as any;
   });
 
   describe('executeConversationFlow git integration', () => {
     it('should set initial_commit_head when in git repo', async () => {
-      mockFileSystemService.isGitRepository.mockResolvedValue(true);
-      mockFileSystemService.getCurrentGitHead.mockResolvedValue('abc123commit');
+      mockFileSystemService.isGitRepository.mockImplementation(() => Promise.resolve(true));
+      mockFileSystemService.getCurrentGitHead.mockImplementation(() => Promise.resolve('abc123commit'));
 
       // Test the git logic directly
       const processManager = new ClaudeProcessManager(
@@ -73,7 +80,7 @@ describe('ClaudeProcessManager - Git Integration', () => {
     });
 
     it('should not set initial_commit_head when not in git repo', async () => {
-      mockFileSystemService.isGitRepository.mockResolvedValue(false);
+      mockFileSystemService.isGitRepository.mockImplementation(() => Promise.resolve(false));
 
       const processManager = new ClaudeProcessManager(
         {} as any,

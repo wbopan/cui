@@ -3,11 +3,14 @@ import { ChevronDown, Mic, Send, Loader2, Sparkles, Laptop, Square, Check, X, Mi
 import { DropdownSelector, DropdownOption } from '../DropdownSelector';
 import { PermissionDialog } from '../PermissionDialog';
 import { WaveformVisualizer } from '../WaveformVisualizer';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import type { PermissionRequest, Command } from '@/types';
 import { useLocalStorage } from '../../hooks/useLocalStorage';
 import { useAudioRecording } from '../../hooks/useAudioRecording';
 import { api } from '../../../chat/services/api';
-import styles from './Composer.module.css';
+import { cn } from '@/lib/utils';
 
 export interface FileSystemEntry {
   name: string;
@@ -124,18 +127,20 @@ function DirectoryDropdown({
         return false;
       }}
       renderTrigger={({ onClick }) => (
-        <button
+        <Button
           type="button"
-          className={styles.actionButton}
+          variant="ghost"
+          size="sm"
+          className="h-8 px-2 text-muted-foreground hover:bg-muted/50 rounded-full"
           onClick={onClick}
           aria-label="View all code environments"
         >
-          <Laptop size={14} />
-          <span className={styles.buttonText}>
-            <span className={styles.buttonLabel}>{displayText}</span>
+          <span className="flex items-center gap-1.5">
+            <Laptop size={14} />
+            <span className="block max-w-[128px] overflow-hidden text-ellipsis whitespace-nowrap">{displayText}</span>
             <ChevronDown size={14} />
           </span>
-        </button>
+        </Button>
       )}
     />
   );
@@ -189,24 +194,26 @@ function ModelDropdown({
       onOpenChange={setIsOpen}
       showFilterInput={false}
       renderOption={(option) => (
-        <div className={styles.modelOption}>
+        <div className="flex items-center gap-2 w-full">
           {getModelIcon(option.value)}
-          <span className={styles.modelOptionLabel}>{option.label}</span>
+          <span className="text-sm font-medium">{option.label}</span>
         </div>
       )}
       renderTrigger={({ onClick }) => (
-        <button
+        <Button
           type="button"
-          className={styles.actionButton}
+          variant="ghost"
+          size="sm"
+          className="h-8 px-2 text-muted-foreground hover:bg-muted/50 rounded-full"
           onClick={onClick}
           aria-label="Select AI model"
         >
-          {getModelIcon(selectedModel)}
-          <span className={styles.buttonText}>
-            <span className={styles.buttonLabel}>{displayText}</span>
+          <span className="flex items-center gap-1.5">
+            {getModelIcon(selectedModel)}
+            <span className="block max-w-[128px] overflow-hidden text-ellipsis whitespace-nowrap">{displayText}</span>
             <ChevronDown size={14} />
           </span>
-        </button>
+        </Button>
       )}
     />
   );
@@ -255,7 +262,9 @@ function AutocompleteDropdown({
   });
 
   return (
-    <div className={`${styles.autocompleteDropdown} ${position === 'above' ? styles.autocompleteDropdownAbove : ''}`}>
+    <div className={cn(
+      "w-full"
+    )}>
       <DropdownSelector
         options={options}
         value={undefined}
@@ -266,15 +275,14 @@ function AutocompleteDropdown({
         }}
         showFilterInput={false}
         maxVisibleItems={5}
-        className={styles.pathAutocomplete}
         initialFocusedIndex={focusedIndex}
         visualFocusOnly={true}
         triggerElementRef={triggerRef}
         renderOption={type === 'command' ? (option) => (
-          <div className={styles.commandOption}>
-            <span className={styles.commandName}>{option.label}</span>
+          <div className="flex flex-col items-start gap-0.5 w-full">
+            <span className="text-sm">{option.label}</span>
             {option.description && (
-              <span className={styles.commandDescription}>{option.description}</span>
+              <span className="text-xs text-muted-foreground/80">{option.description}</span>
             )}
           </div>
         ) : undefined}
@@ -829,7 +837,7 @@ export const Composer = forwardRef<ComposerRef, ComposerProps>(function Composer
   };
 
   return (
-    <form className={styles.composer} onSubmit={(e) => {
+    <form className="w-full relative" onSubmit={(e) => {
       e.preventDefault();
       handleSubmit(selectedPermissionMode);
     }}>
@@ -844,11 +852,11 @@ export const Composer = forwardRef<ComposerRef, ComposerProps>(function Composer
           type={autocomplete.type}
         />
       )}
-      <div className={styles.container}>
-        <div className={styles.inputWrapper}>
-          <div className={styles.textAreaContainer}>
+      <div className="flex flex-col items-center justify-center w-full bg-background border border-border rounded-3xl shadow-sm cursor-text transition-all duration-300 dark:bg-neutral-800">
+        <div className="relative flex items-end w-full min-h-[73px]">
+          <div className="relative flex flex-1 items-start mx-5 min-h-[73px]">
             {audioState === 'recording' || audioState === 'processing' ? (
-              <div className={styles.waveformContainer}>
+              <div className="w-full min-h-[80px] pb-[34px] bg-transparent overflow-hidden flex items-center justify-start">
                 <WaveformVisualizer
                   audioData={audioData}
                   isRecording={audioState === 'recording'}
@@ -856,9 +864,9 @@ export const Composer = forwardRef<ComposerRef, ComposerProps>(function Composer
                 />
               </div>
             ) : (
-              <textarea
+              <Textarea
                 ref={textareaRef}
-                className={styles.textarea}
+                className="min-h-[80px] max-h-[80vh] pt-4 pr-[60px] pb-[50px] border-none bg-transparent text-foreground font-sans text-base leading-relaxed resize-none outline-none overflow-y-auto scrollbar-thin ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                 placeholder={permissionRequest && showPermissionUI ? "Deny and tell Claude what to do" : placeholder}
                 value={value}
                 onChange={handleTextChange}
@@ -872,8 +880,7 @@ export const Composer = forwardRef<ComposerRef, ComposerProps>(function Composer
             {audioState === 'processing' && (
               <textarea
                 ref={textareaRef}
-                className={styles.textarea}
-                style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', top: '-9999px' }}
+                className="absolute opacity-0 pointer-events-none -top-[9999px]"
                 value={value}
                 onChange={handleTextChange}
                 rows={1}
@@ -883,9 +890,9 @@ export const Composer = forwardRef<ComposerRef, ComposerProps>(function Composer
           </div>
 
           {(showDirectorySelector || showModelSelector) && audioState === 'idle' && (
-            <div className={styles.footerActions}>
-              <div className={styles.actionButtons}>
-                <div className={styles.actionGroup}>
+            <div className="absolute bottom-2 left-6 right-10 flex items-center justify-center overflow-visible">
+              <div className="flex gap-2 w-full justify-between">
+                <div className="flex gap-2">
                   {/* Working Directory Selector */}
                   {showDirectorySelector && (
                     <DirectoryDropdown
@@ -909,103 +916,147 @@ export const Composer = forwardRef<ComposerRef, ComposerProps>(function Composer
           )}
 
           {/* Dynamic Action Button */}
-          <div className={styles.actionGroupRight}>
+          <div className="absolute right-2.5 bottom-2 flex items-center justify-center gap-2">
             {audioState === 'recording' || audioState === 'processing' ? (
               /* Recording/Processing State: Show tick and cross */
-              <div className={styles.recordingControls}>
-                <button
-                  type="button"
-                  className={styles.recordingButton}
-                  onClick={handleAcceptRecording}
-                  disabled={audioState === 'processing'}
-                  title={audioState === 'processing' ? 'Processing...' : 'Accept recording'}
-                >
-                  {audioState === 'processing' ? (
-                    <Loader2 size={16} className={styles.spinning} />
-                  ) : (
-                    <Check size={16} />
-                  )}
-                </button>
-                <button
-                  type="button"
-                  className={styles.recordingButton}
-                  onClick={handleRejectRecording}
-                  disabled={audioState === 'processing'}
-                  title="Discard recording"
-                >
-                  <X size={16} />
-                </button>
+              <div className="flex items-center gap-2">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="icon"
+                        className="w-8 h-8 hover:scale-[1.03]"
+                        onClick={handleAcceptRecording}
+                        disabled={audioState === 'processing'}
+                      >
+                        {audioState === 'processing' ? (
+                          <Loader2 size={16} className="animate-spin" />
+                        ) : (
+                          <Check size={16} />
+                        )}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{audioState === 'processing' ? 'Processing...' : 'Accept recording'}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="icon"
+                        className="w-8 h-8 hover:scale-[1.03]"
+                        onClick={handleRejectRecording}
+                        disabled={audioState === 'processing'}
+                      >
+                        <X size={16} />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Discard recording</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </div>
             ) : (
               /* Idle State: Show mic button */
               isAudioSupported && (
-                <button
-                  type="button"
-                  className={`${styles.actionButton} ${audioError ? styles.micError : ''}`}
-                  onClick={handleMicClick}
-                  disabled={disabled}
-                  title={audioError ? `Error: ${audioError}` : 'Start voice recording'}
-                >
-                  {audioError ? <MicOff size={16} /> : <Mic size={16} />}
-                </button>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className={cn(
+                          "h-8 px-2 text-muted-foreground hover:bg-muted/50 rounded-full",
+                          audioError && "bg-red-300 text-red-900 hover:bg-red-400 hover:text-red-950"
+                        )}
+                        onClick={handleMicClick}
+                        disabled={disabled}
+                      >
+                        {audioError ? <MicOff size={16} /> : <Mic size={16} />}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{audioError ? `Error: ${audioError}` : 'Start voice recording'}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               )
             )}
             
             {permissionRequest && showPermissionUI ? (
-              <div className={styles.permissionButtons}>
-                <button
+              <div className="flex gap-2">
+                <Button
                   type="button"
-                  className={`${styles.btn} ${styles.btnSecondary} ${styles.approveButton}`}
+                  className="h-8 min-w-[60px] px-3 py-0.5 bg-blue-600 text-white hover:bg-blue-700 border-0 shadow-none rounded-full flex items-center gap-1.5"
                   onClick={() => onPermissionDecision?.(permissionRequest.id, 'approve')}
                 >
-                  <div className={styles.btnContent}>
-                    <Check size={14} />
-                    Accept
-                  </div>
-                </button>
-                <button
+                  <Check size={14} />
+                  <span>Accept</span>
+                </Button>
+                <Button
                   type="button"
-                  className={`${styles.btn} ${styles.btnSecondary} ${styles.denyButton}`}
+                  className="h-8 min-w-[60px] px-3 py-0.5 bg-muted text-muted-foreground hover:bg-muted/80 border-0 shadow-none rounded-full flex items-center gap-1.5"
                   onClick={() => {
                     const denyReason = value.trim();
                     onPermissionDecision?.(permissionRequest.id, 'deny', denyReason || undefined);
                     setValue('');
                   }}
                 >
-                  <div className={styles.btnContent}>
-                    <X size={14} />
-                    Deny
-                  </div>
-                </button>
+                  <X size={14} />
+                  <span>Deny</span>
+                </Button>
               </div>
             ) : isLoading && showStopButton ? (
-              <button
-                type="button"
-                className={styles.iconButton}
-                onClick={() => onStop?.()}
-                title="Stop generation"
-              >
-                <Square size={18} />
-              </button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      size="icon"
+                      className="w-8 h-8 hover:scale-[1.03]"
+                      onClick={() => onStop?.()}
+                    >
+                      <Square size={18} />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Stop generation</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             ) : audioState === 'idle' && (
-              <div className={styles.permissionModeButtons}>
+              <div className="flex items-center gap-2">
                 {/* Combined Permission Mode Button with Dropdown */}
-                <div className={styles.combinedPermissionButton}>
-                  <button
-                    type="button"
-                    className={styles.permissionMainButton}
-                    title={getPermissionModeTitle(selectedPermissionMode)}
-                    disabled={!value.trim() || isLoading || disabled || (showDirectorySelector && selectedDirectory === 'Select directory')}
-                    onClick={() => handleSubmit(selectedPermissionMode)}
-                  >
-                    <div className={styles.btnContent}>
-                      {isLoading ? <Loader2 size={14} className={styles.spinning} /> : (
-                        <>
-                          {getPermissionModeLabel(selectedPermissionMode)}
-                        </>
-                      )}
-                    </div>
-                  </button>
+                <div className={`flex items-center rounded-full overflow-hidden ${
+                  (!value.trim() || isLoading || disabled || (showDirectorySelector && selectedDirectory === 'Select directory'))
+                    ? 'bg-foreground/5 text-foreground/50'
+                    : 'bg-foreground text-background'
+                }`}>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          className="h-8 min-w-[48px] w-[48px] px-3 py-0.5 bg-transparent text-inherit hover:bg-white/10 border-0 shadow-none"
+                          disabled={!value.trim() || isLoading || disabled || (showDirectorySelector && selectedDirectory === 'Select directory')}
+                          onClick={() => handleSubmit(selectedPermissionMode)}
+                        >
+                          {isLoading ? <Loader2 size={14} className="animate-spin" /> : getPermissionModeLabel(selectedPermissionMode)}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{getPermissionModeTitle(selectedPermissionMode)}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                   <DropdownSelector
                     options={[
                       { value: 'default', label: 'Ask', description: 'Ask before making changes' },
@@ -1019,26 +1070,26 @@ export const Composer = forwardRef<ComposerRef, ComposerProps>(function Composer
                     onOpenChange={setIsPermissionDropdownOpen}
                     showFilterInput={false}
                     renderOption={(option) => (
-                      <div className={styles.permissionOption}>
-                        <div className={styles.permissionOptionHeader}>
+                      <div className="flex flex-col items-start gap-0.5 w-full">
+                        <div className="flex items-center gap-2">
                           {getPermissionModeIcon(option.value)}
-                          <span className={styles.permissionOptionLabel}>{option.label}</span>
+                          <span className="text-sm font-medium">{option.label}</span>
                         </div>
                         {option.description && (
-                          <span className={styles.permissionOptionDescription}>{option.description}</span>
+                          <span className="text-xs text-muted-foreground/80 pl-[22px]">{option.description}</span>
                         )}
                       </div>
                     )}
                     renderTrigger={({ onClick }) => (
-                      <button
+                      <Button
                         type="button"
-                        className={styles.permissionDropdownButton}
+                        className="w-8 h-8 bg-transparent text-inherit border-l border-white/20 opacity-80 hover:opacity-100 hover:bg-white/10 border-0 shadow-none rounded-none flex items-center justify-center p-0"
                         onClick={onClick}
                         disabled={!value.trim() || isLoading || disabled || (showDirectorySelector && selectedDirectory === 'Select directory')}
                         aria-label="Select permission mode"
                       >
                         <ChevronDown size={14} />
-                      </button>
+                      </Button>
                     )}
                   />
                 </div>

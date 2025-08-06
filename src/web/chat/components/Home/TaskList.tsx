@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TaskItem } from './TaskItem';
-import styles from './TaskList.module.css';
 import type { ConversationSummary } from '../../types';
 import { useConversations } from '../../contexts/ConversationsContext';
 import { api } from '../../services/api';
@@ -133,24 +132,24 @@ export function TaskList({
 
   if (loading && conversations.length === 0) {
     return (
-      <div className={styles.container}>
-        <div className={styles.message}>Loading tasks...</div>
+      <div className="flex flex-col w-full flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-transparent hover:scrollbar-thumb-border scrollbar-track-transparent">
+        <div className="flex items-center justify-center w-full py-12 px-4 text-muted-foreground text-sm text-center bg-background">Loading tasks...</div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className={styles.container}>
-        <div className={styles.error}>{error}</div>
+      <div className="flex flex-col w-full flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-transparent hover:scrollbar-thumb-border scrollbar-track-transparent">
+        <div className="flex items-center justify-center w-full py-12 px-4 text-destructive text-sm text-center bg-background">{error}</div>
       </div>
     );
   }
 
   if (conversations.length === 0) {
     return (
-      <div className={styles.container}>
-        <div className={styles.message}>
+      <div className="flex flex-col w-full flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-transparent hover:scrollbar-thumb-border scrollbar-track-transparent">
+        <div className="flex items-center justify-center w-full py-12 px-4 text-muted-foreground text-sm text-center bg-background">
           {activeTab === 'tasks' ? 'No active tasks.' : activeTab === 'history' ? 'No history tasks.' : 'No archived tasks.'}
         </div>
       </div>
@@ -158,7 +157,7 @@ export function TaskList({
   }
 
   return (
-    <div ref={scrollRef} className={styles.container}>
+    <div ref={scrollRef} className="flex flex-col w-full flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-transparent hover:scrollbar-thumb-border scrollbar-track-transparent">
       {conversations.map((conversation) => (
         <div key={conversation.sessionId} data-session-id={conversation.sessionId}>
           <TaskItem
@@ -194,9 +193,9 @@ export function TaskList({
       
       {/* Loading indicator for infinite scroll */}
       {hasMore && (
-        <div ref={loadingRef} className={styles.loadingMore}>
+        <div ref={loadingRef} className="flex items-center justify-center w-full p-4 min-h-[60px]">
           {loadingMore && (
-            <div className={styles.loadingSpinner}>
+            <div className="flex items-center justify-center text-muted-foreground text-sm animate-pulse">
               Loading more tasks...
             </div>
           )}
@@ -205,7 +204,7 @@ export function TaskList({
       
       {/* End of list message */}
       {!hasMore && conversations.length > 0 && (
-        <div className={styles.endMessage}>
+        <div className="flex items-center justify-center w-full p-4 text-muted-foreground/70 text-xs text-center">
           No more tasks to load
         </div>
       )}

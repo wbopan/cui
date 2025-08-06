@@ -10,6 +10,6 @@
       "@/*": ["src/*"]
     }
   },
-  "include": ["src/web/**/*", "src/web/vite-env.d.ts", "src/web/chat/types/css-modules.d.ts", "vite.config.ts"],
+  "include": ["src/web/**/*", "src/web/vite-env.d.ts", "src/web/chat/types/css-modules.d.ts", "vite.config.mts"],
   "exclude": ["node_modules", "dist"]
 }

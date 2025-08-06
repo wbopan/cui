@@ -1,5 +1,5 @@
 import React from 'react';
-import styles from './TaskTabs.module.css';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface TaskTabsProps {
   activeTab: 'tasks' | 'history' | 'archive';
@@ -8,47 +8,32 @@ interface TaskTabsProps {
 
 export function TaskTabs({ activeTab, onTabChange }: TaskTabsProps) {
   return (
-    <div className={styles.container}>
-      <div className={styles.tabs}>
-        <div className={styles.tabWrapper}>
-          <button
-            className={`${styles.tab} ${activeTab === 'tasks' ? styles.active : ''}`}
-            onClick={() => onTabChange('tasks')}
+    <Tabs value={activeTab} onValueChange={(value) => onTabChange(value as 'tasks' | 'history' | 'archive')} className="w-full mt-4">
+      <div className="w-full border-b border-border/30">
+        <TabsList className="w-64 flex justify-start gap-4 bg-transparent rounded-none h-auto p-0">
+          <TabsTrigger 
+            value="tasks" 
+            className="data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-foreground border-0 rounded-none pb-3 pt-2 px-2 text-muted-foreground hover:text-muted-foreground/80 transition-colors"
             aria-label="Tab selector to view all tasks"
           >
             Tasks
-          </button>
-          {activeTab === 'tasks' && (
-            <div className={styles.activeIndicator} />
-          )}
-        </div>
-        
-        <div className={styles.tabWrapper}>
-          <button
-            className={`${styles.tab} ${activeTab === 'history' ? styles.active : ''}`}
-            onClick={() => onTabChange('history')}
+          </TabsTrigger>
+          <TabsTrigger 
+            value="history"
+            className="data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-foreground border-0 rounded-none pb-3 pt-2 px-2 text-muted-foreground hover:text-muted-foreground/80 transition-colors"
             aria-label="Tab selector to view history"
           >
             History
-          </button>
-          {activeTab === 'history' && (
-            <div className={styles.activeIndicator} />
-          )}
-        </div>
-        
-        <div className={styles.tabWrapper}>
-          <button
-            className={`${styles.tab} ${activeTab === 'archive' ? styles.active : ''}`}
-            onClick={() => onTabChange('archive')}
+          </TabsTrigger>
+          <TabsTrigger 
+            value="archive"
+            className="data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-foreground border-0 rounded-none pb-3 pt-2 px-2 text-muted-foreground hover:text-muted-foreground/80 transition-colors"
             aria-label="Tab selector to view archived tasks"
           >
             Archive
-          </button>
-          {activeTab === 'archive' && (
-            <div className={styles.activeIndicator} />
-          )}
-        </div>
+          </TabsTrigger>
+        </TabsList>
       </div>
-    </div>
+    </Tabs>
   );
 }

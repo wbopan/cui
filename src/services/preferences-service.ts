@@ -15,20 +15,23 @@ interface PreferenceDB {
 }
 
 export class PreferencesService {
-  private static instance: PreferencesService;
   private jsonManager!: JsonFileManager<PreferenceDB>;
   private logger: Logger;
   private dbPath!: string;
   private configDir!: string;
   private isInitialized = false;
 
-  private constructor() {
+  constructor(customConfigDir?: string) {
     this.logger = createLogger('PreferencesService');
-    this.initializePaths();
+    this.initializePaths(customConfigDir);
   }
 
-  private initializePaths(): void {
-    this.configDir = path.join(os.homedir(), '.cui');
+  private initializePaths(customConfigDir?: string): void {
+    if (customConfigDir) {
+      this.configDir = path.join(customConfigDir, '.cui');
+    } else {
+      this.configDir = path.join(os.homedir(), '.cui');
+    }
     this.dbPath = path.join(this.configDir, 'preferences.json');
 
     const defaultData: PreferenceDB = {
@@ -43,12 +46,6 @@ export class PreferencesService {
     this.jsonManager = new JsonFileManager<PreferenceDB>(this.dbPath, defaultData);
   }
 
-  static getInstance(): PreferencesService {
-    if (!PreferencesService.instance) {
-      PreferencesService.instance = new PreferencesService();
-    }
-    return PreferencesService.instance;
-  }
 
   async initialize(): Promise<void> {
     if (this.isInitialized) return;
@@ -62,7 +59,7 @@ export class PreferencesService {
       this.isInitialized = true;
     } catch (error) {
       this.logger.error('Failed to initialize preferences', error);
-      throw new Error('Preferences initialization failed');
+      throw new Error(`Preferences initialization failed: ${error}`);
     }
   }
 
@@ -87,15 +84,9 @@ export class PreferencesService {
     return updated;
   }
 
-  static resetInstance(): void {
-    if (PreferencesService.instance) {
-      PreferencesService.instance.isInitialized = false;
-    }
-    PreferencesService.instance = null as unknown as PreferencesService;
-  }
 
-  reinitializePaths(): void {
-    this.initializePaths();
+  reinitializePaths(customConfigDir?: string): void {
+    this.initializePaths(customConfigDir);
   }
 
   getDbPath(): string {

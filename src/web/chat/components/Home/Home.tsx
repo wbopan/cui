@@ -3,10 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { useConversations } from '../../contexts/ConversationsContext';
 import { api } from '../../services/api';
 import { Header } from './Header';
-import { Composer, ComposerRef } from '@/web/common/components/Composer';
+import { Composer, ComposerRef } from '@/web/chat/components/Composer';
 import { TaskTabs } from './TaskTabs';
 import { TaskList } from './TaskList';
-import styles from './Home.module.css';
 
 export function Home() {
   const navigate = useNavigate();
@@ -120,16 +119,16 @@ export function Home() {
   };
 
   return (
-    <div className={styles.container}>
+    <div className="flex flex-col h-screen w-full bg-background">
       <Header />
 
-      <main className={styles.main}>
-        <div className={styles.mainContent}>
-          <div className={styles.contentWrapper}>
-            <div className={styles.inputSection}>
-              <div className={styles.headingContainer}>
-                <div className={styles.logo}>
-                  <div className={styles.logoIcon}>
+      <main className="relative flex flex-1 w-full h-full overflow-hidden transition-all duration-[250ms] z-[1]">
+        <div className="flex flex-col h-full w-full">
+          <div className="z-0 mx-auto flex flex-col w-full max-w-3xl h-full">
+            <div className="sticky top-0 z-50 flex flex-col items-center bg-background">
+              <div className="flex items-center gap-3 mb-4 pt-4">
+                <div className="flex items-center">
+                  <div className="w-[27px] h-[27px] flex items-center justify-center">
                     <svg width="24" height="24" viewBox="4.5 5.2 11.7 13.3" fill="currentColor">
                       <circle cx="10.3613" cy="6.44531" r="1.03516" />
                       <circle cx="5.69336" cy="9.15039" r="1.03516" />
@@ -141,10 +140,10 @@ export function Home() {
                     </svg>
                   </div>
                 </div>
-                <h1 className={styles.heading}>What is the next task?</h1>
+                <h1 className="text-2xl font-semibold font-sans text-foreground">What is the next task?</h1>
               </div>
               
-              <div className={styles.composerWrapper}>
+              <div className="w-full pt-px px-3">
                 <Composer 
                   ref={composerRef}
                   workingDirectory={recentWorkingDirectory}

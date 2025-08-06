@@ -96,7 +96,7 @@ export class CUIServer {
     this.toolMetricsService = new ToolMetricsService();
     this.fileSystemService = new FileSystemService();
     this.sessionInfoService = SessionInfoService.getInstance();
-    this.preferencesService = PreferencesService.getInstance();
+    this.preferencesService = new PreferencesService();
     this.processManager = new ClaudeProcessManager(this.historyReader, this.statusTracker, undefined, undefined, this.toolMetricsService, this.sessionInfoService, this.fileSystemService);
     this.streamManager = new StreamManager();
     this.permissionTracker = new PermissionTracker();
@@ -239,7 +239,7 @@ export class CUIServer {
             // Configure ViteExpress for development
             ViteExpress.config({
               mode: 'development',
-              viteConfigFile: 'vite.config.ts'
+              viteConfigFile: 'vite.config.mts'
             });
             
             ViteExpress.bind(this.app, this.server);

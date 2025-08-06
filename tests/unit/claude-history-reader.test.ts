@@ -1,27 +1,23 @@
+import { describe, it, expect, beforeEach, afterEach, mock, spyOn } from 'bun:test';
 import { ClaudeHistoryReader } from '@/services/claude-history-reader';
 import { ConversationListQuery } from '@/types';
 import { createLogger } from '@/services/logger';
+import { createMockLogger } from '../utils/test-helpers';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as os from 'os';
 
 // Mock logger instance
-const mockLogger = {
-  info: jest.fn(),
-  error: jest.fn(),
-  fatal: jest.fn(),
-  warn: jest.fn(),
-  debug: jest.fn()
-};
+const mockLogger = createMockLogger();
 
 // Mock SessionInfoService
 const mockSessionInfoService = {
-  getSessionInfo: jest.fn()
+  getSessionInfo: mock()
 };
 
 // Mock ToolMetricsService
 const mockToolMetricsService = {
-  calculateMetricsFromMessages: jest.fn(() => ({
+  calculateMetricsFromMessages: mock(() => ({
     linesAdded: 0,
     linesRemoved: 0,
     editCount: 0,
@@ -30,20 +26,20 @@ const mockToolMetricsService = {
 };
 
 // Mock logger
-jest.mock('@/services/logger', () => ({
-  createLogger: jest.fn(() => mockLogger)
+mock.module('@/services/logger', () => ({
+  createLogger: mock(() => mockLogger)
 }));
 
 // Mock SessionInfoService
-jest.mock('@/services/session-info-service', () => ({
+mock.module('@/services/session-info-service', () => ({
   SessionInfoService: {
-    getInstance: jest.fn(() => mockSessionInfoService)
+    getInstance: mock(() => mockSessionInfoService)
   }
 }));
 
 // Mock ToolMetricsService
-jest.mock('@/services/ToolMetricsService', () => ({
-  ToolMetricsService: jest.fn(() => mockToolMetricsService)
+mock.module('@/services/ToolMetricsService', () => ({
+  ToolMetricsService: mock(() => mockToolMetricsService)
 }));
 
 describe('ClaudeHistoryReader', () => {
@@ -51,10 +47,10 @@ describe('ClaudeHistoryReader', () => {
   let tempDir: string;
 
   beforeEach(async () => {
-    jest.clearAllMocks();
+    mock.restore();
     
     // Set up default mock session info
-    mockSessionInfoService.getSessionInfo.mockResolvedValue({
+    mockSessionInfoService.getSessionInfo.mockImplementation(() => Promise.resolve({
       custom_name: '',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -63,7 +59,7 @@ describe('ClaudeHistoryReader', () => {
       archived: false,
       continuation_session_id: '',
       initial_commit_head: ''
-    });
+    }));
     
     // Create temporary Claude home directory structure
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'claude-test-'));
@@ -435,7 +431,13 @@ describe('ClaudeHistoryReader', () => {
       reader = new ClaudeHistoryReader();
       (reader as any).claudeHomePath = tempDir;
       
-      await expect(reader.fetchConversation('non-existent')).rejects.toThrow('Conversation non-existent not found');
+      try {
+        await reader.fetchConversation('non-existent');
+        expect().fail('Expected function to throw');
+      } catch (error) {
+        expect(error).toBeDefined();
+        expect((error as Error).message).toBe('Conversation non-existent not found');
+      }
     });
 
     it('should parse JSONL file correctly', async () => {
@@ -578,7 +580,13 @@ describe('ClaudeHistoryReader', () => {
       const invalidReader = new ClaudeHistoryReader();
       (invalidReader as any).claudeHomePath = '/invalid/path';
       
-      await expect(invalidReader.fetchConversation('any-session')).rejects.toThrow("Conversation any-session not found");
+      try {
+        await invalidReader.fetchConversation('any-session');
+        expect().fail('Expected function to throw');
+      } catch (error) {
+        expect(error).toBeDefined();
+        expect((error as Error).message).toBe('Conversation any-session not found');
+      }
     });
   });
 

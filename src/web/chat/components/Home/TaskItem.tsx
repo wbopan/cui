@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { StopCircle, Archive } from 'lucide-react';
-import styles from './TaskItem.module.css';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import type { StreamStatus } from '../../types';
 
 interface TaskItemProps {
@@ -56,12 +57,12 @@ export function TaskItem({
 
   return (
     <div 
-      className={styles.container}
+      className="relative group hover:bg-muted/30 focus-within:border-l-2 focus-within:border-accent"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
       <a 
-        className={styles.link} 
+        className="block no-underline text-inherit outline-offset-[-1px] focus-within:rounded-lg" 
         onClick={(e) => {
           // Allow native behavior for cmd+click (Mac) or ctrl+click (Windows/Linux)
           if (e.metaKey || e.ctrlKey) {
@@ -72,87 +73,106 @@ export function TaskItem({
         }}
         href={`/c/${_id}`}
       >
-        <div className={styles.content}>
-          <div className={styles.details}>
-            <div className={styles.titleRow}>
-              <div className={styles.title}>
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-5 w-full px-4 py-3.5 border-b border-border/30 text-sm">
+          <div className="flex flex-col gap-0.5">
+            <div className="flex items-center gap-1.5 w-full min-w-0 text-foreground">
+              <div className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap font-medium group-hover:text-foreground">
                 <span>{title || 'New conversation'}</span>
               </div>
             </div>
-            <div className={styles.metadata}>
-              <span className={styles.timestamp}>
+            <div className="flex items-center gap-1 text-muted-foreground">
+              <span className="overflow-hidden text-ellipsis whitespace-nowrap">
                 {formatTimestamp(timestamp)}
               </span>
-              <span className={styles.separator}>·</span>
-              <span className={styles.projectPath}>
+              <span className="text-muted-foreground">·</span>
+              <span className="overflow-hidden text-ellipsis whitespace-nowrap">
                 {projectPath 
                   ? (recentDirectories[projectPath]?.shortname || projectPath.split('/').pop() || projectPath)
                   : 'No project'}
               </span>
               {messageCount !== undefined && (
                 <>
-                  <span className={styles.separator}>·</span>
-                  <span className={styles.messageCount}>{messageCount}</span>
+                  <span className="text-muted-foreground">·</span>
+                  <span className="text-muted-foreground">{messageCount}</span>
                 </>
               )}
             </div>
           </div>
           
           {status === 'ongoing' && (
-            <div className={styles.statusSection}>
-              <span className={`${styles.statusText} ${liveStatus ? styles.liveStatus : ''}`}>
+            <div className="flex items-center gap-2">
+              <span className={`animate-pulse bg-gradient-to-r from-muted-foreground via-muted-foreground to-muted-foreground/50 bg-[length:200%_100%] bg-clip-text text-transparent ${liveStatus ? 'animate-[shimmer_2s_linear_infinite]' : ''}`}>
                 {liveStatus?.currentStatus || 'Running'}
               </span>
-              <button
-                className={styles.stopButton}
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  onCancel?.();
-                }}
-                aria-label="Stop task"
-                type="button"
-              >
-                <StopCircle size={24} />
-              </button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="w-6 h-6 rounded-full hover:bg-muted/50"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        onCancel?.();
+                      }}
+                      aria-label="Stop task"
+                      type="button"
+                    >
+                      <StopCircle size={24} />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Stop task</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
           )}
           
           {status === 'completed' && isHovered && (
-            <div className={styles.statusSection}>
-              <button
-                className={styles.archiveButton}
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  if (isArchived) {
-                    onUnarchive?.();
-                  } else {
-                    onArchive?.();
-                  }
-                }}
-                aria-label={isArchived ? "Unarchive task" : "Archive task"}
-                type="button"
-              >
-                <Archive size={21} />
-              </button>
+            <div className="flex items-center gap-2">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="w-6 h-6 rounded-full hover:bg-muted/50"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (isArchived) {
+                          onUnarchive?.();
+                        } else {
+                          onArchive?.();
+                        }
+                      }}
+                      aria-label={isArchived ? "Unarchive task" : "Archive task"}
+                      type="button"
+                    >
+                      <Archive size={21} />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{isArchived ? "Unarchive task" : "Archive task"}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
           )}
           
           {status !== 'ongoing' && !isHovered && toolMetrics && (toolMetrics.linesAdded > 0 || toolMetrics.linesRemoved > 0) && (
-            <div className={styles.metricsSection}>
+            <div className="flex items-center gap-2 text-xs">
               {toolMetrics.linesAdded > 0 && (
-                <span className={styles.additions}>+{toolMetrics.linesAdded}</span>
+                <span className="text-green-500 font-medium">+{toolMetrics.linesAdded}</span>
               )}
               {toolMetrics.linesRemoved > 0 && (
-                <span className={styles.deletions}>-{toolMetrics.linesRemoved}</span>
+                <span className="text-red-500 font-medium">-{toolMetrics.linesRemoved}</span>
               )}
             </div>
           )}
         </div>
-        
-        {/* Hover effect overlay */}
-        <div className={styles.hoverOverlay} />
       </a>
     </div>
   );

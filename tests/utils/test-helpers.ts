@@ -1,3 +1,4 @@
+import { mock } from 'bun:test';
 import { CUIServer } from '@/cui-server';
 import { ClaudeProcessManager } from '@/services/claude-process-manager';
 import { ClaudeHistoryReader } from '@/services/claude-history-reader';
@@ -347,3 +348,14 @@ export class TestHelpers {
     }
   }
 }
+
+/**
+ * Shared mock logger for tests - Bun compatible
+ */
+export const createMockLogger = () => ({
+  info: mock(),
+  error: mock(),
+  fatal: mock(),
+  warn: mock(),
+  debug: mock()
+});
