@@ -32,9 +32,9 @@ mock.module('@/services/logger', () => ({
 
 // Mock SessionInfoService
 mock.module('@/services/session-info-service', () => ({
-  SessionInfoService: {
-    getInstance: mock(() => mockSessionInfoService)
-  }
+  SessionInfoService: mock(function() {
+    return mockSessionInfoService;
+  })
 }));
 
 // Mock ToolMetricsService
