@@ -1,7 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import { MessageItem } from './MessageItem';
 import type { ChatMessage, ToolResult } from '../../types';
-import styles from './MessageList.module.css';
 
 export interface MessageListProps {
   messages: ChatMessage[];
@@ -56,8 +55,8 @@ export const MessageList: React.FC<MessageListProps> = ({
 
   if (displayMessages.length === 0 && !isLoading) {
     return (
-      <div className={styles.container}>
-        <div className={styles.empty}>
+      <div className="flex-1 overflow-y-auto bg-white">
+        <div className="text-center p-8 text-muted-foreground">
           <p>No messages yet. Start by typing a message below.</p>
         </div>
       </div>
@@ -65,10 +64,10 @@ export const MessageList: React.FC<MessageListProps> = ({
   }
 
   return (
-    <div className={styles.container} ref={containerRef}>
-      <div className={styles.messageList}>
+    <div className="flex-1 overflow-y-auto bg-white" ref={containerRef}>
+      <div className="flex flex-col py-6 max-w-3xl mx-auto w-full box-border">
         {messageGroups.map((group, groupIndex) => (
-          <div key={`group-${groupIndex}`} className={styles.messageGroup}>
+          <div key={`group-${groupIndex}`} className="flex flex-col gap-2 px-4 box-border">
             {group.messages.map((message, messageIndex) => (
               <MessageItem 
                 key={message.messageId} 
@@ -88,17 +87,17 @@ export const MessageList: React.FC<MessageListProps> = ({
              (group.type === 'user' && 
               groupIndex === messageGroups.length - 1 && 
               isStreaming)) && (
-              <div className={styles.messageDivider} />
+              <div className="h-px bg-border/20 my-2 w-full" />
             )}
           </div>
         ))}
         
         {isLoading && displayMessages.length === 0 && (
-          <div className={styles.loadingMessage}>
-            <div className={styles.loadingSpinner}>
-              <span></span>
-              <span></span>
-              <span></span>
+          <div className="flex items-center justify-center p-8">
+            <div className="flex gap-1">
+              <span className="w-1 h-1 bg-blue-500 rounded-full animate-bounce [animation-delay:-0.32s]" aria-label="Loading dot 1"></span>
+              <span className="w-1 h-1 bg-blue-500 rounded-full animate-bounce [animation-delay:-0.16s]" aria-label="Loading dot 2"></span>
+              <span className="w-1 h-1 bg-blue-500 rounded-full animate-bounce" aria-label="Loading dot 3"></span>
             </div>
           </div>
         )}
@@ -120,11 +119,11 @@ export const MessageList: React.FC<MessageListProps> = ({
           
           // Only show streaming dots when no tool use icons are blinking
           return !hasLoadingToolUse ? (
-            <div className={styles.streamingIndicator}>
-              <div className={styles.timelineIcon}>
-                <div className={styles.streamingDot} />
+            <div className="flex items-start px-4 mt-2">
+              <div className="w-4 h-5 flex-shrink-0 flex items-center justify-center text-foreground relative">
+                <div className="w-2.5 h-2.5 bg-foreground rounded-full mt-3.5 animate-pulse" aria-label="Streaming indicator" />
                 {/* Connector from last message */}
-                <div className={styles.streamingConnector} />
+                <div className="absolute left-1.5 -top-3 w-px h-5 bg-border hidden" />
               </div>
             </div>
           ) : null;

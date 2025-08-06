@@ -1,24 +1,25 @@
+import { describe, it, expect, beforeEach, afterEach, mock, spyOn } from 'bun:test';
 import { parseArgs } from '@/cli-parser';
 
 // Mock logger instance
 const mockLogger = {
-  error: jest.fn(),
-  info: jest.fn(),
-  debug: jest.fn(),
-  warn: jest.fn()
+  error: mock(),
+  info: mock(),
+  debug: mock(),
+  warn: mock()
 };
 
 // Mock the logger
-jest.mock('@/services/logger', () => ({
-  createLogger: jest.fn(() => mockLogger)
+mock.module('@/services/logger', () => ({
+  createLogger: mock(() => mockLogger)
 }));
 
 describe('CLI Parser', () => {
-  let mockExit: jest.SpyInstance;
+  let mockExit: any;
   
   beforeEach(() => {
     // Mock process.exit
-    mockExit = jest.spyOn(process, 'exit').mockImplementation((code?: string | number | null | undefined) => {
+    mockExit = spyOn(process, 'exit').mockImplementation((code?: string | number | null | undefined) => {
       throw new Error(`Process exited with code ${code}`);
     });
     
@@ -31,7 +32,7 @@ describe('CLI Parser', () => {
   
   afterEach(() => {
     mockExit.mockRestore();
-    jest.clearAllMocks();
+    mock.restore();
   });
   
   describe('Valid arguments', () => {
