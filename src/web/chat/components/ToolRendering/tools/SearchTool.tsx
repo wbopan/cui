@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { CornerDownRight } from 'lucide-react';
 import { countLines, extractFileCount } from '../../../utils/tool-utils';
-import styles from '../ToolRendering.module.css';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface SearchToolProps {
   input: any;
@@ -32,23 +32,29 @@ export function SearchTool({ input, result, toolType }: SearchToolProps) {
   };
 
   return (
-    <div className={styles.toolContent}>
-      <div 
-        className={`${styles.toolSummary} ${styles.expandable}`}
-        onClick={() => setIsExpanded(!isExpanded)}
-      >
-        <CornerDownRight 
-          size={12} 
-          className={`${styles.chevron} ${isExpanded ? styles.expanded : ''}`} 
-        />
-        {getSummaryText()}
-      </div>
-      
-      {isExpanded && result && (
-        <div className={styles.codeBlock}>
-          <pre>{result}</pre>
-        </div>
-      )}
+    <div className="flex flex-col gap-1 -mt-0.5">
+      <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
+        <CollapsibleTrigger asChild>
+          <div 
+            className="text-sm text-muted-foreground cursor-pointer select-none hover:text-foreground flex items-center gap-1"
+            aria-label={`Toggle ${getSummaryText().toLowerCase()} details`}
+          >
+            <CornerDownRight 
+              size={12} 
+              className={`transition-transform ${isExpanded ? 'rotate-90' : ''}`} 
+            />
+            {getSummaryText()}
+          </div>
+        </CollapsibleTrigger>
+        
+        <CollapsibleContent>
+          {result && (
+            <div className="bg-neutral-950 rounded-xl overflow-hidden">
+              <pre className="m-0 p-3 text-neutral-100 font-mono text-xs leading-relaxed whitespace-pre-wrap break-words">{result}</pre>
+            </div>
+          )}
+        </CollapsibleContent>
+      </Collapsible>
     </div>
   );
 }

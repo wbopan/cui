@@ -1,7 +1,6 @@
 import React from 'react';
 import { detectLanguageFromPath } from '../../../utils/language-detection';
 import { DiffViewer } from './DiffViewer';
-import styles from '../ToolRendering.module.css';
 
 interface WriteToolProps {
   input: any;
@@ -15,7 +14,7 @@ export function WriteTool({ input, result, workingDirectory }: WriteToolProps) {
   const language = detectLanguageFromPath(filePath);
 
   return (
-    <div className={styles.toolContent}>
+    <div className="flex flex-col gap-1 -mt-0.5">
       <DiffViewer
         oldValue=""
         newValue={content}

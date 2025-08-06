@@ -1,6 +1,5 @@
 import React from 'react';
 import { CodeHighlight } from '../../CodeHighlight';
-import styles from '../ToolRendering.module.css';
 
 interface BashToolProps {
   input: any;
@@ -10,12 +9,12 @@ interface BashToolProps {
 
 export function BashTool({ input, result }: BashToolProps) {
   return (
-    <div className={styles.toolContent}>
+    <div className="flex flex-col gap-1 -mt-0.5">
       <CodeHighlight
         code={result || '(No content)'}
         language="text"
         showLineNumbers={false}
-        className={styles.codeBlock}
+        className="bg-neutral-950 rounded-xl overflow-hidden"
       />
     </div>
   );

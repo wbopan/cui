@@ -3,7 +3,7 @@ import { CornerDownRight } from 'lucide-react';
 import { countLines } from '../../../utils/tool-utils';
 import { detectLanguageFromPath } from '../../../utils/language-detection';
 import { CodeHighlight } from '../../CodeHighlight';
-import styles from '../ToolRendering.module.css';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface ReadToolProps {
   input: any;
@@ -35,26 +35,27 @@ export function ReadTool({ input, result, workingDirectory }: ReadToolProps) {
   const language = detectLanguageFromPath(filePath);
 
   return (
-    <div className={styles.toolContent}>
-      <div 
-        className={`${styles.toolSummary} ${styles.expandable}`}
-        onClick={() => setIsExpanded(!isExpanded)}
-      >
-        <CornerDownRight 
-          size={12} 
-          className={`${styles.chevron} ${isExpanded ? styles.expanded : ''}`} 
-        />
-        Read {lineCount} line{lineCount !== 1 ? 's' : ''}
-      </div>
-      
-      {isExpanded && cleanedContent && (
-        <CodeHighlight
-          code={cleanedContent}
-          language={language}
-          showLineNumbers={true}
-          className={styles.codeBlock}
-        />
-      )}
+    <div className="flex flex-col gap-1 -mt-0.5">
+      <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
+        <CollapsibleTrigger className="flex items-center gap-1 text-sm text-muted-foreground cursor-pointer select-none hover:text-foreground" aria-label="Toggle file content">
+          <CornerDownRight 
+            size={12} 
+            className={`transition-transform ${isExpanded ? 'rotate-90' : ''}`}
+          />
+          Read {lineCount} line{lineCount !== 1 ? 's' : ''}
+        </CollapsibleTrigger>
+        
+        <CollapsibleContent>
+          {cleanedContent && (
+            <CodeHighlight
+              code={cleanedContent}
+              language={language}
+              showLineNumbers={true}
+              className="bg-neutral-950 rounded-xl overflow-hidden mt-1"
+            />
+          )}
+        </CollapsibleContent>
+      </Collapsible>
     </div>
   );
 }

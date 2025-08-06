@@ -3,6 +3,7 @@ import ReactDiffViewer from 'react-diff-viewer-continued';
 import Prism from 'prismjs';
 import { Maximize2, Minimize2 } from 'lucide-react';
 import { useTheme } from '../../../hooks/useTheme';
+import { Button } from '@/components/ui/button';
 import 'prismjs/components/prism-javascript';
 import 'prismjs/components/prism-typescript';
 import 'prismjs/components/prism-jsx';
@@ -63,35 +64,17 @@ export function DiffViewer({ oldValue, newValue, language = 'javascript' }: Diff
   };
   
   return (
-    <div style={{ 
-      position: 'relative',
-      border: '1px solid var(--color-border)',
-      borderRadius: '12px',
-      overflow: 'hidden'
-    }}>
+    <div className="relative border border-border rounded-xl overflow-hidden">
       {shouldShowExpandButton && (
-        <button
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={() => setIsExpanded(!isExpanded)}
-          title={isExpanded ? "Show fewer lines" : "Show all lines"}
-          style={{
-            position: 'absolute',
-            top: '8px',
-            right: '8px',
-            width: '24px',
-            height: '24px',
-            border: 'none',
-            background: 'none',
-            color: 'var(--color-text-secondary)',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: 0,
-            zIndex: 10,
-          }}
+          className="absolute top-2 right-2 h-6 w-6 p-0 z-10 text-muted-foreground hover:text-foreground"
+          aria-label={isExpanded ? "Show fewer lines" : "Show all lines"}
         >
           {isExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
-        </button>
+        </Button>
       )}
       <ReactDiffViewer
         oldValue={displayOldValue}

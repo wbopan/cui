@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Maximize2, Minimize2, CornerDownRight } from 'lucide-react';
 import type { ChatMessage } from '../../../types';
 import { MessageItem } from '../../MessageList/MessageItem';
-import styles from '../ToolRendering.module.css';
+import { Button } from '@/components/ui/button';
 
 interface TaskToolProps {
   input: any;
@@ -37,18 +37,23 @@ export function TaskTool({
   return (
     <>
       {hasChildren && (
-        <div className={styles.toolContent}>
-          <div className={styles.taskChildrenContainer}>
-            <button
-              className={styles.expandButton}
+        <div className="flex flex-col gap-1 -mt-0.5">
+          <div className="bg-secondary rounded-xl mt-1 relative overflow-hidden">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="absolute top-2 right-2 h-6 w-6 p-0 text-muted-foreground hover:bg-background hover:text-foreground z-10"
               onClick={() => setIsFullHeight(!isFullHeight)}
-              title={isFullHeight ? "Collapse height" : "Expand height"}
+              aria-label={isFullHeight ? "Collapse height" : "Expand height"}
             >
               {isFullHeight ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
-            </button>
+            </Button>
             <div 
               ref={contentRef}
-              className={`${styles.taskChildrenContent} ${isFullHeight ? styles.fullHeight : styles.autoScroll}`}
+              className={`${isFullHeight 
+                ? 'max-h-96 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-border' 
+                : 'max-h-24 overflow-hidden [mask-image:linear-gradient(180deg,transparent_0,black_40%,black_45%,transparent_90%)]'
+              } p-4 pt-8 pb-2 relative`}
             >
               {children.map((childMessage) => (
                 <MessageItem
@@ -61,9 +66,9 @@ export function TaskTool({
           </div>
         </div>
       )}
-      <div className={styles.toolContent}>
-        <div className={styles.toolSummary}>
-          <CornerDownRight size={16} style={{ verticalAlign: 'middle', marginRight: 4 }} /> Task completed
+      <div className="flex flex-col gap-1 -mt-0.5">
+        <div className="text-sm text-muted-foreground flex items-center gap-1">
+          <CornerDownRight size={16} /> Task completed
         </div>
       </div>
     </>

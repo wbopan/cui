@@ -2,7 +2,6 @@ import React from 'react';
 import { detectLanguageFromPath } from '../../../utils/language-detection';
 import { CodeHighlight } from '../../CodeHighlight';
 import { DiffViewer } from './DiffViewer';
-import styles from '../ToolRendering.module.css';
 
 interface EditToolProps {
   input: any;
@@ -18,7 +17,7 @@ export function EditTool({ input, result, isMultiEdit = false, workingDirectory 
   // For MultiEdit, process all edits
   if (isMultiEdit && input.edits && Array.isArray(input.edits)) {
     return (
-      <div className={styles.toolContent}>
+      <div className="flex flex-col gap-1 -mt-0.5">
         {input.edits.map((edit: any, index: number) => (
           <div key={index}>
             <DiffViewer
@@ -27,7 +26,7 @@ export function EditTool({ input, result, isMultiEdit = false, workingDirectory 
               language={language}
             />
             {index < input.edits.length - 1 && (
-              <div style={{ height: '8px' }} />
+              <div className="h-2" />
             )}
           </div>
         ))}
@@ -38,7 +37,7 @@ export function EditTool({ input, result, isMultiEdit = false, workingDirectory 
   // For regular Edit, process single edit
   if (input.old_string !== undefined && input.new_string !== undefined) {
     return (
-      <div className={styles.toolContent}>
+      <div className="flex flex-col gap-1 -mt-0.5">
         <DiffViewer
           oldValue={input.old_string}
           newValue={input.new_string}
@@ -51,16 +50,16 @@ export function EditTool({ input, result, isMultiEdit = false, workingDirectory 
   // Fallback if we can't parse the edit
   
   return (
-    <div className={styles.toolContent}>
+    <div className="flex flex-col gap-1 -mt-0.5">
       {result ? (
         <CodeHighlight
           code={result}
           language={language}
-          className={styles.codeBlock}
+          className="bg-neutral-950 rounded-xl overflow-hidden"
         />
       ) : (
-        <div className={styles.codeBlock}>
-          <pre>Edit completed successfully</pre>
+        <div className="bg-neutral-950 rounded-xl overflow-hidden">
+          <pre className="p-3 m-0 text-neutral-200 font-mono text-xs leading-6">Edit completed successfully</pre>
         </div>
       )}
     </div>

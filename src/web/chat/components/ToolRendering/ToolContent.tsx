@@ -12,7 +12,7 @@ import { WebTool } from './tools/WebTool';
 import { TaskTool } from './tools/TaskTool';
 import { PlanTool } from './tools/PlanTool';
 import { FallbackTool } from './tools/FallbackTool';
-import styles from './ToolRendering.module.css';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface ToolContentProps {
   toolName: string;
@@ -68,25 +68,22 @@ export function ToolContent({
     const hasMultipleLines = errorMessage.includes('\n');
     
     return (
-      <div className={styles.toolContent}>
-        <div 
-          className={`${styles.toolSummary} ${styles.expandable}`}
-          onClick={() => setIsErrorExpanded(!isErrorExpanded)}
-        >
-          <CornerDownRight 
-            size={12} 
-            className={`${styles.chevron} ${isErrorExpanded ? styles.expanded : ''}`} 
-          />
-          <span style={{ color: 'var(--color-error)' }}>
+      <div className="flex flex-col gap-1 -mt-0.5">
+        <Collapsible open={isErrorExpanded} onOpenChange={setIsErrorExpanded}>
+          <CollapsibleTrigger className="flex items-center gap-1 text-sm text-destructive cursor-pointer select-none hover:text-destructive/80" aria-label="Toggle error details">
+            <CornerDownRight 
+              size={12} 
+              className={`transition-transform ${isErrorExpanded ? 'rotate-90' : ''}`}
+            />
             Error: {firstLine}
-          </span>
-        </div>
-        
-        {isErrorExpanded && (
-          <div className={styles.errorContent}>
-            {errorMessage}
-          </div>
-        )}
+          </CollapsibleTrigger>
+          
+          <CollapsibleContent>
+            <div className="text-destructive bg-destructive/10 rounded-md p-3 border border-destructive text-sm">
+              {errorMessage}
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
       </div>
     );
   }

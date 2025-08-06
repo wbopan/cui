@@ -1,6 +1,5 @@
 import React from 'react';
 import { formatFilePath, formatToolInput, extractDomain } from '../../utils/tool-utils';
-import styles from './ToolRendering.module.css';
 
 interface ToolLabelProps {
   toolName: string;
@@ -30,8 +29,8 @@ export function ToolLabel({ toolName, toolInput, workingDirectory, onClick }: To
         
         return (
           <>
-            <span className={styles.toolName}>Read</span>
-            <span className={styles.toolParams}>({pathWithRange})</span>
+            <span className="font-semibold">Read</span>
+            <span className="font-normal">({pathWithRange})</span>
           </>
         );
       }
@@ -39,90 +38,90 @@ export function ToolLabel({ toolName, toolInput, workingDirectory, onClick }: To
       case 'Edit':
         return (
           <>
-            <span className={styles.toolName}>Update</span>
-            <span className={styles.toolParams}>({formatFilePath(toolInput.file_path, workingDirectory)})</span>
+            <span className="font-semibold">Update</span>
+            <span className="font-normal">({formatFilePath(toolInput.file_path, workingDirectory)})</span>
           </>
         );
       
       case 'MultiEdit':
         return (
           <>
-            <span className={styles.toolName}>MultiEdit</span>
-            <span className={styles.toolParams}>({formatFilePath(toolInput.file_path, workingDirectory)})</span>
+            <span className="font-semibold">MultiEdit</span>
+            <span className="font-normal">({formatFilePath(toolInput.file_path, workingDirectory)})</span>
           </>
         );
       
       case 'Bash':
         return (
           <>
-            <span className={styles.toolName}>Bash</span>
-            <span className={styles.toolParams}>({toolInput.command || ''})</span>
+            <span className="font-semibold">Bash</span>
+            <span className="font-normal">({toolInput.command || ''})</span>
           </>
         );
       
       case 'Grep':
         return (
           <>
-            <span className={styles.toolName}>Search</span>
-            <span className={styles.toolParams}>(pattern: "{toolInput.pattern || ''}", path: "{toolInput.path || ''}")</span>
+            <span className="font-semibold">Search</span>
+            <span className="font-normal">(pattern: "{toolInput.pattern || ''}", path: "{toolInput.path || ''}")</span>
           </>
         );
       
       case 'Glob':
         return (
           <>
-            <span className={styles.toolName}>Search</span>
-            <span className={styles.toolParams}>(pattern: "{toolInput.pattern || ''}", path: "{toolInput.path || ''}")</span>
+            <span className="font-semibold">Search</span>
+            <span className="font-normal">(pattern: "{toolInput.pattern || ''}", path: "{toolInput.path || ''}")</span>
           </>
         );
       
       case 'LS':
         return (
           <>
-            <span className={styles.toolName}>List</span>
-            <span className={styles.toolParams}>({formatFilePath(toolInput.path, workingDirectory)})</span>
+            <span className="font-semibold">List</span>
+            <span className="font-normal">({formatFilePath(toolInput.path, workingDirectory)})</span>
           </>
         );
       
       case 'TodoRead':
-        return <span className={styles.toolName}>Read Todos</span>;
+        return <span className="font-semibold">Read Todos</span>;
       
       case 'TodoWrite':
-        return <span className={styles.toolName}>Update Todos</span>;
+        return <span className="font-semibold">Update Todos</span>;
       
       case 'WebSearch':
         return (
           <>
-            <span className={styles.toolName}>Web Search</span>
-            <span className={styles.toolParams}>("{toolInput.query || ''}")</span>
+            <span className="font-semibold">Web Search</span>
+            <span className="font-normal">("{toolInput.query || ''}")</span>
           </>
         );
       
       case 'WebFetch':
         return (
           <>
-            <span className={styles.toolName}>Fetch</span>
-            <span className={styles.toolParams}>({toolInput.url || ''})</span>
+            <span className="font-semibold">Fetch</span>
+            <span className="font-normal">({toolInput.url || ''})</span>
           </>
         );
       
       case 'Task':
         return (
           <>
-            <span className={styles.toolName}>Task</span>
-            <span className={styles.toolParams}>({toolInput.description || ''})</span>
+            <span className="font-semibold">Task</span>
+            <span className="font-normal">({toolInput.description || ''})</span>
           </>
         );
       
       case 'exit_plan_mode':
-        return <span className={styles.toolName}>Plan</span>;
+        return <span className="font-semibold">Plan</span>;
       
       default:
         // Fallback for any unspecified tool
         return (
           <>
-            <span className={styles.toolName}>{toolName}</span>
-            <span className={styles.toolParams}>({formatToolInput(toolInput)})</span>
+            <span className="font-semibold">{toolName}</span>
+            <span className="font-normal">({formatToolInput(toolInput)})</span>
           </>
         );
     }
@@ -130,9 +129,9 @@ export function ToolLabel({ toolName, toolInput, workingDirectory, onClick }: To
 
   return (
     <div 
-      className={styles.toolLabel} 
+      className={`text-sm font-mono text-foreground mb-1 ${onClick ? 'cursor-pointer' : ''}`}
       onClick={onClick}
-      style={onClick ? { cursor: 'pointer' } : undefined}
+      aria-label={`Tool: ${toolName}`}
     >
       {generateLabel()}
     </div>
