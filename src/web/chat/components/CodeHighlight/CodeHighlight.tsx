@@ -2,7 +2,9 @@ import React, { useState } from 'react';
 import { Highlight, Language } from 'prism-react-renderer';
 import { Maximize2, Minimize2 } from 'lucide-react';
 import { useTheme } from '../../hooks/useTheme';
-import styles from './CodeHighlight.module.css';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
 
 interface CodeHighlightProps {
   code: string;
@@ -232,44 +234,46 @@ export const CodeHighlight: React.FC<CodeHighlightProps> = ({
         const hiddenLinesCount = totalLines - 8;
         
         return (
-          <div style={{ position: 'relative' }}>
+          <div className="relative">
             {shouldShowExpandButton && (
-              <button
-                onClick={() => setIsExpanded(!isExpanded)}
-                title={isExpanded ? "Show fewer lines" : "Show all lines"}
-                style={{
-                  position: 'absolute',
-                  top: '8px',
-                  right: '8px',
-                  width: '24px',
-                  height: '24px',
-                  border: 'none',
-                  background: 'none',
-                  color: 'var(--color-text-secondary)',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: 0,
-                  zIndex: 10,
-                }}
-              >
-                {isExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
-              </button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setIsExpanded(!isExpanded)}
+                      className="absolute top-2 right-2 h-6 w-6 z-10 text-muted-foreground hover:text-foreground"
+                      aria-label={isExpanded ? "Show fewer lines" : "Show all lines"}
+                    >
+                      {isExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {isExpanded ? "Show fewer lines" : "Show all lines"}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             )}
             <pre
-              className={`${styles.codeBlock} ${highlightClassName} ${className}`}
+              className={cn(
+                "bg-white dark:bg-[#292a30] text-neutral-900 dark:text-white p-3 rounded-md overflow-hidden whitespace-pre-wrap break-words font-mono text-[13px] leading-[1.8] m-0 border border-neutral-200 dark:border-neutral-800",
+                highlightClassName,
+                className
+              )}
               style={{ ...style, margin: 0 }}
             >
-              <code className={styles.codeContent}>
+              <code className="block font-mono text-[13px] leading-[1.8] whitespace-pre-wrap break-words">
                 {linesToShow.map((line, i) => {
                   const { key, ...lineProps } = getLineProps({ line, key: i });
                   return (
-                    <div key={i} {...lineProps} className={styles.line}>
+                    <div key={i} {...lineProps} className="table-row">
                       {showLineNumbers && (
-                        <span className={styles.lineNumber}>{i + 1}</span>
+                        <span className="table-cell text-right pr-4 select-none text-neutral-500 dark:text-neutral-400 min-w-[2.5rem] bg-transparent">
+                          {i + 1}
+                        </span>
                       )}
-                      <span className={styles.lineContent}>
+                      <span className="table-cell w-full whitespace-pre-wrap break-words">
                         {line.map((token, key) => {
                           const { key: tokenKey, ...tokenProps } = getTokenProps({ token, key });
                           return (
@@ -281,11 +285,11 @@ export const CodeHighlight: React.FC<CodeHighlightProps> = ({
                   );
                 })}
                 {!isExpanded && shouldShowExpandButton && (
-                  <div className={styles.line}>
+                  <div className="table-row">
                     {showLineNumbers && (
-                      <span className={styles.lineNumber}></span>
+                      <span className="table-cell text-right pr-4 select-none text-neutral-500 dark:text-neutral-400 min-w-[2.5rem] bg-transparent"></span>
                     )}
-                    <span className={styles.lineContent} style={{ color: 'var(--color-text-muted)', fontStyle: 'italic' }}>
+                    <span className="table-cell w-full whitespace-pre-wrap break-words text-neutral-500 dark:text-neutral-400 italic">
                       ... +{hiddenLinesCount} lines
                     </span>
                   </div>
