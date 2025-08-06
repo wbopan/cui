@@ -6,7 +6,6 @@ import { ConversationHeader } from '../ConversationHeader/ConversationHeader';
 import { api } from '../../services/api';
 import { useStreaming, useConversationMessages } from '../../hooks';
 import type { ChatMessage, ConversationDetailsResponse, ConversationMessage, ConversationSummary } from '../../types';
-import styles from './ConversationView.module.css';
 
 export function ConversationView() {
   const { sessionId } = useParams<{ sessionId: string }>();
@@ -217,7 +216,7 @@ export function ConversationView() {
 
 
   return (
-    <div className={styles.container}>
+    <div className="h-full flex flex-col bg-background relative" role="main" aria-label="Conversation view">
       <ConversationHeader 
         title={conversationTitle}
         sessionId={sessionId}
@@ -234,7 +233,11 @@ export function ConversationView() {
       />
       
       {error && (
-        <div className={styles.error}>
+        <div 
+          className="bg-red-500/10 border-b border-red-500 text-red-600 dark:text-red-400 px-4 py-2 text-sm text-center animate-in slide-in-from-top duration-300"
+          role="alert"
+          aria-label="Error message"
+        >
           {error}
         </div>
       )}
@@ -249,43 +252,48 @@ export function ConversationView() {
         isStreaming={!!streamingId}
       />
 
-      <div className={styles.composerWrapper}>
-        <Composer
-          ref={composerRef}
-          onSubmit={handleSendMessage}
-          onStop={handleStop}
-          onPermissionDecision={handlePermissionDecision}
-          isLoading={isConnected || isPermissionDecisionLoading}
-          placeholder="Continue the conversation..."
-          permissionRequest={currentPermissionRequest}
-          showPermissionUI={true}
-          showStopButton={true}
-          enableFileAutocomplete={true}
-          dropdownPosition="above"
-          workingDirectory={conversationSummary?.projectPath}
-          onFetchFileSystem={async (directory) => {
-            try {
-              const response = await api.listDirectory({
-                path: directory || currentWorkingDirectory,
-                recursive: true,
-                respectGitignore: true,
-              });
-              return response.entries;
-            } catch (error) {
-              console.error('Failed to fetch file system entries:', error);
-              return [];
-            }
-          }}
-          onFetchCommands={async (workingDirectory) => {
-            try {
-              const response = await api.getCommands(workingDirectory || currentWorkingDirectory);
-              return response.commands;
-            } catch (error) {
-              console.error('Failed to fetch commands:', error);
-              return [];
-            }
-          }}
-        />
+      <div 
+        className="sticky bottom-0 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm z-10 w-full flex justify-center px-2 pb-6"
+        aria-label="Message composer section"
+      >
+        <div className="w-full max-w-3xl">
+          <Composer
+            ref={composerRef}
+            onSubmit={handleSendMessage}
+            onStop={handleStop}
+            onPermissionDecision={handlePermissionDecision}
+            isLoading={isConnected || isPermissionDecisionLoading}
+            placeholder="Continue the conversation..."
+            permissionRequest={currentPermissionRequest}
+            showPermissionUI={true}
+            showStopButton={true}
+            enableFileAutocomplete={true}
+            dropdownPosition="above"
+            workingDirectory={conversationSummary?.projectPath}
+            onFetchFileSystem={async (directory) => {
+              try {
+                const response = await api.listDirectory({
+                  path: directory || currentWorkingDirectory,
+                  recursive: true,
+                  respectGitignore: true,
+                });
+                return response.entries;
+              } catch (error) {
+                console.error('Failed to fetch file system entries:', error);
+                return [];
+              }
+            }}
+            onFetchCommands={async (workingDirectory) => {
+              try {
+                const response = await api.getCommands(workingDirectory || currentWorkingDirectory);
+                return response.commands;
+              } catch (error) {
+                console.error('Failed to fetch commands:', error);
+                return [];
+              }
+            }}
+          />
+        </div>
       </div>
 
     </div>

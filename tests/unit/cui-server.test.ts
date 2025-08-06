@@ -9,18 +9,40 @@ import request from 'supertest';
 import { TestHelpers } from '../utils/test-helpers';
 import * as path from 'path';
 
+// Create global mocks that will be used by the mocked modules
+let globalMockProcessManager: any;
+let globalMockHistoryReader: any; 
+let globalMockStreamManager: any;
+let globalMockStatusTracker: any;
+
 // Mock all dependencies BEFORE the describe block
 mock.module('@/services/claude-process-manager', () => ({
-  ClaudeProcessManager: mock()
+  ClaudeProcessManager: class MockClaudeProcessManager {
+    constructor() {
+      return globalMockProcessManager;
+    }
+  }
 }));
 mock.module('@/services/claude-history-reader', () => ({
-  ClaudeHistoryReader: mock()
+  ClaudeHistoryReader: class MockClaudeHistoryReader {
+    constructor() {
+      return globalMockHistoryReader;
+    }
+  }
 }));
 mock.module('@/services/stream-manager', () => ({
-  StreamManager: mock()
+  StreamManager: class MockStreamManager {
+    constructor() {
+      return globalMockStreamManager;
+    }
+  }
 }));
 mock.module('@/services/conversation-status-manager', () => ({
-  ConversationStatusManager: mock()
+  ConversationStatusManager: class MockConversationStatusManager {
+    constructor() {
+      return globalMockStatusTracker;
+    }
+  }
 }));
 
 // Mock child_process for execSync and exec calls
@@ -35,10 +57,7 @@ mock.module('child_process', () => ({
   exec: mockExec
 }));
 
-const MockedClaudeProcessManager = ClaudeProcessManager as any;
-const MockedClaudeHistoryReader = ClaudeHistoryReader as any;
-const MockedStreamManager = StreamManager as any;
-const MockedConversationStatusManager = ConversationStatusManager as any;
+// These will be set up in beforeEach
 
 // Get mock Claude executable path
 function getMockClaudeExecutablePath(): string {
@@ -59,7 +78,7 @@ describe('CUIServer', () => {
     mock.restore();
     
     // Setup mock implementations
-    mockProcessManager = {
+    mockProcessManager = globalMockProcessManager = {
       startConversation: mock(),
       stopConversation: mock(),
       getActiveSessions: mock(),
@@ -74,14 +93,14 @@ describe('CUIServer', () => {
       listenerCount: mock().mockReturnValue(0)
     };
 
-    mockHistoryReader = {
+    mockHistoryReader = globalMockHistoryReader = {
       listConversations: mock(),
       fetchConversation: mock(),
       getConversationMetadata: mock(),
       homePath: '/test/home/.claude'
     };
 
-    mockStreamManager = {
+    mockStreamManager = globalMockStreamManager = {
       addClient: mock(),
       broadcast: mock(),
       closeSession: mock(),
@@ -90,7 +109,7 @@ describe('CUIServer', () => {
       on: mock()
     };
 
-    mockStatusTracker = {
+    mockStatusTracker = globalMockStatusTracker = {
       registerActiveSession: mock(),
       unregisterActiveSession: mock(),
       getConversationContext: mock(),
@@ -106,17 +125,7 @@ describe('CUIServer', () => {
       emit: mock()
     };
 
-    // Clear and reset mock constructors
-    MockedClaudeProcessManager.mockClear();
-    MockedClaudeHistoryReader.mockClear();
-    MockedStreamManager.mockClear();
-    MockedConversationStatusManager.mockClear();
-    
-    // Set up mock implementations
-    MockedClaudeProcessManager.mockImplementation(() => mockProcessManager);
-    MockedClaudeHistoryReader.mockImplementation(() => mockHistoryReader);
-    MockedStreamManager.mockImplementation(() => mockStreamManager);
-    MockedConversationStatusManager.mockImplementation(() => mockStatusTracker);
+    // The global mocks are now set up, constructors will return them automatically
   });
 
   afterEach(async () => {
@@ -127,6 +136,14 @@ describe('CUIServer', () => {
     await Promise.allSettled(
       runningServers.map(async (server) => {
         try {
+          // Ensure mocks are properly set before cleanup
+          if (!(server as any).processManager) {
+            (server as any).processManager = mockProcessManager;
+          }
+          if (!(server as any).streamManager) {
+            (server as any).streamManager = mockStreamManager;
+          }
+          
           if ((server as any).server) {
             await server.stop();
           }
@@ -176,6 +193,28 @@ describe('CUIServer', () => {
       port: testPort,
       ...config
     });
+    
+    
+    // Mock the HTTP server for lifecycle tests
+    const mockHttpServer = {
+      listen: mock((port, callback) => {
+        if (callback) callback();
+        return mockHttpServer;
+      }),
+      close: mock((callback) => {
+        if (callback) callback();
+      }),
+      on: mock()
+    };
+    
+    // Mock app.listen to return our mock HTTP server  
+    (server as any).app.listen = mock((...args: any[]) => {
+      // Handle different Express listen signatures: (port, callback) or (port, host, callback)
+      const callback = args.find(arg => typeof arg === 'function');
+      if (callback) callback();
+      return mockHttpServer;
+    });
+    
     // Track the server for cleanup
     runningServers.push(server);
     return server;
