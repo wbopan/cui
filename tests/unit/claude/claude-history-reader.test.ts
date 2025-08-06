@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, mock, spyOn } from 'bun:te
 import { ClaudeHistoryReader } from '@/services/claude-history-reader';
 import { ConversationListQuery } from '@/types';
 import { createLogger } from '@/services/logger';
-import { createMockLogger } from '../utils/test-helpers';
+import { createMockLogger } from '../../utils/test-helpers';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as os from 'os';
