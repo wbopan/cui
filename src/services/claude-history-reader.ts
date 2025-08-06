@@ -37,10 +37,10 @@ export class ClaudeHistoryReader {
   private toolMetricsService: ToolMetricsService;
   private messageFilter: MessageFilter;
   
-  constructor() {
+  constructor(sessionInfoService?: SessionInfoService) {
     this.claudeHomePath = path.join(os.homedir(), '.claude');
     this.logger = createLogger('ClaudeHistoryReader');
-    this.sessionInfoService = SessionInfoService.getInstance();
+    this.sessionInfoService = sessionInfoService || new SessionInfoService();
     this.conversationCache = new ConversationCache();
     this.toolMetricsService = new ToolMetricsService();
     this.messageFilter = new MessageFilter();

@@ -89,13 +89,13 @@ export class CUIServer {
     
     // Initialize services
     this.logger.debug('Initializing services');
-    this.historyReader = new ClaudeHistoryReader();
+    this.sessionInfoService = new SessionInfoService();
+    this.historyReader = new ClaudeHistoryReader(this.sessionInfoService);
     // Create a single instance of ConversationStatusManager for both statusTracker and conversationStatusManager
     this.conversationStatusManager = new ConversationStatusManager();
     this.statusTracker = this.conversationStatusManager; // Use the same instance for backward compatibility
     this.toolMetricsService = new ToolMetricsService();
     this.fileSystemService = new FileSystemService();
-    this.sessionInfoService = SessionInfoService.getInstance();
     this.preferencesService = new PreferencesService();
     this.processManager = new ClaudeProcessManager(this.historyReader, this.statusTracker, undefined, undefined, this.toolMetricsService, this.sessionInfoService, this.fileSystemService);
     this.streamManager = new StreamManager();
