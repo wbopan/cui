@@ -1,3 +1,4 @@
+// No imports needed - using Jest globals
 import { MessageFilter } from '@/services/message-filter';
 import { ConversationMessage } from '@/types';
 

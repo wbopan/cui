@@ -1,9 +1,28 @@
+import { describe, it, expect, beforeEach, afterEach, mock } from 'bun:test';
+
+mock.module('@/services/claude-history-reader', () => ({
+  ClaudeHistoryReader: mock()
+}));
+
+mock.module('@/services/logger', () => ({
+  createLogger: mock(() => ({
+    child: mock(() => ({
+      debug: mock(),
+      info: mock(),
+      error: mock(),
+      warn: mock()
+    })),
+    debug: mock(),
+    info: mock(),
+    error: mock(),
+    warn: mock()
+  }))
+}));
+
 import { WorkingDirectoriesService } from '@/services/working-directories-service';
 import { ClaudeHistoryReader } from '@/services/claude-history-reader';
 import { createLogger } from '@/services/logger';
 import { ConversationSummary } from '@/types';
-
-jest.mock('@/services/claude-history-reader');
 
 // Helper to create a ConversationSummary with default values
 const createConversation = (overrides: Partial<ConversationSummary>): ConversationSummary => ({
@@ -32,22 +51,26 @@ const createConversation = (overrides: Partial<ConversationSummary>): Conversati
 
 describe('WorkingDirectoriesService', () => {
   let service: WorkingDirectoriesService;
-  let mockHistoryReader: jest.Mocked<ClaudeHistoryReader>;
+  let mockHistoryReader: any;
   let logger: ReturnType<typeof createLogger>;
 
   beforeEach(() => {
-    mockHistoryReader = new ClaudeHistoryReader() as jest.Mocked<ClaudeHistoryReader>;
+    mockHistoryReader = {
+      listConversations: mock()
+    };
     logger = createLogger('test');
     service = new WorkingDirectoriesService(mockHistoryReader, logger);
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    // No cleanup needed with Jest
   });
 
   describe('getWorkingDirectories', () => {
     it('should return empty array when no conversations exist', async () => {
-      mockHistoryReader.listConversations.mockResolvedValue({ conversations: [], total: 0 });
+      mockHistoryReader.listConversations.mockImplementation(() => 
+        Promise.resolve({ conversations: [], total: 0 })
+      );
 
       const result = await service.getWorkingDirectories();
 
@@ -88,7 +111,9 @@ describe('WorkingDirectoriesService', () => {
         })
       ];
 
-      mockHistoryReader.listConversations.mockResolvedValue({ conversations: mockConversations, total: mockConversations.length });
+      mockHistoryReader.listConversations.mockImplementation(() => 
+        Promise.resolve({ conversations: mockConversations, total: mockConversations.length })
+      );
 
       const result = await service.getWorkingDirectories();
 
@@ -131,7 +156,9 @@ describe('WorkingDirectoriesService', () => {
         })
       ];
 
-      mockHistoryReader.listConversations.mockResolvedValue({ conversations: mockConversations, total: mockConversations.length });
+      mockHistoryReader.listConversations.mockImplementation(() => 
+        Promise.resolve({ conversations: mockConversations, total: mockConversations.length })
+      );
 
       const result = await service.getWorkingDirectories();
 
@@ -158,7 +185,9 @@ describe('WorkingDirectoriesService', () => {
         })
       ];
 
-      mockHistoryReader.listConversations.mockResolvedValue({ conversations: mockConversations, total: mockConversations.length });
+      mockHistoryReader.listConversations.mockImplementation(() => 
+        Promise.resolve({ conversations: mockConversations, total: mockConversations.length })
+      );
 
       const result = await service.getWorkingDirectories();
 
@@ -187,7 +216,9 @@ describe('WorkingDirectoriesService', () => {
         })
       ];
 
-      mockHistoryReader.listConversations.mockResolvedValue({ conversations: mockConversations, total: mockConversations.length });
+      mockHistoryReader.listConversations.mockImplementation(() => 
+        Promise.resolve({ conversations: mockConversations, total: mockConversations.length })
+      );
 
       const result = await service.getWorkingDirectories();
 
@@ -209,7 +240,9 @@ describe('WorkingDirectoriesService', () => {
         })
       ];
 
-      mockHistoryReader.listConversations.mockResolvedValue({ conversations: mockConversations, total: mockConversations.length });
+      mockHistoryReader.listConversations.mockImplementation(() => 
+        Promise.resolve({ conversations: mockConversations, total: mockConversations.length })
+      );
 
       const result = await service.getWorkingDirectories();
 
@@ -235,7 +268,9 @@ describe('WorkingDirectoriesService', () => {
         })
       ];
 
-      mockHistoryReader.listConversations.mockResolvedValue({ conversations: mockConversations, total: mockConversations.length });
+      mockHistoryReader.listConversations.mockImplementation(() => 
+        Promise.resolve({ conversations: mockConversations, total: mockConversations.length })
+      );
 
       const result = await service.getWorkingDirectories();
 
@@ -245,9 +280,14 @@ describe('WorkingDirectoriesService', () => {
 
     it('should handle error from history reader', async () => {
       const error = new Error('Failed to read history');
-      mockHistoryReader.listConversations.mockRejectedValue(error);
+      mockHistoryReader.listConversations.mockImplementation(() => Promise.reject(error));
 
-      await expect(service.getWorkingDirectories()).rejects.toThrow('Failed to read history');
+      try {
+        await service.getWorkingDirectories();
+        fail('Expected to throw');
+      } catch (err) {
+        expect(err).toEqual(error);
+      }
     });
   });
 });

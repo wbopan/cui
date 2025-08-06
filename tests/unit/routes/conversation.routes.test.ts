@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, mock, spyOn } from 'bun:test';
 import request from 'supertest';
 import express from 'express';
 import Anthropic from '@anthropic-ai/sdk';
@@ -9,15 +10,22 @@ import { ConversationStatusManager } from '@/services/conversation-status-manage
 import { ToolMetricsService } from '@/services/ToolMetricsService';
 import { ConversationSummary, ConversationMessage, ToolMetrics, CUIError } from '@/types';
 
-jest.mock('@/services/logger');
+mock.module('@/services/logger', () => ({
+  createLogger: mock(() => ({
+    debug: mock(),
+    info: mock(),
+    error: mock(),
+    warn: mock()
+  }))
+}));
 
 describe('Conversation Routes - Unified Start/Resume Endpoint', () => {
   let app: express.Application;
-  let processManager: jest.Mocked<ClaudeProcessManager>;
-  let sessionInfoService: jest.Mocked<SessionInfoService>;
-  let historyReader: jest.Mocked<ClaudeHistoryReader>;
-  let conversationStatusManager: jest.Mocked<ConversationStatusManager>;
-  let toolMetricsService: jest.Mocked<ToolMetricsService>;
+  let processManager: any;
+  let sessionInfoService: any;
+  let historyReader: any;
+  let conversationStatusManager: any;
+  let toolMetricsService: any;
 
   // Helper to create a valid ConversationSummary
   const createMockConversation = (sessionId: string): ConversationSummary => ({
@@ -48,33 +56,33 @@ describe('Conversation Routes - Unified Start/Resume Endpoint', () => {
     app.use(express.json());
 
     processManager = {
-      startConversation: jest.fn(),
-      stopConversation: jest.fn(),
+      startConversation: mock(),
+      stopConversation: mock(),
     } as any;
 
     sessionInfoService = {
-      updateSessionInfo: jest.fn(),
-      getSessionInfo: jest.fn(),
-      updateCustomName: jest.fn(),
-      archiveAllSessions: jest.fn(),
+      updateSessionInfo: mock(),
+      getSessionInfo: mock(),
+      updateCustomName: mock(),
+      archiveAllSessions: mock(),
     } as any;
 
     historyReader = {
-      fetchConversation: jest.fn(),
-      listConversations: jest.fn(),
-      getConversationMetadata: jest.fn(),
+      fetchConversation: mock(),
+      listConversations: mock(),
+      getConversationMetadata: mock(),
     } as any;
 
     conversationStatusManager = {
-      registerActiveSession: jest.fn(),
-      getConversationStatus: jest.fn(),
-      getStreamingId: jest.fn(),
-      getConversationsNotInHistory: jest.fn(),
-      getActiveConversationDetails: jest.fn(),
+      registerActiveSession: mock(),
+      getConversationStatus: mock(),
+      getStreamingId: mock(),
+      getConversationsNotInHistory: mock(),
+      getActiveConversationDetails: mock(),
     } as any;
 
     toolMetricsService = {
-      getMetrics: jest.fn(),
+      getMetrics: mock(),
     } as any;
 
     app.use('/api/conversations', createConversationRoutes(
@@ -105,12 +113,12 @@ describe('Conversation Routes - Unified Start/Resume Endpoint', () => {
         apiKeySource: 'env'
       };
 
-      processManager.startConversation.mockResolvedValue({
+      processManager.startConversation.mockImplementation(() => Promise.resolve({
         streamingId: 'stream-123',
         systemInit: mockSystemInit
-      });
+      }));
 
-      sessionInfoService.updateSessionInfo.mockResolvedValue({} as any);
+      sessionInfoService.updateSessionInfo.mockImplementation(() => Promise.resolve({} as any));
 
       const response = await request(app)
         .post('/api/conversations/start')
@@ -147,15 +155,15 @@ describe('Conversation Routes - Unified Start/Resume Endpoint', () => {
         { uuid: '1', type: 'user' as const, message: 'Previous message' }
       ];
 
-      historyReader.fetchConversation.mockResolvedValue(mockPreviousMessages as any);
-      sessionInfoService.getSessionInfo.mockResolvedValue({ permission_mode: 'default' } as any);
+      historyReader.fetchConversation.mockImplementation(() => Promise.resolve(mockPreviousMessages as any));
+      sessionInfoService.getSessionInfo.mockImplementation(() => Promise.resolve({ permission_mode: 'default' } as any));
 
-      processManager.startConversation.mockResolvedValue({
+      processManager.startConversation.mockImplementation(() => Promise.resolve({
         streamingId: 'stream-123',
         systemInit: mockSystemInit
-      });
+      }));
 
-      sessionInfoService.updateSessionInfo.mockResolvedValue({} as any);
+      sessionInfoService.updateSessionInfo.mockImplementation(() => Promise.resolve({} as any));
 
       const response = await request(app)
         .post('/api/conversations/start')
@@ -232,13 +240,13 @@ describe('Conversation Routes - Unified Start/Resume Endpoint', () => {
         apiKeySource: 'env'
       };
 
-      historyReader.fetchConversation.mockResolvedValue([]);
-      sessionInfoService.getSessionInfo.mockResolvedValue({ permission_mode: 'bypassPermissions' } as any);
+      historyReader.fetchConversation.mockImplementation(() => Promise.resolve([]));
+      sessionInfoService.getSessionInfo.mockImplementation(() => Promise.resolve({ permission_mode: 'bypassPermissions' } as any));
 
-      processManager.startConversation.mockResolvedValue({
+      processManager.startConversation.mockImplementation(() => Promise.resolve({
         streamingId: 'stream-123',
         systemInit: mockSystemInit
-      });
+      }));
 
       const response = await request(app)
         .post('/api/conversations/start')
@@ -283,13 +291,13 @@ describe('Conversation Routes - Unified Start/Resume Endpoint', () => {
         apiKeySource: 'env'
       };
 
-      historyReader.fetchConversation.mockRejectedValue(new Error('Database error'));
-      sessionInfoService.getSessionInfo.mockResolvedValue({ permission_mode: 'default' } as any);
+      historyReader.fetchConversation.mockImplementation(() => Promise.reject(new Error('Database error')));
+      sessionInfoService.getSessionInfo.mockImplementation(() => Promise.resolve({ permission_mode: 'default' } as any));
 
-      processManager.startConversation.mockResolvedValue({
+      processManager.startConversation.mockImplementation(() => Promise.resolve({
         streamingId: 'stream-123',
         systemInit: mockSystemInit
-      });
+      }));
 
       const response = await request(app)
         .post('/api/conversations/start')
@@ -322,13 +330,13 @@ describe('Conversation Routes - Unified Start/Resume Endpoint', () => {
         apiKeySource: 'env'
       };
 
-      historyReader.fetchConversation.mockResolvedValue([]);
-      sessionInfoService.getSessionInfo.mockRejectedValue(new Error('Session info not found'));
+      historyReader.fetchConversation.mockImplementation(() => Promise.resolve([]));
+      sessionInfoService.getSessionInfo.mockImplementation(() => Promise.reject(new Error('Session info not found')));
 
-      processManager.startConversation.mockResolvedValue({
+      processManager.startConversation.mockImplementation(() => Promise.resolve({
         streamingId: 'stream-123',
         systemInit: mockSystemInit
-      });
+      }));
 
       const response = await request(app)
         .post('/api/conversations/start')
@@ -361,16 +369,16 @@ describe('Conversation Routes - Unified Start/Resume Endpoint', () => {
         apiKeySource: 'env'
       };
 
-      historyReader.fetchConversation.mockResolvedValue([]);
-      sessionInfoService.getSessionInfo.mockResolvedValue({ permission_mode: 'default' } as any);
+      historyReader.fetchConversation.mockImplementation(() => Promise.resolve([]));
+      sessionInfoService.getSessionInfo.mockImplementation(() => Promise.resolve({ permission_mode: 'default' } as any));
 
-      processManager.startConversation.mockResolvedValue({
+      processManager.startConversation.mockImplementation(() => Promise.resolve({
         streamingId: 'stream-123',
         systemInit: mockSystemInit
-      });
+      }));
 
       // First updateSessionInfo call (for continuation_session_id) fails
-      sessionInfoService.updateSessionInfo.mockRejectedValueOnce(new Error('Update failed'));
+      sessionInfoService.updateSessionInfo.mockImplementationOnce(() => Promise.reject(new Error('Update failed')));
 
       const response = await request(app)
         .post('/api/conversations/start')
@@ -398,7 +406,7 @@ describe('Conversation Routes - Unified Start/Resume Endpoint', () => {
         apiKeySource: 'env'
       };
 
-      historyReader.fetchConversation.mockResolvedValue([
+      historyReader.fetchConversation.mockImplementation(() => Promise.resolve([
         { 
           uuid: '1', 
           type: 'user' as const, 
@@ -406,14 +414,14 @@ describe('Conversation Routes - Unified Start/Resume Endpoint', () => {
           timestamp: '2024-01-01T00:00:00Z',
           sessionId: 'original-session-456'
         }
-      ]);
+      ]));
 
-      processManager.startConversation.mockResolvedValue({
+      processManager.startConversation.mockImplementation(() => Promise.resolve({
         streamingId: 'stream-123',
         systemInit: mockSystemInit
-      });
+      }));
 
-      sessionInfoService.updateSessionInfo.mockResolvedValue({} as any);
+      sessionInfoService.updateSessionInfo.mockImplementation(() => Promise.resolve({} as any));
       conversationStatusManager.registerActiveSession.mockImplementation(() => {
         throw new Error('Registration failed');
       });
@@ -444,12 +452,12 @@ describe('Conversation Routes - Unified Start/Resume Endpoint', () => {
         apiKeySource: 'env'
       };
 
-      processManager.startConversation.mockResolvedValue({
+      processManager.startConversation.mockImplementation(() => Promise.resolve({
         streamingId: 'stream-123',
         systemInit: mockSystemInit
-      });
+      }));
 
-      sessionInfoService.updateSessionInfo.mockRejectedValue(new Error('Update failed'));
+      sessionInfoService.updateSessionInfo.mockImplementation(() => Promise.reject(new Error('Update failed')));
 
       const response = await request(app)
         .post('/api/conversations/start')
@@ -514,10 +522,10 @@ describe('Conversation Routes - Unified Start/Resume Endpoint', () => {
         }
       ];
 
-      historyReader.listConversations.mockResolvedValue({
+      historyReader.listConversations.mockImplementation(() => Promise.resolve({
         conversations: mockConversations,
         total: 2
-      });
+      }));
 
       conversationStatusManager.getConversationStatus.mockReturnValue('completed');
       conversationStatusManager.getConversationsNotInHistory.mockReturnValue([]);
@@ -584,10 +592,10 @@ describe('Conversation Routes - Unified Start/Resume Endpoint', () => {
         status: 'ongoing' as const
       }];
 
-      historyReader.listConversations.mockResolvedValue({
+      historyReader.listConversations.mockImplementation(() => Promise.resolve({
         conversations: mockConversations,
         total: 1
-      });
+      }));
 
       conversationStatusManager.getConversationStatus.mockReturnValue('ongoing');
       conversationStatusManager.getStreamingId.mockReturnValue('stream-123');
@@ -655,10 +663,10 @@ describe('Conversation Routes - Unified Start/Resume Endpoint', () => {
         model: 'claude-3'
       }];
 
-      historyReader.listConversations.mockResolvedValue({
+      historyReader.listConversations.mockImplementation(() => Promise.resolve({
         conversations: mockHistoryConversations,
         total: 1
-      });
+      }));
 
       conversationStatusManager.getConversationStatus.mockReturnValue('completed');
       conversationStatusManager.getConversationsNotInHistory.mockReturnValue(mockActiveConversations);
@@ -676,7 +684,7 @@ describe('Conversation Routes - Unified Start/Resume Endpoint', () => {
     });
 
     it('should handle listConversations errors', async () => {
-      historyReader.listConversations.mockRejectedValue(new Error('Database error'));
+      historyReader.listConversations.mockImplementation(() => Promise.reject(new Error('Database error')));
 
       const response = await request(app)
         .get('/api/conversations/')
@@ -729,8 +737,8 @@ describe('Conversation Routes - Unified Start/Resume Endpoint', () => {
         writeCount: 2
       };
 
-      historyReader.fetchConversation.mockResolvedValue(mockMessages);
-      historyReader.getConversationMetadata.mockResolvedValue(mockMetadata);
+      historyReader.fetchConversation.mockImplementation(() => Promise.resolve(mockMessages));
+      historyReader.getConversationMetadata.mockImplementation(() => Promise.resolve(mockMetadata));
       toolMetricsService.getMetrics.mockReturnValue(mockToolMetrics);
 
       const response = await request(app)
@@ -767,8 +775,8 @@ describe('Conversation Routes - Unified Start/Resume Endpoint', () => {
         model: 'claude-3'
       };
 
-      historyReader.fetchConversation.mockResolvedValue(mockMessages);
-      historyReader.getConversationMetadata.mockResolvedValue(mockMetadata);
+      historyReader.fetchConversation.mockImplementation(() => Promise.resolve(mockMessages));
+      historyReader.getConversationMetadata.mockImplementation(() => Promise.resolve(mockMetadata));
       toolMetricsService.getMetrics.mockReturnValue(undefined);
 
       const response = await request(app)
@@ -798,10 +806,10 @@ describe('Conversation Routes - Unified Start/Resume Endpoint', () => {
         }
       };
 
-      historyReader.fetchConversation.mockRejectedValue(
-        new CUIError('CONVERSATION_NOT_FOUND', 'Conversation not found', 404)
+      historyReader.fetchConversation.mockImplementation(() => 
+        Promise.reject(new CUIError('CONVERSATION_NOT_FOUND', 'Conversation not found', 404))
       );
-      historyReader.getConversationMetadata.mockResolvedValue(null);
+      historyReader.getConversationMetadata.mockImplementation(() => Promise.resolve(null));
       conversationStatusManager.getActiveConversationDetails.mockReturnValue(mockActiveDetails);
 
       const response = await request(app)
@@ -812,10 +820,10 @@ describe('Conversation Routes - Unified Start/Resume Endpoint', () => {
     });
 
     it('should return 404 when conversation not found anywhere', async () => {
-      historyReader.fetchConversation.mockRejectedValue(
-        new CUIError('CONVERSATION_NOT_FOUND', 'Conversation not found', 404)
+      historyReader.fetchConversation.mockImplementation(() => 
+        Promise.reject(new CUIError('CONVERSATION_NOT_FOUND', 'Conversation not found', 404))
       );
-      historyReader.getConversationMetadata.mockResolvedValue(null);
+      historyReader.getConversationMetadata.mockImplementation(() => Promise.resolve(null));
       conversationStatusManager.getActiveConversationDetails.mockReturnValue(null);
 
       const response = await request(app)
@@ -826,7 +834,7 @@ describe('Conversation Routes - Unified Start/Resume Endpoint', () => {
     });
 
     it('should handle other errors when fetching conversation', async () => {
-      historyReader.fetchConversation.mockRejectedValue(new Error('Database error'));
+      historyReader.fetchConversation.mockImplementation(() => Promise.reject(new Error('Database error')));
 
       const response = await request(app)
         .get('/api/conversations/test-session-123');
@@ -846,8 +854,8 @@ describe('Conversation Routes - Unified Start/Resume Endpoint', () => {
         }
       ];
 
-      historyReader.fetchConversation.mockResolvedValue(mockMessages);
-      historyReader.getConversationMetadata.mockResolvedValue(null);
+      historyReader.fetchConversation.mockImplementation(() => Promise.resolve(mockMessages));
+      historyReader.getConversationMetadata.mockImplementation(() => Promise.resolve(null));
 
       const response = await request(app)
         .get('/api/conversations/test-session-123');
@@ -859,7 +867,7 @@ describe('Conversation Routes - Unified Start/Resume Endpoint', () => {
 
   describe('POST /api/conversations/:streamingId/stop', () => {
     it('should stop conversation successfully', async () => {
-      processManager.stopConversation.mockResolvedValue(true);
+      processManager.stopConversation.mockImplementation(() => Promise.resolve(true));
 
       const response = await request(app)
         .post('/api/conversations/stream-123/stop');
@@ -870,7 +878,7 @@ describe('Conversation Routes - Unified Start/Resume Endpoint', () => {
     });
 
     it('should handle failed stop', async () => {
-      processManager.stopConversation.mockResolvedValue(false);
+      processManager.stopConversation.mockImplementation(() => Promise.resolve(false));
 
       const response = await request(app)
         .post('/api/conversations/stream-123/stop');
@@ -880,7 +888,7 @@ describe('Conversation Routes - Unified Start/Resume Endpoint', () => {
     });
 
     it('should handle stop conversation errors', async () => {
-      processManager.stopConversation.mockRejectedValue(new Error('Process error'));
+      processManager.stopConversation.mockImplementation(() => Promise.reject(new Error('Process error')));
 
       const response = await request(app)
         .post('/api/conversations/stream-123/stop');
@@ -892,11 +900,11 @@ describe('Conversation Routes - Unified Start/Resume Endpoint', () => {
 
   describe('POST /api/conversations/archive-all', () => {
     beforeEach(() => {
-      sessionInfoService.archiveAllSessions = jest.fn();
+      sessionInfoService.archiveAllSessions = mock();
     });
 
     it('should archive all sessions successfully', async () => {
-      sessionInfoService.archiveAllSessions.mockResolvedValue(5);
+      sessionInfoService.archiveAllSessions.mockImplementation(() => Promise.resolve(5));
 
       const response = await request(app)
         .post('/api/conversations/archive-all')
@@ -912,7 +920,7 @@ describe('Conversation Routes - Unified Start/Resume Endpoint', () => {
     });
 
     it('should handle archiving zero sessions', async () => {
-      sessionInfoService.archiveAllSessions.mockResolvedValue(0);
+      sessionInfoService.archiveAllSessions.mockImplementation(() => Promise.resolve(0));
 
       const response = await request(app)
         .post('/api/conversations/archive-all')
@@ -928,7 +936,7 @@ describe('Conversation Routes - Unified Start/Resume Endpoint', () => {
     });
 
     it('should handle archiving one session with singular message', async () => {
-      sessionInfoService.archiveAllSessions.mockResolvedValue(1);
+      sessionInfoService.archiveAllSessions.mockImplementation(() => Promise.resolve(1));
 
       const response = await request(app)
         .post('/api/conversations/archive-all')
@@ -944,7 +952,7 @@ describe('Conversation Routes - Unified Start/Resume Endpoint', () => {
     });
 
     it('should handle service errors', async () => {
-      sessionInfoService.archiveAllSessions.mockRejectedValue(new Error('Database error'));
+      sessionInfoService.archiveAllSessions.mockImplementation(() => Promise.reject(new Error('Database error')));
 
       const response = await request(app)
         .post('/api/conversations/archive-all')
@@ -958,18 +966,18 @@ describe('Conversation Routes - Unified Start/Resume Endpoint', () => {
 
   describe('PUT /api/conversations/:sessionId/rename', () => {
     beforeEach(() => {
-      sessionInfoService.updateCustomName = jest.fn();
-      historyReader.getConversationMetadata = jest.fn();
+      sessionInfoService.updateCustomName = mock();
+      historyReader.getConversationMetadata = mock();
     });
 
     it('should rename session successfully', async () => {
-      historyReader.getConversationMetadata.mockResolvedValue({
+      historyReader.getConversationMetadata.mockImplementation(() => Promise.resolve({
         summary: 'Test conversation',
         projectPath: '/path/to/project',
         model: 'claude-3',
         totalDuration: 60000
-      });
-      sessionInfoService.updateCustomName.mockResolvedValue(undefined);
+      }));
+      sessionInfoService.updateCustomName.mockImplementation(() => Promise.resolve(undefined));
 
       const response = await request(app)
         .put('/api/conversations/test-session-123/rename')
@@ -985,13 +993,13 @@ describe('Conversation Routes - Unified Start/Resume Endpoint', () => {
     });
 
     it('should trim custom name', async () => {
-      historyReader.getConversationMetadata.mockResolvedValue({
+      historyReader.getConversationMetadata.mockImplementation(() => Promise.resolve({
         summary: 'Test conversation',
         projectPath: '/path/to/project',
         model: 'claude-3',
         totalDuration: 60000
-      });
-      sessionInfoService.updateCustomName.mockResolvedValue(undefined);
+      }));
+      sessionInfoService.updateCustomName.mockImplementation(() => Promise.resolve(undefined));
 
       const response = await request(app)
         .put('/api/conversations/test-session-123/rename')
@@ -1003,13 +1011,13 @@ describe('Conversation Routes - Unified Start/Resume Endpoint', () => {
     });
 
     it('should allow empty custom name', async () => {
-      historyReader.getConversationMetadata.mockResolvedValue({
+      historyReader.getConversationMetadata.mockImplementation(() => Promise.resolve({
         summary: 'Test conversation',
         projectPath: '/path/to/project',
         model: 'claude-3',
         totalDuration: 60000
-      });
-      sessionInfoService.updateCustomName.mockResolvedValue(undefined);
+      }));
+      sessionInfoService.updateCustomName.mockImplementation(() => Promise.resolve(undefined));
 
       const response = await request(app)
         .put('/api/conversations/test-session-123/rename')
@@ -1049,7 +1057,7 @@ describe('Conversation Routes - Unified Start/Resume Endpoint', () => {
     });
 
     it('should handle session not found', async () => {
-      historyReader.getConversationMetadata.mockResolvedValue(null);
+      historyReader.getConversationMetadata.mockImplementation(() => Promise.resolve(null));
 
       const response = await request(app)
         .put('/api/conversations/test-session-123/rename')
@@ -1069,13 +1077,13 @@ describe('Conversation Routes - Unified Start/Resume Endpoint', () => {
     });
 
     it('should handle service errors', async () => {
-      historyReader.getConversationMetadata.mockResolvedValue({
+      historyReader.getConversationMetadata.mockImplementation(() => Promise.resolve({
         summary: 'Test conversation',
         projectPath: '/path/to/project',
         model: 'claude-3',
         totalDuration: 60000
-      });
-      sessionInfoService.updateCustomName.mockRejectedValue(new Error('Database error'));
+      }));
+      sessionInfoService.updateCustomName.mockImplementation(() => Promise.reject(new Error('Database error')));
 
       const response = await request(app)
         .put('/api/conversations/test-session-123/rename')
@@ -1088,16 +1096,16 @@ describe('Conversation Routes - Unified Start/Resume Endpoint', () => {
 
   describe('PUT /api/conversations/:sessionId/update', () => {
     beforeEach(() => {
-      sessionInfoService.updateSessionInfo = jest.fn();
-      historyReader.listConversations = jest.fn();
+      sessionInfoService.updateSessionInfo = mock();
+      historyReader.listConversations = mock();
     });
 
     it('should update session info successfully', async () => {
-      historyReader.listConversations.mockResolvedValue({
+      historyReader.listConversations.mockImplementation(() => Promise.resolve({
         conversations: [createMockConversation('test-session-123')],
         total: 1
-      });
-      sessionInfoService.updateSessionInfo.mockResolvedValue({
+      }));
+      sessionInfoService.updateSessionInfo.mockImplementation(() => Promise.resolve({
         custom_name: 'Updated Name',
         pinned: true,
         archived: false,
@@ -1107,7 +1115,7 @@ describe('Conversation Routes - Unified Start/Resume Endpoint', () => {
         created_at: '2024-01-01T00:00:00Z',
         updated_at: '2024-01-01T00:00:00Z',
         version: 1
-      });
+      }));
 
       const response = await request(app)
         .put('/api/conversations/test-session-123/update')
@@ -1138,11 +1146,11 @@ describe('Conversation Routes - Unified Start/Resume Endpoint', () => {
     });
 
     it('should update all supported fields', async () => {
-      historyReader.listConversations.mockResolvedValue({
+      historyReader.listConversations.mockImplementation(() => Promise.resolve({
         conversations: [createMockConversation('test-session-123')],
         total: 1
-      });
-      sessionInfoService.updateSessionInfo.mockResolvedValue({
+      }));
+      sessionInfoService.updateSessionInfo.mockImplementation(() => Promise.resolve({
         custom_name: 'Updated Name',
         pinned: true,
         archived: true,
@@ -1152,7 +1160,7 @@ describe('Conversation Routes - Unified Start/Resume Endpoint', () => {
         created_at: '2024-01-01T00:00:00Z',
         updated_at: '2024-01-01T00:00:00Z',
         version: 1
-      });
+      }));
 
       const response = await request(app)
         .put('/api/conversations/test-session-123/update')
@@ -1180,11 +1188,11 @@ describe('Conversation Routes - Unified Start/Resume Endpoint', () => {
     });
 
     it('should trim custom name when updating', async () => {
-      historyReader.listConversations.mockResolvedValue({
+      historyReader.listConversations.mockImplementation(() => Promise.resolve({
         conversations: [createMockConversation('test-session-123')],
         total: 1
-      });
-      sessionInfoService.updateSessionInfo.mockResolvedValue({
+      }));
+      sessionInfoService.updateSessionInfo.mockImplementation(() => Promise.resolve({
         custom_name: 'Trimmed Name',
         pinned: false,
         archived: false,
@@ -1194,7 +1202,7 @@ describe('Conversation Routes - Unified Start/Resume Endpoint', () => {
         created_at: '2024-01-01T00:00:00Z',
         updated_at: '2024-01-01T00:00:00Z',
         version: 1
-      });
+      }));
 
       const response = await request(app)
         .put('/api/conversations/test-session-123/update')
@@ -1223,10 +1231,10 @@ describe('Conversation Routes - Unified Start/Resume Endpoint', () => {
     // This is expected behavior as the route doesn't match
 
     it('should handle session not found', async () => {
-      historyReader.listConversations.mockResolvedValue({
+      historyReader.listConversations.mockImplementation(() => Promise.resolve({
         conversations: [],
         total: 0
-      });
+      }));
 
       const response = await request(app)
         .put('/api/conversations/test-session-123/update')
@@ -1238,10 +1246,10 @@ describe('Conversation Routes - Unified Start/Resume Endpoint', () => {
     });
 
     it('should reject custom name that is too long', async () => {
-      historyReader.listConversations.mockResolvedValue({
+      historyReader.listConversations.mockImplementation(() => Promise.resolve({
         conversations: [createMockConversation('test-session-123')],
         total: 1
-      });
+      }));
 
       const longName = 'a'.repeat(201);
       const response = await request(app)
@@ -1254,10 +1262,10 @@ describe('Conversation Routes - Unified Start/Resume Endpoint', () => {
     });
 
     it('should reject invalid permission mode', async () => {
-      historyReader.listConversations.mockResolvedValue({
+      historyReader.listConversations.mockImplementation(() => Promise.resolve({
         conversations: [createMockConversation('test-session-123')],
         total: 1
-      });
+      }));
 
       const response = await request(app)
         .put('/api/conversations/test-session-123/update')
@@ -1269,11 +1277,11 @@ describe('Conversation Routes - Unified Start/Resume Endpoint', () => {
     });
 
     it('should handle service errors', async () => {
-      historyReader.listConversations.mockResolvedValue({
+      historyReader.listConversations.mockImplementation(() => Promise.resolve({
         conversations: [createMockConversation('test-session-123')],
         total: 1
-      });
-      sessionInfoService.updateSessionInfo.mockRejectedValue(new Error('Database error'));
+      }));
+      sessionInfoService.updateSessionInfo.mockImplementation(() => Promise.reject(new Error('Database error')));
 
       const response = await request(app)
         .put('/api/conversations/test-session-123/update')
@@ -1284,11 +1292,11 @@ describe('Conversation Routes - Unified Start/Resume Endpoint', () => {
     });
 
     it('should handle empty update payload', async () => {
-      historyReader.listConversations.mockResolvedValue({
+      historyReader.listConversations.mockImplementation(() => Promise.resolve({
         conversations: [createMockConversation('test-session-123')],
         total: 1
-      });
-      sessionInfoService.updateSessionInfo.mockResolvedValue({
+      }));
+      sessionInfoService.updateSessionInfo.mockImplementation(() => Promise.resolve({
         custom_name: '',
         pinned: false,
         archived: false,
@@ -1298,7 +1306,7 @@ describe('Conversation Routes - Unified Start/Resume Endpoint', () => {
         created_at: '2024-01-01T00:00:00Z',
         updated_at: '2024-01-01T00:00:00Z',
         version: 1
-      });
+      }));
 
       const response = await request(app)
         .put('/api/conversations/test-session-123/update')

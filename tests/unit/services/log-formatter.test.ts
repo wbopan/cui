@@ -1,3 +1,4 @@
+// No imports needed - using Jest globals
 import { LogFormatter } from '@/services/log-formatter';
 import { Readable, Writable } from 'stream';
 

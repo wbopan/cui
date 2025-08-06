@@ -1,4 +1,4 @@
-import { storage } from '@/web/common/utils/storage';
+import { storage } from '@/web/chat/utils/storage';
 
 // Mock localStorage
 const localStorageMock = (() => {

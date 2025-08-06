@@ -1,14 +1,22 @@
+import { describe, it, expect, beforeEach, mock } from 'bun:test';
 import request from 'supertest';
+
+mock.module('@/services/logger', () => ({
+  createLogger: mock(() => ({
+    debug: mock(),
+    info: mock(),
+    error: mock(),
+    warn: mock()
+  }))
+}));
 import express from 'express';
 import { createFileSystemRoutes } from '@/routes/filesystem.routes';
 import { FileSystemService } from '@/services/file-system-service';
 import { CUIError } from '@/types';
 
-jest.mock('@/services/logger');
-
 describe('FileSystem Routes', () => {
   let app: express.Application;
-  let fileSystemService: jest.Mocked<FileSystemService>;
+  let fileSystemService: any;
 
   beforeEach(() => {
     app = express();
@@ -16,8 +24,8 @@ describe('FileSystem Routes', () => {
 
     // Mock FileSystemService
     fileSystemService = {
-      listDirectory: jest.fn(),
-      readFile: jest.fn(),
+      listDirectory: mock(),
+      readFile: mock(),
     } as any;
 
     // Add request ID middleware
@@ -46,7 +54,7 @@ describe('FileSystem Routes', () => {
         total: 2
       };
 
-      fileSystemService.listDirectory.mockResolvedValue(mockResult);
+      fileSystemService.listDirectory.mockImplementation(() => Promise.resolve(mockResult));
 
       const response = await request(app)
         .get('/api/filesystem/list')
@@ -67,7 +75,7 @@ describe('FileSystem Routes', () => {
         total: 2
       };
 
-      fileSystemService.listDirectory.mockResolvedValue(mockResult);
+      fileSystemService.listDirectory.mockImplementation(() => Promise.resolve(mockResult));
 
       const response = await request(app)
         .get('/api/filesystem/list')
@@ -87,7 +95,7 @@ describe('FileSystem Routes', () => {
         total: 1
       };
 
-      fileSystemService.listDirectory.mockResolvedValue(mockResult);
+      fileSystemService.listDirectory.mockImplementation(() => Promise.resolve(mockResult));
 
       const response = await request(app)
         .get('/api/filesystem/list')
@@ -105,7 +113,7 @@ describe('FileSystem Routes', () => {
         total: 0
       };
 
-      fileSystemService.listDirectory.mockResolvedValue(mockResult);
+      fileSystemService.listDirectory.mockImplementation(() => Promise.resolve(mockResult));
 
       const response = await request(app)
         .get('/api/filesystem/list')
@@ -126,8 +134,8 @@ describe('FileSystem Routes', () => {
     });
 
     it('should handle service errors', async () => {
-      fileSystemService.listDirectory.mockRejectedValue(
-        new CUIError('PERMISSION_DENIED', 'Permission denied', 403)
+      fileSystemService.listDirectory.mockImplementation(() => 
+        Promise.reject(new CUIError('PERMISSION_DENIED', 'Permission denied', 403))
       );
 
       const response = await request(app)
@@ -139,8 +147,8 @@ describe('FileSystem Routes', () => {
     });
 
     it('should handle generic errors', async () => {
-      fileSystemService.listDirectory.mockRejectedValue(
-        new Error('Unexpected error')
+      fileSystemService.listDirectory.mockImplementation(() => 
+        Promise.reject(new Error('Unexpected error'))
       );
 
       const response = await request(app)
@@ -152,7 +160,7 @@ describe('FileSystem Routes', () => {
     });
 
     it('should handle non-Error objects thrown as errors', async () => {
-      fileSystemService.listDirectory.mockRejectedValue('String error');
+      fileSystemService.listDirectory.mockImplementation(() => Promise.reject('String error'));
 
       const response = await request(app)
         .get('/api/filesystem/list')
@@ -173,7 +181,7 @@ describe('FileSystem Routes', () => {
         encoding: 'utf-8'
       };
 
-      fileSystemService.readFile.mockResolvedValue(mockResult);
+      fileSystemService.readFile.mockImplementation(() => Promise.resolve(mockResult));
 
       const response = await request(app)
         .get('/api/filesystem/read')
@@ -194,8 +202,8 @@ describe('FileSystem Routes', () => {
     });
 
     it('should handle file not found error', async () => {
-      fileSystemService.readFile.mockRejectedValue(
-        new CUIError('FILE_NOT_FOUND', 'File not found', 404)
+      fileSystemService.readFile.mockImplementation(() => 
+        Promise.reject(new CUIError('FILE_NOT_FOUND', 'File not found', 404))
       );
 
       const response = await request(app)
@@ -207,8 +215,8 @@ describe('FileSystem Routes', () => {
     });
 
     it('should handle permission denied error', async () => {
-      fileSystemService.readFile.mockRejectedValue(
-        new CUIError('PERMISSION_DENIED', 'Permission denied', 403)
+      fileSystemService.readFile.mockImplementation(() => 
+        Promise.reject(new CUIError('PERMISSION_DENIED', 'Permission denied', 403))
       );
 
       const response = await request(app)
@@ -220,8 +228,8 @@ describe('FileSystem Routes', () => {
     });
 
     it('should handle file too large error', async () => {
-      fileSystemService.readFile.mockRejectedValue(
-        new CUIError('FILE_TOO_LARGE', 'File is too large', 413)
+      fileSystemService.readFile.mockImplementation(() => 
+        Promise.reject(new CUIError('FILE_TOO_LARGE', 'File is too large', 413))
       );
 
       const response = await request(app)
@@ -233,8 +241,8 @@ describe('FileSystem Routes', () => {
     });
 
     it('should handle generic errors', async () => {
-      fileSystemService.readFile.mockRejectedValue(
-        new Error('Disk read error')
+      fileSystemService.readFile.mockImplementation(() => 
+        Promise.reject(new Error('Disk read error'))
       );
 
       const response = await request(app)
@@ -246,7 +254,7 @@ describe('FileSystem Routes', () => {
     });
 
     it('should handle non-Error objects thrown as errors', async () => {
-      fileSystemService.readFile.mockRejectedValue('String error');
+      fileSystemService.readFile.mockImplementation(() => Promise.reject('String error'));
 
       const response = await request(app)
         .get('/api/filesystem/read')

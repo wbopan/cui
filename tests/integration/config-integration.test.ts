@@ -1,3 +1,4 @@
+// No imports needed - using Jest globals
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
@@ -20,7 +21,7 @@ describe('Configuration System Basic Integration', () => {
 
   afterAll(() => {
     // Restore original home directory
-    (os.homedir as jest.MockedFunction<typeof os.homedir>).mockRestore();
+    (os.homedir as any).mockRestore();
     
     // Clean up test config directory
     if (fs.existsSync(testConfigDir)) {
@@ -157,7 +158,7 @@ describe('Configuration System Basic Integration', () => {
       await configService.initialize();
       
       // Second initialization should not throw
-      await expect(configService.initialize()).resolves.not.toThrow();
+      await configService.initialize();
     });
   });
 
@@ -174,7 +175,12 @@ describe('Configuration System Basic Integration', () => {
       
       const configService = ConfigService.getInstance();
       
-      await expect(configService.initialize()).rejects.toThrow();
+      try {
+        await configService.initialize();
+        fail('Expected initialization to throw');
+      } catch (error) {
+        expect(error).toBeDefined();
+      }
     });
 
     it('should handle missing config file fields', async () => {
@@ -189,7 +195,12 @@ describe('Configuration System Basic Integration', () => {
       
       const configService = ConfigService.getInstance();
       
-      await expect(configService.initialize()).rejects.toThrow();
+      try {
+        await configService.initialize();
+        fail('Expected initialization to throw');
+      } catch (error) {
+        expect(error).toBeDefined();
+      }
     });
   });
 

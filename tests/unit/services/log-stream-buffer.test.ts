@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, mock } from 'bun:test';
 import { LogStreamBuffer } from '@/services/log-stream-buffer';
 
 describe('LogStreamBuffer', () => {
@@ -147,7 +148,7 @@ describe('LogStreamBuffer', () => {
     });
 
     it('should handle event listener removal', () => {
-      const listener = jest.fn();
+      const listener = mock();
       
       buffer.on('log', listener);
       buffer.addLog('test 1');

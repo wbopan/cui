@@ -1,23 +1,24 @@
+import { describe, it, expect, beforeEach, afterEach, mock } from 'bun:test';
 import request from 'supertest';
+
+// Mock the logger
+mock.module('@/services/logger', () => ({
+  createLogger: mock(() => ({
+    info: mock(),
+    warn: mock(),
+    error: mock(),
+    debug: mock(),
+  })),
+}));
 import express from 'express';
 import { createGeminiRoutes } from '@/routes/gemini.routes';
 import { GeminiService } from '@/services/gemini-service';
 import { CUIError } from '@/types';
 import type { RequestWithRequestId } from '@/types/express';
 
-// Mock the logger
-jest.mock('@/services/logger', () => ({
-  createLogger: jest.fn(() => ({
-    info: jest.fn(),
-    warn: jest.fn(),
-    error: jest.fn(),
-    debug: jest.fn(),
-  })),
-}));
-
 describe('Gemini Routes', () => {
   let app: express.Application;
-  let mockGeminiService: jest.Mocked<GeminiService>;
+  let mockGeminiService: any;
 
   beforeEach(() => {
     app = express();
@@ -30,10 +31,10 @@ describe('Gemini Routes', () => {
     });
 
     mockGeminiService = {
-      checkHealth: jest.fn(),
-      transcribe: jest.fn(),
-      summarize: jest.fn(),
-      initialize: jest.fn(),
+      checkHealth: mock(),
+      transcribe: mock(),
+      summarize: mock(),
+      initialize: mock(),
     } as any;
 
     app.use('/api/gemini', createGeminiRoutes(mockGeminiService));
@@ -49,7 +50,7 @@ describe('Gemini Routes', () => {
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    // No cleanup needed
   });
 
   describe('GET /api/gemini/health', () => {
@@ -60,7 +61,7 @@ describe('Gemini Routes', () => {
         apiKeyValid: true
       };
 
-      mockGeminiService.checkHealth.mockResolvedValue(mockHealthResponse);
+      mockGeminiService.checkHealth.mockImplementation(() => Promise.resolve(mockHealthResponse));
 
       const response = await request(app)
         .get('/api/gemini/health');
@@ -77,7 +78,7 @@ describe('Gemini Routes', () => {
         apiKeyValid: false
       };
 
-      mockGeminiService.checkHealth.mockResolvedValue(mockHealthResponse);
+      mockGeminiService.checkHealth.mockImplementation(() => Promise.resolve(mockHealthResponse));
 
       const response = await request(app)
         .get('/api/gemini/health');
@@ -87,7 +88,7 @@ describe('Gemini Routes', () => {
     });
 
     it('should handle service errors', async () => {
-      mockGeminiService.checkHealth.mockRejectedValue(new Error('Service error'));
+      mockGeminiService.checkHealth.mockImplementation(() => Promise.reject(new Error('Service error')));
 
       const response = await request(app)
         .get('/api/gemini/health');
@@ -103,7 +104,7 @@ describe('Gemini Routes', () => {
         text: 'Hello world, this is a test transcription.'
       };
 
-      mockGeminiService.transcribe.mockResolvedValue(mockTranscribeResponse);
+      mockGeminiService.transcribe.mockImplementation(() => Promise.resolve(mockTranscribeResponse));
 
       const response = await request(app)
         .post('/api/gemini/transcribe')
@@ -125,7 +126,7 @@ describe('Gemini Routes', () => {
         text: 'Hello world from base64 audio.'
       };
 
-      mockGeminiService.transcribe.mockResolvedValue(mockTranscribeResponse);
+      mockGeminiService.transcribe.mockImplementation(() => Promise.resolve(mockTranscribeResponse));
 
       const response = await request(app)
         .post('/api/gemini/transcribe')
@@ -176,8 +177,8 @@ describe('Gemini Routes', () => {
     });
 
     it('should handle transcription service errors', async () => {
-      mockGeminiService.transcribe.mockRejectedValue(
-        new CUIError('GEMINI_TRANSCRIBE_ERROR', 'Failed to transcribe audio', 500)
+      mockGeminiService.transcribe.mockImplementation(() => 
+        Promise.reject(new CUIError('GEMINI_TRANSCRIBE_ERROR', 'Failed to transcribe audio', 500))
       );
 
       const response = await request(app)
@@ -192,8 +193,8 @@ describe('Gemini Routes', () => {
     });
 
     it('should handle API key missing error', async () => {
-      mockGeminiService.transcribe.mockRejectedValue(
-        new CUIError('GEMINI_API_KEY_MISSING', 'Gemini API key not configured', 400)
+      mockGeminiService.transcribe.mockImplementation(() => 
+        Promise.reject(new CUIError('GEMINI_API_KEY_MISSING', 'Gemini API key not configured', 400))
       );
 
       const response = await request(app)
@@ -234,7 +235,7 @@ describe('Gemini Routes', () => {
         ]
       };
 
-      mockGeminiService.summarize.mockResolvedValue(mockSummarizeResponse);
+      mockGeminiService.summarize.mockImplementation(() => Promise.resolve(mockSummarizeResponse));
 
       const response = await request(app)
         .post('/api/gemini/summarize')
@@ -270,8 +271,8 @@ describe('Gemini Routes', () => {
     });
 
     it('should handle summarization service errors', async () => {
-      mockGeminiService.summarize.mockRejectedValue(
-        new CUIError('GEMINI_SUMMARIZE_ERROR', 'Failed to summarize text', 500)
+      mockGeminiService.summarize.mockImplementation(() => 
+        Promise.reject(new CUIError('GEMINI_SUMMARIZE_ERROR', 'Failed to summarize text', 500))
       );
 
       const response = await request(app)
@@ -285,8 +286,8 @@ describe('Gemini Routes', () => {
     });
 
     it('should handle API key missing error', async () => {
-      mockGeminiService.summarize.mockRejectedValue(
-        new CUIError('GEMINI_API_KEY_MISSING', 'Gemini API key not configured', 400)
+      mockGeminiService.summarize.mockImplementation(() => 
+        Promise.reject(new CUIError('GEMINI_API_KEY_MISSING', 'Gemini API key not configured', 400))
       );
 
       const response = await request(app)
@@ -300,8 +301,8 @@ describe('Gemini Routes', () => {
     });
 
     it('should handle invalid response format error', async () => {
-      mockGeminiService.summarize.mockRejectedValue(
-        new CUIError('GEMINI_SUMMARIZE_ERROR', 'Invalid response format', 500)
+      mockGeminiService.summarize.mockImplementation(() => 
+        Promise.reject(new CUIError('GEMINI_SUMMARIZE_ERROR', 'Invalid response format', 500))
       );
 
       const response = await request(app)
@@ -315,7 +316,7 @@ describe('Gemini Routes', () => {
     });
 
     it('should handle generic service errors', async () => {
-      mockGeminiService.summarize.mockRejectedValue(new Error('Generic error'));
+      mockGeminiService.summarize.mockImplementation(() => Promise.reject(new Error('Generic error')));
 
       const response = await request(app)
         .post('/api/gemini/summarize')
@@ -330,11 +331,11 @@ describe('Gemini Routes', () => {
 
   describe('Request logging', () => {
     it('should log requests with requestId for health endpoint', async () => {
-      mockGeminiService.checkHealth.mockResolvedValue({
+      mockGeminiService.checkHealth.mockImplementation(() => Promise.resolve({
         status: 'healthy',
         message: 'OK',
         apiKeyValid: true
-      });
+      }));
 
       await request(app)
         .get('/api/gemini/health');
@@ -344,7 +345,7 @@ describe('Gemini Routes', () => {
     });
 
     it('should log requests with requestId for transcribe endpoint', async () => {
-      mockGeminiService.transcribe.mockResolvedValue({ text: 'test' });
+      mockGeminiService.transcribe.mockImplementation(() => Promise.resolve({ text: 'test' }));
 
       await request(app)
         .post('/api/gemini/transcribe')
@@ -357,10 +358,10 @@ describe('Gemini Routes', () => {
     });
 
     it('should log requests with requestId for summarize endpoint', async () => {
-      mockGeminiService.summarize.mockResolvedValue({
+      mockGeminiService.summarize.mockImplementation(() => Promise.resolve({
         title: 'Test',
         keypoints: ['Point 1']
-      });
+      }));
 
       await request(app)
         .post('/api/gemini/summarize')

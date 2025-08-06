@@ -1,40 +1,47 @@
 import { describe, it, expect, beforeEach, mock } from 'bun:test';
 
-// Mock dependencies
-mock.module('@/services/preferences-service', () => ({
-  PreferencesService: mock()
-}));
+// Mock logger
+const mockLogger = {
+  debug: mock(() => {}),
+  info: mock(() => {}),
+  error: mock(() => {}),
+  warn: mock(() => {})
+};
 
+// Mock the logger module
 mock.module('@/services/logger', () => ({
-  createLogger: mock(() => ({
-    debug: mock(),
-    info: mock(),
-    error: mock(),
-    warn: mock()
-  }))
+  createLogger: mock(() => mockLogger)
 }));
 
-// Mock the machine-id module before importing the service
+// Mock machine-id
 mock.module('@/utils/machine-id', () => ({
   generateMachineId: mock(() => Promise.resolve('test-machine-12345678'))
 }));
 
+// Mock fetch globally
+const mockFetch = mock(() => 
+  Promise.resolve({
+    ok: true,
+    text: mock(() => Promise.resolve('Success'))
+  })
+);
+
 import { NotificationService } from '@/services/notification-service';
 import { PreferencesService } from '@/services/preferences-service';
 import { PermissionRequest } from '@/types';
-import { generateMachineId } from '@/utils/machine-id';
-
-// Mock fetch with proper typing for Bun
-const mockFetch = mock() as any;
-global.fetch = mockFetch;
+global.fetch = mockFetch as any;
 
 describe('NotificationService', () => {
   let service: NotificationService;
-  let mockPreferencesService: any;
+  let mockPreferencesService: PreferencesService;
   
   beforeEach(() => {
-    // Clear all mocks
+    // Reset all mocks
     mockFetch.mockClear();
+    mockLogger.debug.mockClear();
+    mockLogger.info.mockClear();
+    mockLogger.error.mockClear();
+    mockLogger.warn.mockClear();
     
     // Setup mocked preferences service
     mockPreferencesService = {
@@ -46,17 +53,18 @@ describe('NotificationService', () => {
           ntfyUrl: 'https://ntfy.sh'
         }
       }))
-    };
+    } as any;
     
     // Create service instance for each test
     service = new NotificationService(mockPreferencesService);
     
-    // Reset fetch mock
-    mockFetch.mockReset();
-    mockFetch.mockImplementation(() => Promise.resolve({
-      ok: true,
-      text: mock(() => Promise.resolve('Success'))
-    }));
+    // Reset fetch mock to default success response
+    mockFetch.mockImplementation(() => 
+      Promise.resolve({
+        ok: true,
+        text: mock(() => Promise.resolve('Success'))
+      })
+    );
   });
 
   describe('sendPermissionNotification', () => {
@@ -72,7 +80,7 @@ describe('NotificationService', () => {
     it('should send permission notification when enabled', async () => {
       await service.sendPermissionNotification(mockPermissionRequest, 'session-789');
 
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(mockFetch).toHaveBeenCalledWith(
         expect.stringMatching(/^https:\/\/ntfy\.sh\/cui-.+$/),
         expect.objectContaining({
           method: 'POST',
@@ -90,7 +98,7 @@ describe('NotificationService', () => {
     });
 
     it('should skip notification when disabled', async () => {
-      mockPreferencesService.getPreferences.mockImplementation(() => Promise.resolve({
+      mockPreferencesService.getPreferences = mock(() => Promise.resolve({
         colorScheme: 'system',
         language: 'en',
         notifications: {
@@ -100,7 +108,7 @@ describe('NotificationService', () => {
 
       await service.sendPermissionNotification(mockPermissionRequest, undefined);
 
-      expect(global.fetch).not.toHaveBeenCalled();
+      expect(mockFetch).not.toHaveBeenCalled();
     });
 
     it('should handle fetch errors gracefully', async () => {
@@ -108,6 +116,7 @@ describe('NotificationService', () => {
 
       // Should not throw
       await service.sendPermissionNotification(mockPermissionRequest, undefined, undefined);
+      // Test passes if no error is thrown
     });
 
     it('should handle non-ok responses', async () => {
@@ -119,10 +128,11 @@ describe('NotificationService', () => {
 
       // Should not throw
       await service.sendPermissionNotification(mockPermissionRequest, undefined, undefined);
+      // Test passes if no error is thrown
     });
 
     it('should use custom ntfy URL if provided', async () => {
-      mockPreferencesService.getPreferences.mockImplementation(() => Promise.resolve({
+      mockPreferencesService.getPreferences = mock(() => Promise.resolve({
         colorScheme: 'system',
         language: 'en',
         notifications: {
@@ -133,7 +143,7 @@ describe('NotificationService', () => {
 
       await service.sendPermissionNotification(mockPermissionRequest, undefined, undefined);
 
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(mockFetch).toHaveBeenCalledWith(
         expect.stringMatching(/^https:\/\/custom\.ntfy\.server\/cui-.+$/),
         expect.any(Object)
       );
@@ -142,7 +152,7 @@ describe('NotificationService', () => {
     it('should include summary in message when provided', async () => {
       await service.sendPermissionNotification(mockPermissionRequest, 'session-789', 'Working on authentication');
 
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(mockFetch).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({
           body: 'Working on authentication - Bash'
@@ -153,7 +163,7 @@ describe('NotificationService', () => {
     it('should show tool input when summary not provided', async () => {
       await service.sendPermissionNotification(mockPermissionRequest, 'session-789');
 
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(mockFetch).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({
           body: expect.stringContaining('Bash tool: {"command":"npm install express"}')
@@ -170,7 +180,7 @@ describe('NotificationService', () => {
         'Fixed authentication bug'
       );
 
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(mockFetch).toHaveBeenCalledWith(
         expect.stringMatching(/^https:\/\/ntfy\.sh\/cui-.+$/),
         expect.objectContaining({
           method: 'POST',
@@ -192,7 +202,7 @@ describe('NotificationService', () => {
         'session-456'
       );
 
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(mockFetch).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({
           body: 'Task completed'
@@ -201,7 +211,7 @@ describe('NotificationService', () => {
     });
 
     it('should skip notification when disabled', async () => {
-      mockPreferencesService.getPreferences.mockImplementation(() => Promise.resolve({
+      mockPreferencesService.getPreferences = mock(() => Promise.resolve({
         colorScheme: 'system',
         language: 'en',
         notifications: {
@@ -211,7 +221,7 @@ describe('NotificationService', () => {
 
       await service.sendConversationEndNotification('stream-123', 'session-456');
 
-      expect(global.fetch).not.toHaveBeenCalled();
+      expect(mockFetch).not.toHaveBeenCalled();
     });
 
     it('should handle errors gracefully', async () => {
@@ -219,12 +229,13 @@ describe('NotificationService', () => {
 
       // Should not throw even if notification fails
       await service.sendConversationEndNotification('stream-123', 'session-456');
+      // Test passes if no error is thrown
     });
   });
 
   describe('notification preferences', () => {
     it('should not send any notifications when preferences not set', async () => {
-      mockPreferencesService.getPreferences.mockImplementation(() => Promise.resolve({
+      mockPreferencesService.getPreferences = mock(() => Promise.resolve({
         colorScheme: 'system',
         language: 'en'
         // notifications field not set
@@ -242,7 +253,7 @@ describe('NotificationService', () => {
       await service.sendPermissionNotification(mockRequest, undefined);
       await service.sendConversationEndNotification('stream-123', 'session-456');
 
-      expect(global.fetch).not.toHaveBeenCalled();
+      expect(mockFetch).not.toHaveBeenCalled();
     });
   });
 });

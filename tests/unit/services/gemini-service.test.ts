@@ -1,14 +1,16 @@
-import { GeminiService } from '@/services/gemini-service';
+import { describe, it, expect, beforeEach, mock } from 'bun:test';
 
 // Mock the logger
-jest.mock('@/services/logger', () => ({
-  createLogger: jest.fn(() => ({
-    info: jest.fn(),
-    warn: jest.fn(),
-    error: jest.fn(),
-    debug: jest.fn(),
+mock.module('@/services/logger', () => ({
+  createLogger: mock(() => ({
+    info: mock(),
+    warn: mock(),
+    error: mock(),
+    debug: mock(),
   })),
 }));
+
+import { GeminiService } from '@/services/gemini-service';
 
 describe('GeminiService', () => {
   let geminiService: GeminiService;
