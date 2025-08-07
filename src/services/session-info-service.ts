@@ -1,10 +1,10 @@
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
-import type { SessionInfo, SessionInfoDatabase } from '@/types';
-import { createLogger } from './logger';
-import { type Logger } from './logger';
-import { JsonFileManager } from './json-file-manager';
+import type { SessionInfo, SessionInfoDatabase } from '@/types/index.js';
+import { createLogger } from './logger.js';
+import { type Logger } from './logger.js';
+import { JsonFileManager } from './json-file-manager.js';
 
 /**
  * SessionInfoService manages session information using custom JSON file manager

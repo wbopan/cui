@@ -1,8 +1,8 @@
 import { Router } from 'express';
-import { CUIError, PermissionDecisionRequest, PermissionDecisionResponse } from '@/types';
-import { RequestWithRequestId } from '@/types/express';
-import { PermissionTracker } from '@/services/permission-tracker';
-import { createLogger } from '@/services/logger';
+import { CUIError, PermissionDecisionRequest, PermissionDecisionResponse } from '@/types/index.js';
+import { RequestWithRequestId } from '@/types/express.js';
+import { PermissionTracker } from '@/services/permission-tracker.js';
+import { createLogger } from '@/services/logger.js';
 
 export function createPermissionRoutes(
   permissionTracker: PermissionTracker

@@ -1,11 +1,11 @@
 import { Router } from 'express';
-import { SystemStatusResponse, CUIError, CommandsResponse } from '@/types';
-import { RequestWithRequestId } from '@/types/express';
-import { ClaudeProcessManager } from '@/services/claude-process-manager';
-import { ClaudeHistoryReader } from '@/services/claude-history-reader';
-import { createLogger, type Logger } from '@/services/logger';
-import { getAvailableCommands } from '@/services/commands-service';
-import { ConfigService } from '@/services/config-service';
+import { SystemStatusResponse, CUIError, CommandsResponse } from '@/types/index.js';
+import { RequestWithRequestId } from '@/types/express.js';
+import { ClaudeProcessManager } from '@/services/claude-process-manager.js';
+import { ClaudeHistoryReader } from '@/services/claude-history-reader.js';
+import { createLogger, type Logger } from '@/services/logger.js';
+import { getAvailableCommands } from '@/services/commands-service.js';
+import { ConfigService } from '@/services/config-service.js';
 import { execSync } from 'child_process';
 
 export function createSystemRoutes(

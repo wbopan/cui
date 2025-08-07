@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { ConversationMessage } from '@/types';
-import { createLogger, type Logger } from './logger';
+import { ConversationMessage } from '@/types/index.js';
+import { createLogger, type Logger } from './logger.js';
 
 /**
  * Filters out local command messages from conversation history

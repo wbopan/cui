@@ -5,10 +5,10 @@ import {
   FileSystemListResponse,
   FileSystemReadQuery,
   FileSystemReadResponse 
-} from '@/types';
-import { RequestWithRequestId } from '@/types/express';
-import { FileSystemService } from '@/services/file-system-service';
-import { createLogger } from '@/services/logger';
+} from '@/types/index.js';
+import { RequestWithRequestId } from '@/types/express.js';
+import { FileSystemService } from '@/services/file-system-service.js';
+import { createLogger } from '@/services/logger.js';
 
 export function createFileSystemRoutes(
   fileSystemService: FileSystemService

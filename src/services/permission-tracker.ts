@@ -1,10 +1,10 @@
 import { EventEmitter } from 'events';
 import { v4 as uuidv4 } from 'uuid';
-import { PermissionRequest } from '@/types';
-import { logger } from '@/services/logger';
-import { NotificationService } from './notification-service';
-import { ConversationStatusManager } from './conversation-status-manager';
-import { ClaudeHistoryReader } from './claude-history-reader';
+import { PermissionRequest } from '@/types/index.js';
+import { logger } from '@/services/logger.js';
+import { NotificationService } from './notification-service.js';
+import { ConversationStatusManager } from './conversation-status-manager.js';
+import { ClaudeHistoryReader } from './claude-history-reader.js';
 
 /**
  * Service to track permission requests from Claude CLI via MCP

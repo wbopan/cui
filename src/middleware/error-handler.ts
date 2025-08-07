@@ -1,7 +1,7 @@
 import { Response, NextFunction } from 'express';
-import { CUIError } from '@/types';
-import { createLogger } from '@/services/logger';
-import { RequestWithRequestId } from '@/types/express';
+import { CUIError } from '@/types/index.js';
+import { createLogger } from '@/services/logger.js';
+import { RequestWithRequestId } from '@/types/express.js';
 
 const logger = createLogger('ErrorHandler');
 

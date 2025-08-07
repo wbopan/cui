@@ -1,8 +1,8 @@
 import { GoogleGenAI, Type } from '@google/genai';
 import { setGlobalDispatcher, ProxyAgent } from 'undici';
-import { CUIError } from '@/types';
-import { createLogger, type Logger } from '@/services/logger';
-import { ConfigService } from './config-service';
+import { CUIError } from '@/types/index.js';
+import { createLogger, type Logger } from '@/services/logger.js';
+import { ConfigService } from './config-service.js';
 
 // Set up proxy support using environment variables (production only)
 const proxyUrl = process.env.HTTPS_PROXY || process.env.https_proxy;

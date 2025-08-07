@@ -1,4 +1,4 @@
-import { createLogger } from './services/logger';
+import { createLogger } from './services/logger.js';
 
 export interface CLIConfig {
   port?: number;

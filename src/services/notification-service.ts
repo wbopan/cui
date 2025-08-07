@@ -1,7 +1,7 @@
-import { PermissionRequest } from '@/types';
-import { createLogger, type Logger } from './logger';
-import { PreferencesService } from './preferences-service';
-import { ConfigService } from './config-service';
+import { PermissionRequest } from '@/types/index.js';
+import { createLogger, type Logger } from './logger.js';
+import { PreferencesService } from './preferences-service.js';
+import { ConfigService } from './config-service.js';
 
 export interface Notification {
   title: string;

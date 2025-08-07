@@ -317,7 +317,7 @@ export interface CommandsResponse {
   commands: Command[];
 }
 
-export * from './preferences';
+export * from './preferences.js';
 
 // Gemini API types
 export interface GeminiHealthResponse {

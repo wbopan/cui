@@ -1,7 +1,7 @@
-#!/usr/bin/env node
-import { CUIServer } from './cui-server';
-import { createLogger } from './services/logger';
-import { parseArgs } from './cli-parser';
+#!/usr/bin/env bun
+import { CUIServer } from './cui-server.js';
+import { createLogger } from './services/logger.js';
+import { parseArgs } from './cli-parser.js';
 
 const logger = createLogger('Server');
 

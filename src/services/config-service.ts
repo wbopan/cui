@@ -2,9 +2,9 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import crypto from 'crypto';
-import { CUIConfig, DEFAULT_CONFIG } from '@/types/config';
-import { generateMachineId } from '@/utils/machine-id';
-import { createLogger, type Logger } from './logger';
+import { CUIConfig, DEFAULT_CONFIG } from '@/types/config.js';
+import { generateMachineId } from '@/utils/machine-id.js';
+import { createLogger, type Logger } from './logger.js';
 
 /**
  * ConfigService manages CUI configuration

@@ -1,12 +1,12 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as os from 'os';
-import { ConversationSummary, ConversationMessage, ConversationListQuery, CUIError } from '@/types';
-import { createLogger, type Logger } from './logger';
-import { SessionInfoService } from './session-info-service';
-import { ConversationCache, ConversationChain } from './conversation-cache';
-import { ToolMetricsService } from './ToolMetricsService';
-import { MessageFilter } from './message-filter';
+import { ConversationSummary, ConversationMessage, ConversationListQuery, CUIError } from '@/types/index.js';
+import { createLogger, type Logger } from './logger.js';
+import { SessionInfoService } from './session-info-service.js';
+import { ConversationCache, ConversationChain } from './conversation-cache.js';
+import { ToolMetricsService } from './ToolMetricsService.js';
+import { MessageFilter } from './message-filter.js';
 import Anthropic from '@anthropic-ai/sdk';
 
 // Import RawJsonEntry from ConversationCache to avoid duplication

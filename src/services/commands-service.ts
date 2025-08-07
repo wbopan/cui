@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { createLogger } from './logger';
+import { createLogger } from './logger.js';
 
 export interface Command {
   name: string;

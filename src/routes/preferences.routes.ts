@@ -1,7 +1,7 @@
 import { Router, Request } from 'express';
-import { Preferences } from '@/types';
-import { PreferencesService } from '@/services/preferences-service';
-import { createLogger } from '@/services/logger';
+import { Preferences } from '@/types/index.js';
+import { PreferencesService } from '@/services/preferences-service.js';
+import { createLogger } from '@/services/logger.js';
 
 export function createPreferencesRoutes(service: PreferencesService): Router {
   const router = Router();

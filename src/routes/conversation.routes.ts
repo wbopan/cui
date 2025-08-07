@@ -12,14 +12,14 @@ import {
   ConversationMessage,
   ConversationSummary,
   SessionInfo
-} from '@/types';
-import { RequestWithRequestId } from '@/types/express';
-import { ClaudeProcessManager } from '@/services/claude-process-manager';
-import { ClaudeHistoryReader } from '@/services/claude-history-reader';
-import { SessionInfoService } from '@/services/session-info-service';
-import { ConversationStatusManager } from '@/services/conversation-status-manager';
-import { createLogger } from '@/services/logger';
-import { ToolMetricsService } from '@/services/ToolMetricsService';
+} from '@/types/index.js';
+import { RequestWithRequestId } from '@/types/express.js';
+import { ClaudeProcessManager } from '@/services/claude-process-manager.js';
+import { ClaudeHistoryReader } from '@/services/claude-history-reader.js';
+import { SessionInfoService } from '@/services/session-info-service.js';
+import { ConversationStatusManager } from '@/services/conversation-status-manager.js';
+import { createLogger } from '@/services/logger.js';
+import { ToolMetricsService } from '@/services/ToolMetricsService.js';
 
 export function createConversationRoutes(
   processManager: ClaudeProcessManager,

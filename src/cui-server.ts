@@ -1,39 +1,39 @@
 import express, { Express } from 'express';
 import * as path from 'path';
-import { ClaudeProcessManager } from './services/claude-process-manager';
-import { StreamManager } from './services/stream-manager';
-import { ClaudeHistoryReader } from './services/claude-history-reader';
-import { PermissionTracker } from './services/permission-tracker';
-import { MCPConfigGenerator } from './services/mcp-config-generator';
-import { FileSystemService } from './services/file-system-service';
-import { ConfigService } from './services/config-service';
-import { SessionInfoService } from './services/session-info-service';
-import { PreferencesService } from './services/preferences-service';
-import { ConversationStatusManager } from './services/conversation-status-manager';
-import { WorkingDirectoriesService } from './services/working-directories-service';
-import { ToolMetricsService } from './services/ToolMetricsService';
-import { NotificationService } from './services/notification-service';
-import { geminiService } from './services/gemini-service';
+import { ClaudeProcessManager } from './services/claude-process-manager.js';
+import { StreamManager } from './services/stream-manager.js';
+import { ClaudeHistoryReader } from './services/claude-history-reader.js';
+import { PermissionTracker } from './services/permission-tracker.js';
+import { MCPConfigGenerator } from './services/mcp-config-generator.js';
+import { FileSystemService } from './services/file-system-service.js';
+import { ConfigService } from './services/config-service.js';
+import { SessionInfoService } from './services/session-info-service.js';
+import { PreferencesService } from './services/preferences-service.js';
+import { ConversationStatusManager } from './services/conversation-status-manager.js';
+import { WorkingDirectoriesService } from './services/working-directories-service.js';
+import { ToolMetricsService } from './services/ToolMetricsService.js';
+import { NotificationService } from './services/notification-service.js';
+import { geminiService } from './services/gemini-service.js';
 import { 
   StreamEvent,
   CUIError,
   PermissionRequest
-} from './types';
-import { createLogger, type Logger } from './services/logger';
-import { createConversationRoutes } from './routes/conversation.routes';
-import { createSystemRoutes } from './routes/system.routes';
-import { createPermissionRoutes } from './routes/permission.routes';
-import { createFileSystemRoutes } from './routes/filesystem.routes';
-import { createLogRoutes } from './routes/log.routes';
-import { createStreamingRoutes } from './routes/streaming.routes';
-import { createWorkingDirectoriesRoutes } from './routes/working-directories.routes';
-import { createPreferencesRoutes } from './routes/preferences.routes';
-import { createGeminiRoutes } from './routes/gemini.routes';
-import { errorHandler } from './middleware/error-handler';
-import { requestLogger } from './middleware/request-logger';
-import { createCorsMiddleware } from './middleware/cors-setup';
-import { queryParser } from './middleware/query-parser';
-import { authMiddleware, createAuthMiddleware } from './middleware/auth';
+} from './types/index.js';
+import { createLogger, type Logger } from './services/logger.js';
+import { createConversationRoutes } from './routes/conversation.routes.js';
+import { createSystemRoutes } from './routes/system.routes.js';
+import { createPermissionRoutes } from './routes/permission.routes.js';
+import { createFileSystemRoutes } from './routes/filesystem.routes.js';
+import { createLogRoutes } from './routes/log.routes.js';
+import { createStreamingRoutes } from './routes/streaming.routes.js';
+import { createWorkingDirectoriesRoutes } from './routes/working-directories.routes.js';
+import { createPreferencesRoutes } from './routes/preferences.routes.js';
+import { createGeminiRoutes } from './routes/gemini.routes.js';
+import { errorHandler } from './middleware/error-handler.js';
+import { requestLogger } from './middleware/request-logger.js';
+import { createCorsMiddleware } from './middleware/cors-setup.js';
+import { queryParser } from './middleware/query-parser.js';
+import { authMiddleware, createAuthMiddleware } from './middleware/auth.js';
 
 // Conditionally import ViteExpress only in development environment
 let ViteExpress: typeof import('vite-express') | undefined;

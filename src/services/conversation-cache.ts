@@ -1,5 +1,5 @@
-import { ConversationMessage } from '@/types';
-import { createLogger, type Logger } from './logger';
+import { ConversationMessage } from '@/types/index.js';
+import { createLogger, type Logger } from './logger.js';
 import Anthropic from '@anthropic-ai/sdk';
 
 export interface ConversationChain {

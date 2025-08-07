@@ -1,10 +1,10 @@
 import { Router } from 'express';
 import multer from 'multer';
-import { GeminiService } from '@/services/gemini-service';
-import { CUIError } from '@/types';
-import { createLogger } from '@/services/logger';
-import type { RequestWithRequestId } from '@/types/express';
-import type { GeminiTranscribeRequest, GeminiSummarizeRequest } from '@/types';
+import { GeminiService } from '@/services/gemini-service.js';
+import { CUIError } from '@/types/index.js';
+import { createLogger } from '@/services/logger.js';
+import type { RequestWithRequestId } from '@/types/express.js';
+import type { GeminiTranscribeRequest, GeminiSummarizeRequest } from '@/types/index.js';
 
 // Configure multer for memory storage
 const upload = multer({

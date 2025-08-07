@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
-import { createLogger } from './logger';
-import { type Logger } from './logger';
+import { createLogger } from './logger.js';
+import { type Logger } from './logger.js';
 
 /**
  * Simple JSON file manager with race condition protection

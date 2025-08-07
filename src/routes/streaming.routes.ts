@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { StreamManager } from '@/services/stream-manager';
-import { createLogger } from '@/services/logger';
-import { RequestWithRequestId } from '@/types/express';
+import { StreamManager } from '@/services/stream-manager.js';
+import { createLogger } from '@/services/logger.js';
+import { RequestWithRequestId } from '@/types/express.js';
 
 export function createStreamingRoutes(streamManager: StreamManager): Router {
   const router = Router();

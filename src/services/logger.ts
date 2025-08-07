@@ -1,6 +1,6 @@
 import pino, { Logger as PinoLogger } from 'pino';
 import { PassThrough } from 'stream';
-import { LogFormatter } from './log-formatter';
+import { LogFormatter } from './log-formatter.js';
 
 export interface LogContext {
   component?: string;

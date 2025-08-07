@@ -1,8 +1,8 @@
 import { Response } from 'express';
-import { StreamEvent } from '@/types';
+import { StreamEvent } from '@/types/index.js';
 import { EventEmitter } from 'events';
-import { createLogger } from './logger';
-import { type Logger } from './logger';
+import { createLogger } from './logger.js';
+import { type Logger } from './logger.js';
 
 /**
  * Manages streaming connections to multiple clients

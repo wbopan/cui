@@ -2,8 +2,8 @@ import { writeFileSync, mkdirSync, unlinkSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { tmpdir } from 'os';
 import { v4 as uuidv4 } from 'uuid';
-import { logger } from '@/services/logger';
-import { FileSystemService } from '@/services/file-system-service';
+import { logger } from '@/services/logger.js';
+import { FileSystemService } from '@/services/file-system-service.js';
 
 export interface MCPConfig {
   mcpServers: {

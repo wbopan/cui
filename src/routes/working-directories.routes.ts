@@ -1,7 +1,7 @@
 import { Router, Request } from 'express';
-import { WorkingDirectoriesResponse } from '@/types';
-import { WorkingDirectoriesService } from '@/services/working-directories-service';
-import { createLogger } from '@/services/logger';
+import { WorkingDirectoriesResponse } from '@/types/index.js';
+import { WorkingDirectoriesService } from '@/services/working-directories-service.js';
+import { createLogger } from '@/services/logger.js';
 
 export function createWorkingDirectoriesRoutes(
   workingDirectoriesService: WorkingDirectoriesService

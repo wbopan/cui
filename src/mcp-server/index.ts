@@ -3,7 +3,7 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { CallToolRequestSchema, ListToolsRequestSchema, McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
 import fetch from 'node-fetch';
-import { logger } from '@/services/logger';
+import { logger } from '@/services/logger.js';
 
 // Type definitions
 interface PermissionNotificationResponse {

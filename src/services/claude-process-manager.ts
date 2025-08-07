@@ -1,16 +1,16 @@
 import { ChildProcess, spawn } from 'child_process';
-import { ConversationConfig, CUIError, SystemInitMessage, StreamEvent } from '@/types';
+import { ConversationConfig, CUIError, SystemInitMessage, StreamEvent } from '@/types/index.js';
 import { v4 as uuidv4 } from 'uuid';
 import { EventEmitter } from 'events';
 import { existsSync, readFileSync } from 'fs';
-import { JsonLinesParser } from './json-lines-parser';
-import { createLogger, type Logger } from './logger';
-import { ClaudeHistoryReader } from './claude-history-reader';
-import { ConversationStatusManager } from './conversation-status-manager';
-import { ToolMetricsService } from './ToolMetricsService';
-import { SessionInfoService } from './session-info-service';
-import { FileSystemService } from './file-system-service';
-import { NotificationService } from './notification-service';
+import { JsonLinesParser } from './json-lines-parser.js';
+import { createLogger, type Logger } from './logger.js';
+import { ClaudeHistoryReader } from './claude-history-reader.js';
+import { ConversationStatusManager } from './conversation-status-manager.js';
+import { ToolMetricsService } from './ToolMetricsService.js';
+import { SessionInfoService } from './session-info-service.js';
+import { FileSystemService } from './file-system-service.js';
+import { NotificationService } from './notification-service.js';
 
 /**
  * Manages Claude CLI processes and their lifecycle

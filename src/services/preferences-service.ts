@@ -1,9 +1,9 @@
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
-import { Preferences, DEFAULT_PREFERENCES } from '@/types/preferences';
-import { createLogger, type Logger } from './logger';
-import { JsonFileManager } from './json-file-manager';
+import { Preferences, DEFAULT_PREFERENCES } from '@/types/preferences.js';
+import { createLogger, type Logger } from './logger.js';
+import { JsonFileManager } from './json-file-manager.js';
 
 interface PreferenceDB {
   preferences: Preferences;
