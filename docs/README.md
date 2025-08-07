@@ -88,9 +88,8 @@ All inline syntaxes like `/init` or `@file.txt` are supported just like in the C
 
 All configuration and data are stored in `~/.cui/`.
 
-- `config.json` - Server settings
+- `config.json` - Server and interface settings
 - `session-info.json` - Session metadata
-- `preferences.json` - User preferences
 
 To uninstall cui, simply delete the `~/.cui/` directory and remove the package with `npm uninstall -g cui-server`.
 

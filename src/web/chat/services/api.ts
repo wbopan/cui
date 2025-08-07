@@ -149,14 +149,16 @@ class ApiService {
   }
 
   async getPreferences(): Promise<import('../types').Preferences> {
-    return this.apiCall('/api/preferences');
+    const config = await this.apiCall<any>('/api/config');
+    return config.interface;
   }
 
   async updatePreferences(updates: Partial<import('../types').Preferences>): Promise<import('../types').Preferences> {
-    return this.apiCall('/api/preferences', {
+    const config = await this.apiCall<any>('/api/config', {
       method: 'PUT',
-      body: JSON.stringify(updates),
+      body: JSON.stringify({ interface: updates }),
     });
+    return config.interface;
   }
 
   async listDirectory(params: FileSystemListQuery): Promise<FileSystemListResponse> {

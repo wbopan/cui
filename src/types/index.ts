@@ -317,7 +317,6 @@ export interface CommandsResponse {
   commands: Command[];
 }
 
-export * from './preferences.js';
 
 // Gemini API types
 export interface GeminiHealthResponse {
@@ -343,3 +342,5 @@ export interface GeminiSummarizeResponse {
   title: string;
   keypoints: string[];
 }
+
+export * from './config.js';

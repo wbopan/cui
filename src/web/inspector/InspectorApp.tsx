@@ -22,7 +22,7 @@ function InspectorApp() {
   const [availableSessions, setAvailableSessions] = useState<any[]>([]);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({
     status: true,
-    preferences: true,
+    config: true,
     start: true,
     stop: true,
     list: true,
@@ -88,11 +88,8 @@ function InspectorApp() {
   // Commands state
   const [commandsWorkingDirectory, setCommandsWorkingDirectory] = useState('');
   
-  // Preferences state
-  const [preferencesColorScheme, setPreferencesColorScheme] = useState('system');
-  const [preferencesLanguage, setPreferencesLanguage] = useState('en');
-  const [preferencesNotificationsEnabled, setPreferencesNotificationsEnabled] = useState(false);
-  const [preferencesNtfyUrl, setPreferencesNtfyUrl] = useState('https://ntfy.sh');
+  // Config state
+  const [configUpdateBody, setConfigUpdateBody] = useState('{}');
   
   // Gemini API states
   const [geminiAudioFile, setGeminiAudioFile] = useState<File | null>(null);
@@ -140,36 +137,40 @@ function InspectorApp() {
     }
   };
 
-  const getPreferences = async () => {
+  const getConfig = async () => {
     try {
-      const data = await api.getPreferences();
-      showJson('preferencesGetResult', data);
+      const response = await api.fetchWithAuth('/api/config');
+      const data = await response.json();
+      showJson('configGetResult', data);
       
-      // Update form fields with current values
-      setPreferencesColorScheme(data.colorScheme);
-      setPreferencesLanguage(data.language);
-      setPreferencesNotificationsEnabled(data.notifications?.enabled ?? false);
-      setPreferencesNtfyUrl(data.notifications?.ntfyUrl ?? 'https://ntfy.sh');
+      // Set the update body to current config for easy editing
+      setConfigUpdateBody(JSON.stringify(data, null, 2));
     } catch (e: any) {
-      showJson('preferencesGetResult', { error: e.message });
+      showJson('configGetResult', { error: e.message });
     }
   };
 
-  const updatePreferences = async () => {
+  const updateConfig = async () => {
     try {
-      const updates: any = {
-        colorScheme: preferencesColorScheme as 'light' | 'dark' | 'system',
-        language: preferencesLanguage,
-        notifications: {
-          enabled: preferencesNotificationsEnabled,
-          ntfyUrl: preferencesNtfyUrl
-        }
-      };
+      let body;
+      try {
+        body = JSON.parse(configUpdateBody);
+      } catch (e) {
+        showJson('configUpdateResult', { error: 'Invalid JSON' });
+        return;
+      }
 
-      const data = await api.updatePreferences(updates);
-      showJson('preferencesUpdateResult', data);
+      const response = await api.fetchWithAuth('/api/config', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body)
+      });
+      const data = await response.json();
+      showJson('configUpdateResult', data);
     } catch (e: any) {
-      showJson('preferencesUpdateResult', { error: e.message });
+      showJson('configUpdateResult', { error: e.message });
     }
   };
 
@@ -607,75 +608,57 @@ function InspectorApp() {
           </div>
         </div>
 
-        {/* Preferences */}
+        {/* Config */}
         <div className="bg-white border-t border-b border-neutral-300 p-4 mb-0">
           <div 
             className={cn(
               "font-bold text-blue-600 text-sm mb-4 cursor-pointer select-none",
               "before:content-['▼_'] before:inline-block before:transition-transform",
-              collapsed.preferences && "before:-rotate-90"
+              collapsed.config && "before:-rotate-90"
             )}
-            onClick={() => toggleCollapse('preferences')}
-            aria-label="Toggle Preferences section"
+            onClick={() => toggleCollapse('config')}
+            aria-label="Toggle Config section"
           >
-            GET/PUT /api/preferences
+            GET/PUT /api/config
           </div>
-          <div className={cn("overflow-hidden", collapsed.preferences && "hidden")}>
-            <Button onClick={getPreferences} className="bg-neutral-800 hover:bg-neutral-700">Get Preferences</Button>
+          <div className={cn("overflow-hidden", collapsed.config && "hidden")}>
+            <Button onClick={getConfig} className="bg-neutral-800 hover:bg-neutral-700">Get Config</Button>
             <div className="max-h-96 overflow-auto border border-neutral-300 rounded bg-neutral-50 p-2.5 mt-2.5">
-              {results.preferencesGetResult && <JsonViewer data={results.preferencesGetResult} resultId="preferencesGetResult" />}
+              {results.configGetResult && <JsonViewer data={results.configGetResult} resultId="configGetResult" />}
             </div>
             
             <div className="mt-4 border-t border-neutral-300 pt-4">
-              <h4 className="m-0 mb-2.5 text-sm">Update Preferences</h4>
+              <h4 className="m-0 mb-2.5 text-sm">Update Config</h4>
               
               <div className="my-2.5 p-2.5 bg-neutral-50 rounded">
-                <Label className="font-bold text-neutral-600 text-xs uppercase mb-1" htmlFor="colorScheme">Color Scheme</Label>
-                <Select value={preferencesColorScheme} onValueChange={setPreferencesColorScheme}>
-                  <SelectTrigger id="colorScheme" className="font-mono">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="system">System</SelectItem>
-                    <SelectItem value="light">Light</SelectItem>
-                    <SelectItem value="dark">Dark</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="my-2.5 p-2.5 bg-neutral-50 rounded">
-                <Label className="font-bold text-neutral-600 text-xs uppercase mb-1" htmlFor="language">Language</Label>
-                <Input id="language" type="text" value={preferencesLanguage} onChange={(e) => setPreferencesLanguage(e.target.value)} placeholder="en" className="font-mono" />
-              </div>
-              
-              <div className="my-2.5 p-2.5 bg-neutral-50 rounded">
-                <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="notificationsEnabled" 
-                    checked={preferencesNotificationsEnabled} 
-                    onCheckedChange={(checked) => setPreferencesNotificationsEnabled(checked as boolean)} 
-                  />
-                  <Label htmlFor="notificationsEnabled" className="text-sm cursor-pointer">Enable Notifications</Label>
+                <Label className="font-bold text-neutral-600 text-xs uppercase mb-1" htmlFor="configUpdateBody">
+                  Config JSON <span className="text-red-500">*</span>
+                </Label>
+                <Textarea 
+                  id="configUpdateBody"
+                  value={configUpdateBody} 
+                  onChange={(e) => setConfigUpdateBody(e.target.value)} 
+                  rows={15} 
+                  placeholder={JSON.stringify({
+                    interface: {
+                      colorScheme: 'system',
+                      language: 'en',
+                      notifications: {
+                        enabled: false,
+                        ntfyUrl: 'https://ntfy.sh'
+                      }
+                    }
+                  }, null, 2)}
+                  className="font-mono text-xs"
+                />
+                <div className="text-xs text-neutral-600 mt-0.5">
+                  Enter partial config to update only specific fields
                 </div>
               </div>
               
-              <div className="my-2.5 p-2.5 bg-neutral-50 rounded">
-                <Label className="font-bold text-neutral-600 text-xs uppercase mb-1" htmlFor="ntfyUrl">
-                  Ntfy URL <span className="text-neutral-400 text-[10px]">(optional)</span>
-                </Label>
-                <Input 
-                  id="ntfyUrl"
-                  type="text" 
-                  value={preferencesNtfyUrl} 
-                  onChange={(e) => setPreferencesNtfyUrl(e.target.value)} 
-                  placeholder="https://ntfy.sh" 
-                  className="font-mono"
-                />
-              </div>
-              
-              <Button onClick={updatePreferences} className="bg-neutral-800 hover:bg-neutral-700">Update Preferences</Button>
+              <Button onClick={updateConfig} className="bg-neutral-800 hover:bg-neutral-700">Update Config</Button>
               <div className="max-h-96 overflow-auto border border-neutral-300 rounded bg-neutral-50 p-2.5 mt-2.5">
-                {results.preferencesUpdateResult && <JsonViewer data={results.preferencesUpdateResult} resultId="preferencesUpdateResult" />}
+                {results.configUpdateResult && <JsonViewer data={results.configUpdateResult} resultId="configUpdateResult" />}
               </div>
             </div>
           </div>
