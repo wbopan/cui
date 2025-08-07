@@ -25,8 +25,8 @@ jobs:
       - name: Install dependencies
         run: |
           npm ci
-          # Ensure lightningcss platform-specific binaries are installed
-          npm install -D lightningcss-linux-x64-gnu
+          # Ensure lightningcss and tailwindcss oxide platform-specific binaries are installed
+          npm install -D lightningcss-linux-x64-gnu @tailwindcss/oxide-linux-x64-gnu
 
       - name: Build project
         run: npm run build
@@ -87,8 +87,8 @@ jobs:
       - name: Install dependencies
         run: |
           npm ci
-          # Ensure lightningcss platform-specific binaries are installed
-          npm install -D lightningcss-linux-x64-gnu
+          # Ensure lightningcss and tailwindcss oxide platform-specific binaries are installed
+          npm install -D lightningcss-linux-x64-gnu @tailwindcss/oxide-linux-x64-gnu
 
       - name: Build project
         run: npm run build
