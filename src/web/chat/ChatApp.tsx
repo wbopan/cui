@@ -14,7 +14,11 @@ function ChatApp() {
       <StreamStatusProvider>
         <ConversationsProvider>
           <Routes>
-            <Route path="/" element={<Home />} />
+            <Route path="/" element={
+              <Layout>
+                <Home />
+              </Layout>
+            } />
             <Route path="/c/:sessionId" element={
               <Layout>
                 <ConversationView />
