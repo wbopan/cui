@@ -27,6 +27,7 @@ jobs:
       - name: Install dependencies
         run: |
           npm ci
+          npm install -D lightningcss-linux-x64-gnu
 
       - name: Run linting
         run: npm run lint
