@@ -1,7 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import LogMonitor from './LogMonitor';
-import styles from './styles/inspector.module.css';
 import { api } from '../chat/services/api';
+import { Button } from '@/web/chat/components/ui/button';
+import { Input } from '@/web/chat/components/ui/input';
+import { Textarea } from '@/web/chat/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/web/chat/components/ui/select';
+import { Checkbox } from '@/web/chat/components/ui/checkbox';
+import { Label } from '@/web/chat/components/ui/label';
+import { cn } from '@/web/chat/lib/utils';
 
 declare global {
   namespace JSX {
@@ -227,11 +233,11 @@ function InspectorApp() {
   const startStream = async (id?: string) => {
     const streamId = id || streamingId;
     if (!streamId) {
-      setStreamResult([<span key="error" style={{ color: '#ff6b6b' }}>Please enter a streaming ID</span>]);
+      setStreamResult([<span key="error" className="text-red-400">Please enter a streaming ID</span>]);
       return;
     }
 
-    setStreamResult([<span key="connecting" style={{ color: '#51cf66' }}>Connecting to stream...</span>]);
+    setStreamResult([<span key="connecting" className="text-green-400">Connecting to stream...</span>]);
 
     try {
       const response = await api.fetchWithAuth(api.getStreamUrl(streamId));
@@ -246,7 +252,7 @@ function InspectorApp() {
       while (true) {
         const { done, value } = await reader.read();
         if (done) {
-          setStreamResult(prev => [...prev, <span key="ended" style={{ color: '#868e96' }}>[Stream ended]</span>]);
+          setStreamResult(prev => [...prev, <span key="ended" className="text-neutral-500">[Stream ended]</span>]);
           break;
         }
 
@@ -272,8 +278,8 @@ function InspectorApp() {
             
             lineCount++;
             const newLine = (
-              <div key={`line-${lineCount}`} className={styles.streamLine}>
-                <span style={{ color: '#868e96' }}>{lineCount}:</span> {jsonLine}
+              <div key={`line-${lineCount}`} className="my-0.5 py-0.5 border-b border-dotted border-neutral-700">
+                <span className="text-neutral-500">{lineCount}:</span> {jsonLine}
               </div>
             );
             newLines.push(newLine);
@@ -291,7 +297,7 @@ function InspectorApp() {
         }
       }
     } catch (e: any) {
-      setStreamResult(prev => [...prev, <span key="error" style={{ color: '#ff6b6b' }}>Error: {e.message}</span>]);
+      setStreamResult(prev => [...prev, <span key="error" className="text-red-400">Error: {e.message}</span>]);
     }
   };
 
@@ -299,7 +305,7 @@ function InspectorApp() {
     if (currentStream) {
       currentStream.cancel();
       setCurrentStream(null);
-      setStreamResult(prev => [...prev, <span key="stopped" style={{ color: '#ffd43b' }}>[Stream stopped by user]</span>]);
+      setStreamResult(prev => [...prev, <span key="stopped" className="text-yellow-300">[Stream stopped by user]</span>]);
     }
   };
 
@@ -519,11 +525,11 @@ function InspectorApp() {
       
       const originalText = buttonRef.textContent;
       buttonRef.textContent = 'Copied!';
-      buttonRef.classList.add(styles.copied);
+      buttonRef.classList.add('!bg-green-600');
       
       setTimeout(() => {
         buttonRef.textContent = originalText;
-        buttonRef.classList.remove(styles.copied);
+        buttonRef.classList.remove('!bg-green-600');
       }, 2000);
     } catch (err) {
       console.error('Failed to copy:', err);
@@ -541,11 +547,11 @@ function InspectorApp() {
       
       const originalText = buttonRef.textContent;
       buttonRef.textContent = 'Copied!';
-      buttonRef.classList.add(styles.copied);
+      buttonRef.classList.add('!bg-green-600');
       
       setTimeout(() => {
         buttonRef.textContent = originalText;
-        buttonRef.classList.remove(styles.copied);
+        buttonRef.classList.remove('!bg-green-600');
       }, 2000);
     } catch (err) {
       console.error('Failed to copy:', err);
@@ -553,32 +559,44 @@ function InspectorApp() {
   };
 
   const JsonViewer = ({ data, resultId }: { data: any, resultId: string }) => (
-    <div className={styles.jsonViewerWrapper}>
-      <button className={styles.copyBtn} onClick={(e) => copyJsonToClipboard(data, e.currentTarget)}>
+    <div className="relative">
+      <Button
+        className="absolute top-1 right-1 z-10 h-auto py-1 px-2.5 text-xs bg-neutral-600 hover:bg-neutral-700"
+        onClick={(e) => copyJsonToClipboard(data, e.currentTarget)}
+        aria-label="Copy JSON to clipboard"
+      >
         Copy JSON
-      </button>
+      </Button>
       <json-viewer data={JSON.stringify(data)}></json-viewer>
     </div>
   );
 
   return (
-    <div className={styles.container}>
+    <div className="flex w-full h-screen min-h-0 font-mono bg-neutral-100 fixed top-0 left-0 right-0 bottom-0">
       {/* Sidebar */}
-      <div className={styles.sidebar}>
-        <h1>CUI Raw JSON Interface</h1>
+      <div className="w-[450px] bg-neutral-200 overflow-y-auto border-r-2 border-neutral-300 p-5 box-border min-h-0">
+        <h1 className="text-neutral-800 mt-0 mb-4">CUI Raw JSON Interface</h1>
         
         {/* System Status */}
-        <div className={styles.section}>
-          <div className={`${styles.endpoint} ${styles.collapsible} ${collapsed.status ? styles.collapsed : ''}`} onClick={() => toggleCollapse('status')}>
+        <div className="bg-white border-t border-b border-neutral-300 p-4 mb-0">
+          <div 
+            className={cn(
+              "font-bold text-blue-600 text-sm mb-4 cursor-pointer select-none",
+              "before:content-['▼_'] before:inline-block before:transition-transform",
+              collapsed.status && "before:-rotate-90"
+            )}
+            onClick={() => toggleCollapse('status')}
+            aria-label="Toggle System Status section"
+          >
             GET /api/system/status
           </div>
-          <div className={styles.collapsibleContent}>
-            <button onClick={getSystemStatus}>Get Status</button>
-            <div id="statusResult" className={styles.jsonViewerContainer}>
+          <div className={cn("overflow-hidden", collapsed.status && "hidden")}>
+            <Button onClick={getSystemStatus} className="bg-neutral-800 hover:bg-neutral-700">Get Status</Button>
+            <div className="max-h-96 overflow-auto border border-neutral-300 rounded bg-neutral-50 p-2.5 mt-2.5">
               {results.statusResult && <JsonViewer data={results.statusResult} resultId="statusResult" />}
             </div>
             {results.statusResult && !results.statusResult.error && (
-              <div style={{ marginTop: '10px', fontSize: '12px', color: '#666' }}>
+              <div className="mt-2.5 text-xs text-neutral-600">
                 <div><strong>Claude Version:</strong> {results.statusResult.claudeVersion}</div>
                 <div><strong>Claude Path:</strong> {results.statusResult.claudePath}</div>
                 <div><strong>Config Path:</strong> {results.statusResult.configPath}</div>
@@ -590,59 +608,73 @@ function InspectorApp() {
         </div>
 
         {/* Preferences */}
-        <div className={styles.section}>
-          <div className={`${styles.endpoint} ${styles.collapsible} ${collapsed.preferences ? styles.collapsed : ''}`} onClick={() => toggleCollapse('preferences')}>
+        <div className="bg-white border-t border-b border-neutral-300 p-4 mb-0">
+          <div 
+            className={cn(
+              "font-bold text-blue-600 text-sm mb-4 cursor-pointer select-none",
+              "before:content-['▼_'] before:inline-block before:transition-transform",
+              collapsed.preferences && "before:-rotate-90"
+            )}
+            onClick={() => toggleCollapse('preferences')}
+            aria-label="Toggle Preferences section"
+          >
             GET/PUT /api/preferences
           </div>
-          <div className={styles.collapsibleContent}>
-            <button onClick={getPreferences}>Get Preferences</button>
-            <div id="preferencesGetResult" className={styles.jsonViewerContainer}>
+          <div className={cn("overflow-hidden", collapsed.preferences && "hidden")}>
+            <Button onClick={getPreferences} className="bg-neutral-800 hover:bg-neutral-700">Get Preferences</Button>
+            <div className="max-h-96 overflow-auto border border-neutral-300 rounded bg-neutral-50 p-2.5 mt-2.5">
               {results.preferencesGetResult && <JsonViewer data={results.preferencesGetResult} resultId="preferencesGetResult" />}
             </div>
             
-            <div style={{ marginTop: '15px', borderTop: '1px solid #333', paddingTop: '15px' }}>
-              <h4 style={{ margin: '0 0 10px 0', fontSize: '14px' }}>Update Preferences</h4>
+            <div className="mt-4 border-t border-neutral-300 pt-4">
+              <h4 className="m-0 mb-2.5 text-sm">Update Preferences</h4>
               
-              <div className={styles.fieldGroup}>
-                <div className={styles.fieldLabel}>Color Scheme</div>
-                <select value={preferencesColorScheme} onChange={(e) => setPreferencesColorScheme(e.target.value)}>
-                  <option value="system">System</option>
-                  <option value="light">Light</option>
-                  <option value="dark">Dark</option>
-                </select>
+              <div className="my-2.5 p-2.5 bg-neutral-50 rounded">
+                <Label className="font-bold text-neutral-600 text-xs uppercase mb-1" htmlFor="colorScheme">Color Scheme</Label>
+                <Select value={preferencesColorScheme} onValueChange={setPreferencesColorScheme}>
+                  <SelectTrigger id="colorScheme" className="font-mono">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="system">System</SelectItem>
+                    <SelectItem value="light">Light</SelectItem>
+                    <SelectItem value="dark">Dark</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               
-              <div className={styles.fieldGroup}>
-                <div className={styles.fieldLabel}>Language</div>
-                <input type="text" value={preferencesLanguage} onChange={(e) => setPreferencesLanguage(e.target.value)} placeholder="en" />
+              <div className="my-2.5 p-2.5 bg-neutral-50 rounded">
+                <Label className="font-bold text-neutral-600 text-xs uppercase mb-1" htmlFor="language">Language</Label>
+                <Input id="language" type="text" value={preferencesLanguage} onChange={(e) => setPreferencesLanguage(e.target.value)} placeholder="en" className="font-mono" />
               </div>
               
-              <div className={styles.fieldGroup}>
-                <div className={styles.inlineFields}>
-                  <div>
-                    <input 
-                      type="checkbox" 
-                      id="notificationsEnabled" 
-                      checked={preferencesNotificationsEnabled} 
-                      onChange={(e) => setPreferencesNotificationsEnabled(e.target.checked)} 
-                    />
-                    <label htmlFor="notificationsEnabled">Enable Notifications</label>
-                  </div>
+              <div className="my-2.5 p-2.5 bg-neutral-50 rounded">
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="notificationsEnabled" 
+                    checked={preferencesNotificationsEnabled} 
+                    onCheckedChange={(checked) => setPreferencesNotificationsEnabled(checked as boolean)} 
+                  />
+                  <Label htmlFor="notificationsEnabled" className="text-sm cursor-pointer">Enable Notifications</Label>
                 </div>
               </div>
               
-              <div className={styles.fieldGroup}>
-                <div className={styles.fieldLabel}>Ntfy URL <span className={styles.optional}>(optional)</span></div>
-                <input 
+              <div className="my-2.5 p-2.5 bg-neutral-50 rounded">
+                <Label className="font-bold text-neutral-600 text-xs uppercase mb-1" htmlFor="ntfyUrl">
+                  Ntfy URL <span className="text-neutral-400 text-[10px]">(optional)</span>
+                </Label>
+                <Input 
+                  id="ntfyUrl"
                   type="text" 
                   value={preferencesNtfyUrl} 
                   onChange={(e) => setPreferencesNtfyUrl(e.target.value)} 
                   placeholder="https://ntfy.sh" 
+                  className="font-mono"
                 />
               </div>
               
-              <button onClick={updatePreferences}>Update Preferences</button>
-              <div id="preferencesUpdateResult" className={styles.jsonViewerContainer}>
+              <Button onClick={updatePreferences} className="bg-neutral-800 hover:bg-neutral-700">Update Preferences</Button>
+              <div className="max-h-96 overflow-auto border border-neutral-300 rounded bg-neutral-50 p-2.5 mt-2.5">
                 {results.preferencesUpdateResult && <JsonViewer data={results.preferencesUpdateResult} resultId="preferencesUpdateResult" />}
               </div>
             </div>
@@ -650,22 +682,30 @@ function InspectorApp() {
         </div>
 
         {/* Working Directories */}
-        <div className={styles.section}>
-          <div className={`${styles.endpoint} ${styles.collapsible} ${collapsed.workingDirs ? styles.collapsed : ''}`} onClick={() => toggleCollapse('workingDirs')}>
+        <div className="bg-white border-t border-b border-neutral-300 p-4 mb-0">
+          <div 
+            className={cn(
+              "font-bold text-blue-600 text-sm mb-4 cursor-pointer select-none",
+              "before:content-['▼_'] before:inline-block before:transition-transform",
+              collapsed.workingDirs && "before:-rotate-90"
+            )}
+            onClick={() => toggleCollapse('workingDirs')}
+            aria-label="Toggle Working Directories section"
+          >
             GET /api/working-directories
           </div>
-          <div className={styles.collapsibleContent}>
-            <button onClick={getWorkingDirectories}>Get Working Directories</button>
-            <div id="workingDirsResult" className={styles.jsonViewerContainer}>
+          <div className={cn("overflow-hidden", collapsed.workingDirs && "hidden")}>
+            <Button onClick={getWorkingDirectories} className="bg-neutral-800 hover:bg-neutral-700">Get Working Directories</Button>
+            <div className="max-h-96 overflow-auto border border-neutral-300 rounded bg-neutral-50 p-2.5 mt-2.5">
               {results.workingDirsResult && <JsonViewer data={results.workingDirsResult} resultId="workingDirsResult" />}
             </div>
             {workingDirectories.length > 0 && (
-              <div className={styles.workingDirsList} style={{ marginTop: '10px' }}>
-                <h4 style={{ margin: '5px 0' }}>Quick Select:</h4>
+              <div className="mt-2.5">
+                <h4 className="my-1">Quick Select:</h4>
                 {workingDirectories.map((dir: any, index: number) => (
-                  <div key={index} style={{ marginBottom: '5px' }}>
-                    <button 
-                      style={{ fontSize: '12px', padding: '2px 5px', marginRight: '5px' }}
+                  <div key={index} className="mb-1">
+                    <Button 
+                      className="text-xs py-0.5 px-1 mr-1 h-auto bg-neutral-800 hover:bg-neutral-700"
                       onClick={() => {
                         setWorkingDir(dir.path);
                         setListPath(dir.path);
@@ -673,8 +713,8 @@ function InspectorApp() {
                       title={dir.path}
                     >
                       {dir.shortname}
-                    </button>
-                    <span style={{ fontSize: '11px', color: '#666' }}>
+                    </Button>
+                    <span className="text-[11px] text-neutral-600">
                       ({dir.conversationCount} convs, {new Date(dir.lastDate).toLocaleDateString()})
                     </span>
                   </div>
@@ -685,126 +725,204 @@ function InspectorApp() {
         </div>
 
         {/* Commands API */}
-        <div className={styles.section}>
-          <div className={`${styles.endpoint} ${styles.collapsible} ${collapsed.commands ? styles.collapsed : ''}`} onClick={() => toggleCollapse('commands')}>
+        <div className="bg-white border-t border-b border-neutral-300 p-4 mb-0">
+          <div 
+            className={cn(
+              "font-bold text-blue-600 text-sm mb-4 cursor-pointer select-none",
+              "before:content-['▼_'] before:inline-block before:transition-transform",
+              collapsed.commands && "before:-rotate-90"
+            )}
+            onClick={() => toggleCollapse('commands')}
+            aria-label="Toggle Commands API section"
+          >
             GET /api/system/commands
           </div>
-          <div className={styles.collapsibleContent}>
-            <div className={styles.fieldGroup}>
-              <div className={styles.fieldLabel}>Working Directory <span className={styles.optional}>(optional)</span></div>
-              <input type="text" value={commandsWorkingDirectory} onChange={(e) => setCommandsWorkingDirectory(e.target.value)} placeholder="/path/to/working/directory" />
+          <div className={cn("overflow-hidden", collapsed.commands && "hidden")}>
+            <div className="my-2.5 p-2.5 bg-neutral-50 rounded">
+              <Label className="font-bold text-neutral-600 text-xs uppercase mb-1" htmlFor="commandsWorkingDir">
+                Working Directory <span className="text-neutral-400 text-[10px]">(optional)</span>
+              </Label>
+              <Input id="commandsWorkingDir" type="text" value={commandsWorkingDirectory} onChange={(e) => setCommandsWorkingDirectory(e.target.value)} placeholder="/path/to/working/directory" className="font-mono" />
             </div>
-            <button onClick={getCommands}>Get Commands</button>
-            <div id="commandsResult" className={styles.jsonViewerContainer}>
+            <Button onClick={getCommands} className="bg-neutral-800 hover:bg-neutral-700">Get Commands</Button>
+            <div className="max-h-96 overflow-auto border border-neutral-300 rounded bg-neutral-50 p-2.5 mt-2.5">
               {results.commandsResult && <JsonViewer data={results.commandsResult} resultId="commandsResult" />}
             </div>
           </div>
         </div>
         
         {/* Start Conversation */}
-        <div className={styles.section}>
-          <div className={`${styles.endpoint} ${styles.collapsible} ${collapsed.start ? styles.collapsed : ''}`} onClick={() => toggleCollapse('start')}>
+        <div className="bg-white border-t border-b border-neutral-300 p-4 mb-0">
+          <div 
+            className={cn(
+              "font-bold text-blue-600 text-sm mb-4 cursor-pointer select-none",
+              "before:content-['▼_'] before:inline-block before:transition-transform",
+              collapsed.start && "before:-rotate-90"
+            )}
+            onClick={() => toggleCollapse('start')}
+            aria-label="Toggle Start Conversation section"
+          >
             POST /api/conversations/start
           </div>
-          <div className={styles.collapsibleContent}>
-            <div className={styles.fieldGroup}>
-              <div className={styles.fieldLabel}>Working Directory <span style={{ color: 'red' }}>*</span></div>
-              <input type="text" value={workingDir} onChange={(e) => setWorkingDir(e.target.value)} placeholder="/Users/..." />
+          <div className={cn("overflow-hidden", collapsed.start && "hidden")}>
+            <div className="my-2.5 p-2.5 bg-neutral-50 rounded">
+              <Label className="font-bold text-neutral-600 text-xs uppercase mb-1" htmlFor="workingDir">
+                Working Directory <span className="text-red-500">*</span>
+              </Label>
+              <Input id="workingDir" type="text" value={workingDir} onChange={(e) => setWorkingDir(e.target.value)} placeholder="/Users/..." className="font-mono" />
             </div>
-            <div className={styles.fieldGroup}>
-              <div className={styles.fieldLabel}>Initial Prompt <span style={{ color: 'red' }}>*</span></div>
-              <textarea value={initialPrompt} onChange={(e) => setInitialPrompt(e.target.value)} rows={3} placeholder="Your prompt here..." />
+            <div className="my-2.5 p-2.5 bg-neutral-50 rounded">
+              <Label className="font-bold text-neutral-600 text-xs uppercase mb-1" htmlFor="initialPrompt">
+                Initial Prompt <span className="text-red-500">*</span>
+              </Label>
+              <Textarea id="initialPrompt" value={initialPrompt} onChange={(e) => setInitialPrompt(e.target.value)} rows={3} placeholder="Your prompt here..." className="font-mono" />
             </div>
-            <div className={styles.fieldGroup}>
-              <div className={styles.fieldLabel}>Model <span className={styles.optional}>(optional)</span></div>
-              <select value={model} onChange={(e) => setModel(e.target.value)}>
-                <option value="">Default</option>
-                <option value="claude-3-opus-20240229">Claude 3 Opus</option>
-                <option value="claude-3-sonnet-20240229">Claude 3 Sonnet</option>
-                <option value="claude-3-haiku-20240307">Claude 3 Haiku</option>
-                <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet</option>
-              </select>
+            <div className="my-2.5 p-2.5 bg-neutral-50 rounded">
+              <Label className="font-bold text-neutral-600 text-xs uppercase mb-1" htmlFor="model">
+                Model <span className="text-neutral-400 text-[10px]">(optional)</span>
+              </Label>
+              <Select value={model} onValueChange={setModel}>
+                <SelectTrigger id="model" className="font-mono">
+                  <SelectValue placeholder="Default" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Default</SelectItem>
+                  <SelectItem value="claude-3-opus-20240229">Claude 3 Opus</SelectItem>
+                  <SelectItem value="claude-3-sonnet-20240229">Claude 3 Sonnet</SelectItem>
+                  <SelectItem value="claude-3-haiku-20240307">Claude 3 Haiku</SelectItem>
+                  <SelectItem value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <div className={styles.fieldGroup}>
-              <div className={styles.fieldLabel}>System Prompt <span className={styles.optional}>(optional)</span></div>
-              <textarea value={systemPrompt} onChange={(e) => setSystemPrompt(e.target.value)} rows={2} placeholder="System prompt..." />
+            <div className="my-2.5 p-2.5 bg-neutral-50 rounded">
+              <Label className="font-bold text-neutral-600 text-xs uppercase mb-1" htmlFor="systemPrompt">
+                System Prompt <span className="text-neutral-400 text-[10px]">(optional)</span>
+              </Label>
+              <Textarea id="systemPrompt" value={systemPrompt} onChange={(e) => setSystemPrompt(e.target.value)} rows={2} placeholder="System prompt..." className="font-mono" />
             </div>
-            <div className={styles.fieldGroup}>
-              <div className={styles.fieldLabel}>Claude Executable Path <span className={styles.optional}>(optional)</span></div>
-              <input type="text" value={claudeExecutablePath} onChange={(e) => setClaudeExecutablePath(e.target.value)} placeholder="/usr/local/bin/claude" />
+            <div className="my-2.5 p-2.5 bg-neutral-50 rounded">
+              <Label className="font-bold text-neutral-600 text-xs uppercase mb-1" htmlFor="claudeExecutablePath">
+                Claude Executable Path <span className="text-neutral-400 text-[10px]">(optional)</span>
+              </Label>
+              <Input id="claudeExecutablePath" type="text" value={claudeExecutablePath} onChange={(e) => setClaudeExecutablePath(e.target.value)} placeholder="/usr/local/bin/claude" className="font-mono" />
             </div>
-            <div className={styles.fieldGroup}>
-              <div className={styles.fieldLabel}>Permission Mode <span className={styles.optional}>(optional)</span></div>
-              <select value={permissionMode} onChange={(e) => setPermissionMode(e.target.value)}>
-                <option value="">Default</option>
-                <option value="default">default</option>
-                <option value="acceptEdits">acceptEdits</option>
-                <option value="bypassPermissions">bypassPermissions</option>
-                <option value="plan">plan</option>
-              </select>
+            <div className="my-2.5 p-2.5 bg-neutral-50 rounded">
+              <Label className="font-bold text-neutral-600 text-xs uppercase mb-1" htmlFor="permissionMode">
+                Permission Mode <span className="text-neutral-400 text-[10px]">(optional)</span>
+              </Label>
+              <Select value={permissionMode} onValueChange={setPermissionMode}>
+                <SelectTrigger id="permissionMode" className="font-mono">
+                  <SelectValue placeholder="Default" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Default</SelectItem>
+                  <SelectItem value="default">default</SelectItem>
+                  <SelectItem value="acceptEdits">acceptEdits</SelectItem>
+                  <SelectItem value="bypassPermissions">bypassPermissions</SelectItem>
+                  <SelectItem value="plan">plan</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <button onClick={startConversation}>Start Conversation</button>
-            <div id="startResult" className={styles.jsonViewerContainer}>
+            <Button onClick={startConversation} className="bg-neutral-800 hover:bg-neutral-700">Start Conversation</Button>
+            <div className="max-h-96 overflow-auto border border-neutral-300 rounded bg-neutral-50 p-2.5 mt-2.5">
               {results.startResult && <JsonViewer data={results.startResult} resultId="startResult" />}
             </div>
           </div>
         </div>
         
         {/* Stop Conversation */}
-        <div className={styles.section}>
-          <div className={`${styles.endpoint} ${styles.collapsible} ${collapsed.stop ? styles.collapsed : ''}`} onClick={() => toggleCollapse('stop')}>
+        <div className="bg-white border-t border-b border-neutral-300 p-4 mb-0">
+          <div 
+            className={cn(
+              "font-bold text-blue-600 text-sm mb-4 cursor-pointer select-none",
+              "before:content-['▼_'] before:inline-block before:transition-transform",
+              collapsed.stop && "before:-rotate-90"
+            )}
+            onClick={() => toggleCollapse('stop')}
+            aria-label="Toggle Stop Conversation section"
+          >
             POST /api/conversations/:streamingId/stop
           </div>
-          <div className={styles.collapsibleContent}>
-            <div className={styles.fieldGroup}>
-              <div className={styles.fieldLabel}>Streaming ID <span style={{ color: 'red' }}>*</span></div>
-              <input type="text" value={stopStreamingId} onChange={(e) => setStopStreamingId(e.target.value)} placeholder="streaming-id" />
+          <div className={cn("overflow-hidden", collapsed.stop && "hidden")}>
+            <div className="my-2.5 p-2.5 bg-neutral-50 rounded">
+              <Label className="font-bold text-neutral-600 text-xs uppercase mb-1" htmlFor="stopStreamingId">
+                Streaming ID <span className="text-red-500">*</span>
+              </Label>
+              <Input id="stopStreamingId" type="text" value={stopStreamingId} onChange={(e) => setStopStreamingId(e.target.value)} placeholder="streaming-id" className="font-mono" />
             </div>
-            <button onClick={stopConversation}>Stop Conversation</button>
-            <div id="stopResult" className={styles.jsonViewerContainer}>
+            <Button onClick={stopConversation} className="bg-neutral-800 hover:bg-neutral-700">Stop Conversation</Button>
+            <div className="max-h-96 overflow-auto border border-neutral-300 rounded bg-neutral-50 p-2.5 mt-2.5">
               {results.stopResult && <JsonViewer data={results.stopResult} resultId="stopResult" />}
             </div>
           </div>
         </div>
         
         {/* List Conversations */}
-        <div className={styles.section}>
-          <div className={`${styles.endpoint} ${styles.collapsible} ${collapsed.list ? styles.collapsed : ''}`} onClick={() => toggleCollapse('list')}>
+        <div className="bg-white border-t border-b border-neutral-300 p-4 mb-0">
+          <div 
+            className={cn(
+              "font-bold text-blue-600 text-sm mb-4 cursor-pointer select-none",
+              "before:content-['▼_'] before:inline-block before:transition-transform",
+              collapsed.list && "before:-rotate-90"
+            )}
+            onClick={() => toggleCollapse('list')}
+            aria-label="Toggle List Conversations section"
+          >
             GET /api/conversations
           </div>
-          <div className={styles.collapsibleContent}>
-            <div className={styles.fieldGroup}>
-              <div className={styles.inlineFields}>
-                <div>
-                  <div className={styles.fieldLabel}>Limit <span className={styles.optional}>(optional)</span></div>
-                  <input type="number" value={sidebarConversationsLimit} onChange={(e) => setSidebarConversationsLimit(e.target.value)} placeholder="20" />
+          <div className={cn("overflow-hidden", collapsed.list && "hidden")}>
+            <div className="my-2.5 p-2.5 bg-neutral-50 rounded">
+              <div className="flex gap-2.5">
+                <div className="flex-1">
+                  <Label className="font-bold text-neutral-600 text-xs uppercase mb-1" htmlFor="conversationsLimit">
+                    Limit <span className="text-neutral-400 text-[10px]">(optional)</span>
+                  </Label>
+                  <Input id="conversationsLimit" type="number" value={sidebarConversationsLimit} onChange={(e) => setSidebarConversationsLimit(e.target.value)} placeholder="20" className="font-mono" />
                 </div>
-                <div>
-                  <div className={styles.fieldLabel}>Offset <span className={styles.optional}>(optional)</span></div>
-                  <input type="number" value={sidebarConversationsOffset} onChange={(e) => setSidebarConversationsOffset(e.target.value)} placeholder="0" />
+                <div className="flex-1">
+                  <Label className="font-bold text-neutral-600 text-xs uppercase mb-1" htmlFor="conversationsOffset">
+                    Offset <span className="text-neutral-400 text-[10px]">(optional)</span>
+                  </Label>
+                  <Input id="conversationsOffset" type="number" value={sidebarConversationsOffset} onChange={(e) => setSidebarConversationsOffset(e.target.value)} placeholder="0" className="font-mono" />
                 </div>
-                <div>
-                  <div className={styles.fieldLabel}>Project Path <span className={styles.optional}>(optional)</span></div>
-                  <input type="text" value={sidebarConversationsProjectPath} onChange={(e) => setSidebarConversationsProjectPath(e.target.value)} placeholder="/path/to/project" />
+                <div className="flex-1">
+                  <Label className="font-bold text-neutral-600 text-xs uppercase mb-1" htmlFor="conversationsProjectPath">
+                    Project Path <span className="text-neutral-400 text-[10px]">(optional)</span>
+                  </Label>
+                  <Input id="conversationsProjectPath" type="text" value={sidebarConversationsProjectPath} onChange={(e) => setSidebarConversationsProjectPath(e.target.value)} placeholder="/path/to/project" className="font-mono" />
                 </div>
               </div>
             </div>
-            <button onClick={listConversationsSidebar}>List Conversations</button>
-            <div id="sidebarConversationsResult" className={styles.jsonViewerContainer}>
+            <Button onClick={listConversationsSidebar} className="bg-neutral-800 hover:bg-neutral-700">List Conversations</Button>
+            <div className="max-h-96 overflow-auto border border-neutral-300 rounded bg-neutral-50 p-2.5 mt-2.5">
               {results.sidebarConversationsResult && <JsonViewer data={results.sidebarConversationsResult} resultId="sidebarConversationsResult" />}
             </div>
           </div>
         </div>
         
         {/* Update Session (includes rename) */}
-        <div className={styles.section}>
-          <div className={`${styles.endpoint} ${styles.collapsible} ${collapsed.rename ? styles.collapsed : ''}`} onClick={() => toggleCollapse('rename')}>
+        <div className="bg-white border-t border-b border-neutral-300 p-4 mb-0">
+          <div 
+            className={cn(
+              "font-bold text-blue-600 text-sm mb-4 cursor-pointer select-none",
+              "before:content-['▼_'] before:inline-block before:transition-transform",
+              collapsed.rename && "before:-rotate-90"
+            )}
+            onClick={() => toggleCollapse('rename')}
+            aria-label="Toggle Update Session section"
+          >
             PUT /api/conversations/:sessionId/update
           </div>
-          <div className={styles.collapsibleContent}>
-            <div className={styles.fieldGroup}>
-              <div className={styles.fieldLabel}>Session ID <span style={{ color: 'red' }}>*</span></div>
-              <select value={renameSessionId} onChange={(e) => setRenameSessionId(e.target.value)} style={{ marginBottom: 5 }}>
+          <div className={cn("overflow-hidden", collapsed.rename && "hidden")}>
+            <div className="my-2.5 p-2.5 bg-neutral-50 rounded">
+              <Label className="font-bold text-neutral-600 text-xs uppercase mb-1" htmlFor="renameSessionId">
+                Session ID <span className="text-red-500">*</span>
+              </Label>
+              <select 
+                value={renameSessionId} 
+                onChange={(e) => setRenameSessionId(e.target.value)} 
+                className="font-mono block my-1 p-2 w-full box-border border border-neutral-300 rounded bg-white"
+              >
                 <option value="">Select a session...</option>
                 {availableSessions.map(session => {
                   const summary = session.summary || 'No summary';
@@ -827,95 +945,138 @@ function InspectorApp() {
                   );
                 })}
               </select>
-              <input type="text" value={renameSessionId} onChange={(e) => setRenameSessionId(e.target.value)} placeholder="claude-session-id or select from dropdown" />
+              <Input type="text" value={renameSessionId} onChange={(e) => setRenameSessionId(e.target.value)} placeholder="claude-session-id or select from dropdown" className="font-mono" />
             </div>
-            <div className={styles.fieldGroup}>
-              <div className={styles.fieldLabel}>Custom Name <span className={styles.optional}>(empty to clear)</span></div>
-              <input type="text" value={renameCustomName} onChange={(e) => setRenameCustomName(e.target.value)} placeholder="My Project Discussion" maxLength={200} />
-              <div style={{ fontSize: '12px', color: '#666', marginTop: '2px' }}>
+            <div className="my-2.5 p-2.5 bg-neutral-50 rounded">
+              <Label className="font-bold text-neutral-600 text-xs uppercase mb-1" htmlFor="renameCustomName">
+                Custom Name <span className="text-neutral-400 text-[10px]">(empty to clear)</span>
+              </Label>
+              <Input id="renameCustomName" type="text" value={renameCustomName} onChange={(e) => setRenameCustomName(e.target.value)} placeholder="My Project Discussion" maxLength={200} className="font-mono" />
+              <div className="text-xs text-neutral-600 mt-0.5">
                 {renameCustomName.length}/200 characters
               </div>
             </div>
-            <div className={styles.fieldGroup}>
-              <div className={styles.inlineFields}>
-                <div>
-                  <input type="checkbox" id="sessionPinned" checked={sessionPinned} onChange={(e) => setSessionPinned(e.target.checked)} />
-                  <label htmlFor="sessionPinned">Pinned</label>
+            <div className="my-2.5 p-2.5 bg-neutral-50 rounded">
+              <div className="flex gap-4">
+                <div className="flex items-center space-x-2">
+                  <Checkbox id="sessionPinned" checked={sessionPinned} onCheckedChange={(checked) => setSessionPinned(checked as boolean)} />
+                  <Label htmlFor="sessionPinned" className="text-sm cursor-pointer">Pinned</Label>
                 </div>
-                <div>
-                  <input type="checkbox" id="sessionArchived" checked={sessionArchived} onChange={(e) => setSessionArchived(e.target.checked)} />
-                  <label htmlFor="sessionArchived">Archived</label>
+                <div className="flex items-center space-x-2">
+                  <Checkbox id="sessionArchived" checked={sessionArchived} onCheckedChange={(checked) => setSessionArchived(checked as boolean)} />
+                  <Label htmlFor="sessionArchived" className="text-sm cursor-pointer">Archived</Label>
                 </div>
               </div>
             </div>
-            <div className={styles.fieldGroup}>
-              <div className={styles.fieldLabel}>Continuation Session ID <span className={styles.optional}>(optional)</span></div>
-              <input type="text" value={continuationSessionId} onChange={(e) => setContinuationSessionId(e.target.value)} placeholder="claude-session-id" />
+            <div className="my-2.5 p-2.5 bg-neutral-50 rounded">
+              <Label className="font-bold text-neutral-600 text-xs uppercase mb-1" htmlFor="continuationSessionId">
+                Continuation Session ID <span className="text-neutral-400 text-[10px]">(optional)</span>
+              </Label>
+              <Input id="continuationSessionId" type="text" value={continuationSessionId} onChange={(e) => setContinuationSessionId(e.target.value)} placeholder="claude-session-id" className="font-mono" />
             </div>
-            <div className={styles.fieldGroup}>
-              <div className={styles.fieldLabel}>Initial Commit HEAD <span className={styles.optional}>(optional)</span></div>
-              <input type="text" value={initialCommitHead} onChange={(e) => setInitialCommitHead(e.target.value)} placeholder="git commit hash" />
+            <div className="my-2.5 p-2.5 bg-neutral-50 rounded">
+              <Label className="font-bold text-neutral-600 text-xs uppercase mb-1" htmlFor="initialCommitHead">
+                Initial Commit HEAD <span className="text-neutral-400 text-[10px]">(optional)</span>
+              </Label>
+              <Input id="initialCommitHead" type="text" value={initialCommitHead} onChange={(e) => setInitialCommitHead(e.target.value)} placeholder="git commit hash" className="font-mono" />
             </div>
-            <div className={styles.fieldGroup}>
-              <div className={styles.fieldLabel}>Permission Mode <span className={styles.optional}>(optional)</span></div>
-              <select value={sessionPermissionMode} onChange={(e) => setSessionPermissionMode(e.target.value)}>
-                <option value="">Keep current</option>
-                <option value="default">default</option>
-                <option value="acceptEdits">acceptEdits</option>
-                <option value="bypassPermissions">bypassPermissions</option>
-                <option value="plan">plan</option>
-              </select>
+            <div className="my-2.5 p-2.5 bg-neutral-50 rounded">
+              <Label className="font-bold text-neutral-600 text-xs uppercase mb-1" htmlFor="sessionPermissionMode">
+                Permission Mode <span className="text-neutral-400 text-[10px]">(optional)</span>
+              </Label>
+              <Select value={sessionPermissionMode} onValueChange={setSessionPermissionMode}>
+                <SelectTrigger id="sessionPermissionMode" className="font-mono">
+                  <SelectValue placeholder="Keep current" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Keep current</SelectItem>
+                  <SelectItem value="default">default</SelectItem>
+                  <SelectItem value="acceptEdits">acceptEdits</SelectItem>
+                  <SelectItem value="bypassPermissions">bypassPermissions</SelectItem>
+                  <SelectItem value="plan">plan</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <button onClick={renameSession}>Update Session</button>
-            <div id="renameResult" className={styles.jsonViewerContainer}>
+            <Button onClick={renameSession} className="bg-neutral-800 hover:bg-neutral-700">Update Session</Button>
+            <div className="max-h-96 overflow-auto border border-neutral-300 rounded bg-neutral-50 p-2.5 mt-2.5">
               {results.renameResult && <JsonViewer data={results.renameResult} resultId="renameResult" />}
             </div>
           </div>
         </div>
         
         {/* List Permissions */}
-        <div className={styles.section}>
-          <div className={`${styles.endpoint} ${styles.collapsible} ${collapsed.permissions ? styles.collapsed : ''}`} onClick={() => toggleCollapse('permissions')}>
+        <div className="bg-white border-t border-b border-neutral-300 p-4 mb-0">
+          <div 
+            className={cn(
+              "font-bold text-blue-600 text-sm mb-4 cursor-pointer select-none",
+              "before:content-['▼_'] before:inline-block before:transition-transform",
+              collapsed.permissions && "before:-rotate-90"
+            )}
+            onClick={() => toggleCollapse('permissions')}
+            aria-label="Toggle List Permissions section"
+          >
             GET /api/permissions
           </div>
-          <div className={styles.collapsibleContent}>
-            <div className={styles.fieldGroup}>
-              <div className={styles.inlineFields}>
-                <div>
-                  <div className={styles.fieldLabel}>Streaming ID <span className={styles.optional}>(optional)</span></div>
-                  <input type="text" value={permissionsStreamingId} onChange={(e) => setPermissionsStreamingId(e.target.value)} placeholder="streaming-id" />
+          <div className={cn("overflow-hidden", collapsed.permissions && "hidden")}>
+            <div className="my-2.5 p-2.5 bg-neutral-50 rounded">
+              <div className="flex gap-2.5">
+                <div className="flex-1">
+                  <Label className="font-bold text-neutral-600 text-xs uppercase mb-1" htmlFor="permissionsStreamingId">
+                    Streaming ID <span className="text-neutral-400 text-[10px]">(optional)</span>
+                  </Label>
+                  <Input id="permissionsStreamingId" type="text" value={permissionsStreamingId} onChange={(e) => setPermissionsStreamingId(e.target.value)} placeholder="streaming-id" className="font-mono" />
                 </div>
-                <div>
-                  <div className={styles.fieldLabel}>Status <span className={styles.optional}>(optional)</span></div>
-                  <select value={permissionsStatus} onChange={(e) => setPermissionsStatus(e.target.value)}>
-                    <option value="">All</option>
-                    <option value="pending">Pending</option>
-                    <option value="approved">Approved</option>
-                    <option value="denied">Denied</option>
-                  </select>
+                <div className="flex-1">
+                  <Label className="font-bold text-neutral-600 text-xs uppercase mb-1" htmlFor="permissionsStatus">
+                    Status <span className="text-neutral-400 text-[10px]">(optional)</span>
+                  </Label>
+                  <Select value={permissionsStatus} onValueChange={setPermissionsStatus}>
+                    <SelectTrigger id="permissionsStatus" className="font-mono">
+                      <SelectValue placeholder="All" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">All</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="approved">Approved</SelectItem>
+                      <SelectItem value="denied">Denied</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             </div>
-            <button onClick={listPermissions}>List Permissions</button>
-            <div id="permissionsResult" className={styles.jsonViewerContainer}>
+            <Button onClick={listPermissions} className="bg-neutral-800 hover:bg-neutral-700">List Permissions</Button>
+            <div className="max-h-96 overflow-auto border border-neutral-300 rounded bg-neutral-50 p-2.5 mt-2.5">
               {results.permissionsResult && <JsonViewer data={results.permissionsResult} resultId="permissionsResult" />}
             </div>
           </div>
         </div>
         
         {/* Permission Decision */}
-        <div className={styles.section}>
-          <div className={`${styles.endpoint} ${styles.collapsible} ${collapsed.permissionDecision ? styles.collapsed : ''}`} onClick={() => toggleCollapse('permissionDecision')}>
+        <div className="bg-white border-t border-b border-neutral-300 p-4 mb-0">
+          <div 
+            className={cn(
+              "font-bold text-blue-600 text-sm mb-4 cursor-pointer select-none",
+              "before:content-['▼_'] before:inline-block before:transition-transform",
+              collapsed.permissionDecision && "before:-rotate-90"
+            )}
+            onClick={() => toggleCollapse('permissionDecision')}
+            aria-label="Toggle Permission Decision section"
+          >
             POST /api/permissions/:requestId/decision
           </div>
-          <div className={styles.collapsibleContent}>
-            <div className={styles.fieldGroup}>
-              <div className={styles.fieldLabel}>Request ID <span style={{ color: 'red' }}>*</span></div>
-              <input type="text" value={permissionRequestId} onChange={(e) => setPermissionRequestId(e.target.value)} placeholder="permission-request-id" />
+          <div className={cn("overflow-hidden", collapsed.permissionDecision && "hidden")}>
+            <div className="my-2.5 p-2.5 bg-neutral-50 rounded">
+              <Label className="font-bold text-neutral-600 text-xs uppercase mb-1" htmlFor="permissionRequestId">
+                Request ID <span className="text-red-500">*</span>
+              </Label>
+              <Input id="permissionRequestId" type="text" value={permissionRequestId} onChange={(e) => setPermissionRequestId(e.target.value)} placeholder="permission-request-id" className="font-mono" />
             </div>
-            <div className={styles.fieldGroup}>
-              <div className={styles.fieldLabel}>Request Body <span style={{ color: 'red' }}>*</span></div>
-              <textarea 
+            <div className="my-2.5 p-2.5 bg-neutral-50 rounded">
+              <Label className="font-bold text-neutral-600 text-xs uppercase mb-1" htmlFor="permissionDecisionBody">
+                Request Body <span className="text-red-500">*</span>
+              </Label>
+              <Textarea 
+                id="permissionDecisionBody"
                 value={permissionDecisionBody} 
                 onChange={(e) => setPermissionDecisionBody(e.target.value)} 
                 rows={10} 
@@ -924,75 +1085,103 @@ function InspectorApp() {
                   modifiedInput: {},
                   denyReason: ''
                 }, null, 2)}
-                style={{ fontFamily: 'monospace', fontSize: '12px' }}
+                className="font-mono text-xs"
               />
             </div>
-            <button onClick={makePermissionDecision}>Make Decision</button>
-            <div id="permissionDecisionResult" className={styles.jsonViewerContainer}>
+            <Button onClick={makePermissionDecision} className="bg-neutral-800 hover:bg-neutral-700">Make Decision</Button>
+            <div className="max-h-96 overflow-auto border border-neutral-300 rounded bg-neutral-50 p-2.5 mt-2.5">
               {results.permissionDecisionResult && <JsonViewer data={results.permissionDecisionResult} resultId="permissionDecisionResult" />}
             </div>
           </div>
         </div>
 
         {/* List Directory */}
-        <div className={styles.section}>
-          <div className={`${styles.endpoint} ${styles.collapsible} ${collapsed.listDir ? styles.collapsed : ''}`} onClick={() => toggleCollapse('listDir')}>
+        <div className="bg-white border-t border-b border-neutral-300 p-4 mb-0">
+          <div 
+            className={cn(
+              "font-bold text-blue-600 text-sm mb-4 cursor-pointer select-none",
+              "before:content-['▼_'] before:inline-block before:transition-transform",
+              collapsed.listDir && "before:-rotate-90"
+            )}
+            onClick={() => toggleCollapse('listDir')}
+            aria-label="Toggle List Directory section"
+          >
             GET /api/filesystem/list
           </div>
-          <div className={styles.collapsibleContent}>
-            <div className={styles.fieldGroup}>
-              <div className={styles.fieldLabel}>Path <span style={{ color: 'red' }}>*</span></div>
-              <input type="text" value={listPath} onChange={(e) => setListPath(e.target.value)} placeholder="/absolute/path/to/directory" />
+          <div className={cn("overflow-hidden", collapsed.listDir && "hidden")}>
+            <div className="my-2.5 p-2.5 bg-neutral-50 rounded">
+              <Label className="font-bold text-neutral-600 text-xs uppercase mb-1" htmlFor="listPath">
+                Path <span className="text-red-500">*</span>
+              </Label>
+              <Input id="listPath" type="text" value={listPath} onChange={(e) => setListPath(e.target.value)} placeholder="/absolute/path/to/directory" className="font-mono" />
             </div>
-            <div className={styles.fieldGroup}>
-              <div className={styles.inlineFields}>
-                <div>
-                  <input type="checkbox" id="listRecursive" checked={listRecursive} onChange={(e) => setListRecursive(e.target.checked)} />
-                  <label htmlFor="listRecursive">Recursive</label>
+            <div className="my-2.5 p-2.5 bg-neutral-50 rounded">
+              <div className="flex gap-4">
+                <div className="flex items-center space-x-2">
+                  <Checkbox id="listRecursive" checked={listRecursive} onCheckedChange={(checked) => setListRecursive(checked as boolean)} />
+                  <Label htmlFor="listRecursive" className="text-sm cursor-pointer">Recursive</Label>
                 </div>
-                <div>
-                  <input type="checkbox" id="listRespectGitignore" checked={listRespectGitignore} onChange={(e) => setListRespectGitignore(e.target.checked)} />
-                  <label htmlFor="listRespectGitignore">Respect .gitignore</label>
+                <div className="flex items-center space-x-2">
+                  <Checkbox id="listRespectGitignore" checked={listRespectGitignore} onCheckedChange={(checked) => setListRespectGitignore(checked as boolean)} />
+                  <Label htmlFor="listRespectGitignore" className="text-sm cursor-pointer">Respect .gitignore</Label>
                 </div>
               </div>
             </div>
-            <button onClick={listDirectory}>List Directory</button>
-            <div id="listResult" className={styles.jsonViewerContainer}>
+            <Button onClick={listDirectory} className="bg-neutral-800 hover:bg-neutral-700">List Directory</Button>
+            <div className="max-h-96 overflow-auto border border-neutral-300 rounded bg-neutral-50 p-2.5 mt-2.5">
               {results.listResult && <JsonViewer data={results.listResult} resultId="listResult" />}
             </div>
           </div>
         </div>
 
         {/* Read File */}
-        <div className={styles.section}>
-          <div className={`${styles.endpoint} ${styles.collapsible} ${collapsed.readFile ? styles.collapsed : ''}`} onClick={() => toggleCollapse('readFile')}>
+        <div className="bg-white border-t border-b border-neutral-300 p-4 mb-0">
+          <div 
+            className={cn(
+              "font-bold text-blue-600 text-sm mb-4 cursor-pointer select-none",
+              "before:content-['▼_'] before:inline-block before:transition-transform",
+              collapsed.readFile && "before:-rotate-90"
+            )}
+            onClick={() => toggleCollapse('readFile')}
+            aria-label="Toggle Read File section"
+          >
             GET /api/filesystem/read
           </div>
-          <div className={styles.collapsibleContent}>
-            <div className={styles.fieldGroup}>
-              <div className={styles.fieldLabel}>Path <span style={{ color: 'red' }}>*</span></div>
-              <input type="text" value={readPath} onChange={(e) => setReadPath(e.target.value)} placeholder="/absolute/path/to/file.txt" />
+          <div className={cn("overflow-hidden", collapsed.readFile && "hidden")}>
+            <div className="my-2.5 p-2.5 bg-neutral-50 rounded">
+              <Label className="font-bold text-neutral-600 text-xs uppercase mb-1" htmlFor="readPath">
+                Path <span className="text-red-500">*</span>
+              </Label>
+              <Input id="readPath" type="text" value={readPath} onChange={(e) => setReadPath(e.target.value)} placeholder="/absolute/path/to/file.txt" className="font-mono" />
             </div>
-            <button onClick={readFile}>Read File</button>
-            <div id="readResult" className={styles.jsonViewerContainer}>
+            <Button onClick={readFile} className="bg-neutral-800 hover:bg-neutral-700">Read File</Button>
+            <div className="max-h-96 overflow-auto border border-neutral-300 rounded bg-neutral-50 p-2.5 mt-2.5">
               {results.readResult && <JsonViewer data={results.readResult} resultId="readResult" />}
             </div>
           </div>
         </div>
 
         {/* Bulk Operations */}
-        <div className={styles.section}>
-          <div className={`${styles.endpoint} ${styles.collapsible} ${collapsed.bulkOperations ? styles.collapsed : ''}`} onClick={() => toggleCollapse('bulkOperations')}>
+        <div className="bg-white border-t border-b border-neutral-300 p-4 mb-0">
+          <div 
+            className={cn(
+              "font-bold text-blue-600 text-sm mb-4 cursor-pointer select-none",
+              "before:content-['▼_'] before:inline-block before:transition-transform",
+              collapsed.bulkOperations && "before:-rotate-90"
+            )}
+            onClick={() => toggleCollapse('bulkOperations')}
+            aria-label="Toggle Bulk Operations section"
+          >
             Bulk Operations
           </div>
-          <div className={styles.collapsibleContent}>
-            <div style={{ marginBottom: '10px' }}>
-              <h4 style={{ margin: '5px 0' }}>Archive All Sessions</h4>
-              <p style={{ fontSize: '12px', color: '#666', margin: '5px 0' }}>
+          <div className={cn("overflow-hidden", collapsed.bulkOperations && "hidden")}>
+            <div className="mb-2.5">
+              <h4 className="my-1">Archive All Sessions</h4>
+              <p className="text-xs text-neutral-600 my-1">
                 Archive all non-archived sessions at once. This action cannot be undone.
               </p>
-              <button onClick={archiveAllSessions} style={{ background: '#e74c3c' }}>Archive All Sessions</button>
-              <div id="archiveAllResult" className={styles.jsonViewerContainer}>
+              <Button onClick={archiveAllSessions} className="bg-red-600 hover:bg-red-700">Archive All Sessions</Button>
+              <div className="max-h-96 overflow-auto border border-neutral-300 rounded bg-neutral-50 p-2.5 mt-2.5">
                 {results.archiveAllResult && <JsonViewer data={results.archiveAllResult} resultId="archiveAllResult" />}
               </div>
             </div>
@@ -1000,35 +1189,52 @@ function InspectorApp() {
         </div>
 
         {/* Gemini Health Check */}
-        <div className={styles.section}>
-          <div className={`${styles.endpoint} ${styles.collapsible} ${collapsed.geminiHealth ? styles.collapsed : ''}`} onClick={() => toggleCollapse('geminiHealth')}>
+        <div className="bg-white border-t border-b border-neutral-300 p-4 mb-0">
+          <div 
+            className={cn(
+              "font-bold text-blue-600 text-sm mb-4 cursor-pointer select-none",
+              "before:content-['▼_'] before:inline-block before:transition-transform",
+              collapsed.geminiHealth && "before:-rotate-90"
+            )}
+            onClick={() => toggleCollapse('geminiHealth')}
+            aria-label="Toggle Gemini Health Check section"
+          >
             GET /api/gemini/health
           </div>
-          <div className={styles.collapsibleContent}>
-            <button onClick={getGeminiHealth}>Check Gemini Health</button>
-            <div id="geminiHealthResult" className={styles.jsonViewerContainer}>
+          <div className={cn("overflow-hidden", collapsed.geminiHealth && "hidden")}>
+            <Button onClick={getGeminiHealth} className="bg-neutral-800 hover:bg-neutral-700">Check Gemini Health</Button>
+            <div className="max-h-96 overflow-auto border border-neutral-300 rounded bg-neutral-50 p-2.5 mt-2.5">
               {results.geminiHealthResult && <JsonViewer data={results.geminiHealthResult} resultId="geminiHealthResult" />}
             </div>
           </div>
         </div>
 
         {/* Gemini Transcribe */}
-        <div className={styles.section}>
-          <div className={`${styles.endpoint} ${styles.collapsible} ${collapsed.geminiTranscribe ? styles.collapsed : ''}`} onClick={() => toggleCollapse('geminiTranscribe')}>
+        <div className="bg-white border-t border-b border-neutral-300 p-4 mb-0">
+          <div 
+            className={cn(
+              "font-bold text-blue-600 text-sm mb-4 cursor-pointer select-none",
+              "before:content-['▼_'] before:inline-block before:transition-transform",
+              collapsed.geminiTranscribe && "before:-rotate-90"
+            )}
+            onClick={() => toggleCollapse('geminiTranscribe')}
+            aria-label="Toggle Gemini Transcribe section"
+          >
             POST /api/gemini/transcribe
           </div>
-          <div className={styles.collapsibleContent}>
-            <div className={styles.fieldGroup}>
-              <div className={styles.fieldLabel}>Audio File Upload</div>
-              <input type="file" accept="audio/*" onChange={handleFileChange} />
-              {geminiAudioFile && <div style={{ fontSize: '12px', color: '#666', marginTop: '2px' }}>Selected: {geminiAudioFile.name}</div>}
+          <div className={cn("overflow-hidden", collapsed.geminiTranscribe && "hidden")}>
+            <div className="my-2.5 p-2.5 bg-neutral-50 rounded">
+              <Label className="font-bold text-neutral-600 text-xs uppercase mb-1" htmlFor="audioFile">Audio File Upload</Label>
+              <Input id="audioFile" type="file" accept="audio/*" onChange={handleFileChange} className="font-mono" />
+              {geminiAudioFile && <div className="text-xs text-neutral-600 mt-0.5">Selected: {geminiAudioFile.name}</div>}
             </div>
-            <div style={{ margin: '10px 0', textAlign: 'center' }}>
-              <span style={{ color: '#666' }}>— OR —</span>
+            <div className="my-2.5 text-center">
+              <span className="text-neutral-600">— OR —</span>
             </div>
-            <div className={styles.fieldGroup}>
-              <div className={styles.fieldLabel}>Base64 Audio Data</div>
-              <textarea 
+            <div className="my-2.5 p-2.5 bg-neutral-50 rounded">
+              <Label className="font-bold text-neutral-600 text-xs uppercase mb-1" htmlFor="audioBase64">Base64 Audio Data</Label>
+              <Textarea 
+                id="audioBase64"
                 value={geminiAudioBase64} 
                 onChange={(e) => {
                   setGeminiAudioBase64(e.target.value);
@@ -1036,46 +1242,65 @@ function InspectorApp() {
                 }} 
                 rows={4} 
                 placeholder="Base64 encoded audio data..."
-                style={{ fontFamily: 'monospace', fontSize: '12px' }}
+                className="font-mono text-xs"
               />
             </div>
-            <div className={styles.fieldGroup}>
-              <div className={styles.fieldLabel}>MIME Type <span className={styles.optional}>(for base64)</span></div>
-              <select value={geminiMimeType} onChange={(e) => setGeminiMimeType(e.target.value)}>
-                <option value="audio/wav">audio/wav</option>
-                <option value="audio/mp3">audio/mp3</option>
-                <option value="audio/mpeg">audio/mpeg</option>
-                <option value="audio/ogg">audio/ogg</option>
-                <option value="audio/webm">audio/webm</option>
-              </select>
+            <div className="my-2.5 p-2.5 bg-neutral-50 rounded">
+              <Label className="font-bold text-neutral-600 text-xs uppercase mb-1" htmlFor="mimeType">
+                MIME Type <span className="text-neutral-400 text-[10px]">(for base64)</span>
+              </Label>
+              <Select value={geminiMimeType} onValueChange={setGeminiMimeType}>
+                <SelectTrigger id="mimeType" className="font-mono">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="audio/wav">audio/wav</SelectItem>
+                  <SelectItem value="audio/mp3">audio/mp3</SelectItem>
+                  <SelectItem value="audio/mpeg">audio/mpeg</SelectItem>
+                  <SelectItem value="audio/ogg">audio/ogg</SelectItem>
+                  <SelectItem value="audio/webm">audio/webm</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <button onClick={transcribeAudio}>Transcribe Audio</button>
-            <div id="geminiTranscribeResult" className={styles.jsonViewerContainer}>
+            <Button onClick={transcribeAudio} className="bg-neutral-800 hover:bg-neutral-700">Transcribe Audio</Button>
+            <div className="max-h-96 overflow-auto border border-neutral-300 rounded bg-neutral-50 p-2.5 mt-2.5">
               {results.geminiTranscribeResult && <JsonViewer data={results.geminiTranscribeResult} resultId="geminiTranscribeResult" />}
             </div>
           </div>
         </div>
 
         {/* Gemini Summarize */}
-        <div className={styles.section}>
-          <div className={`${styles.endpoint} ${styles.collapsible} ${collapsed.geminiSummarize ? styles.collapsed : ''}`} onClick={() => toggleCollapse('geminiSummarize')}>
+        <div className="bg-white border-t border-b border-neutral-300 p-4 mb-0">
+          <div 
+            className={cn(
+              "font-bold text-blue-600 text-sm mb-4 cursor-pointer select-none",
+              "before:content-['▼_'] before:inline-block before:transition-transform",
+              collapsed.geminiSummarize && "before:-rotate-90"
+            )}
+            onClick={() => toggleCollapse('geminiSummarize')}
+            aria-label="Toggle Gemini Summarize section"
+          >
             POST /api/gemini/summarize
           </div>
-          <div className={styles.collapsibleContent}>
-            <div className={styles.fieldGroup}>
-              <div className={styles.fieldLabel}>Text to Summarize <span style={{ color: 'red' }}>*</span></div>
-              <textarea 
+          <div className={cn("overflow-hidden", collapsed.geminiSummarize && "hidden")}>
+            <div className="my-2.5 p-2.5 bg-neutral-50 rounded">
+              <Label className="font-bold text-neutral-600 text-xs uppercase mb-1" htmlFor="textToSummarize">
+                Text to Summarize <span className="text-red-500">*</span>
+              </Label>
+              <Textarea 
+                id="textToSummarize"
                 value={geminiTextToSummarize} 
                 onChange={(e) => setGeminiTextToSummarize(e.target.value)} 
                 rows={8} 
                 placeholder="Enter text to summarize..."
+                className="font-mono"
               />
-              <div style={{ fontSize: '12px', color: '#666', marginTop: '2px' }}>
+              <div className="text-xs text-neutral-600 mt-0.5">
                 {geminiTextToSummarize.length} characters
               </div>
             </div>
-            <button onClick={summarizeText}>Summarize Text</button>
-            <div id="geminiSummarizeResult" className={styles.jsonViewerContainer}>
+            <Button onClick={summarizeText} className="bg-neutral-800 hover:bg-neutral-700">Summarize Text</Button>
+            <div className="max-h-96 overflow-auto border border-neutral-300 rounded bg-neutral-50 p-2.5 mt-2.5">
               {results.geminiSummarizeResult && <JsonViewer data={results.geminiSummarizeResult} resultId="geminiSummarizeResult" />}
             </div>
           </div>
@@ -1083,14 +1308,20 @@ function InspectorApp() {
       </div>
       
       {/* Main Content Area */}
-      <div className={styles.main}>
-        <div className={styles.mainContent}>
+      <div className="flex-1 flex flex-col overflow-hidden relative">
+        <div className="flex-1 overflow-y-auto p-0 box-border min-h-0">
           {/* Get Conversation Details */}
-          <div className={styles.section}>
-          <div className={styles.endpoint}>GET /api/conversations/:sessionId</div>
-          <div className={styles.fieldGroup}>
-            <div className={styles.fieldLabel}>Session ID <span style={{ color: 'red' }}>*</span></div>
-            <select value={detailSessionId} onChange={(e) => setDetailSessionId(e.target.value)} style={{ marginBottom: 5 }}>
+          <div className="bg-white border-t border-b border-neutral-300 p-4 mb-0">
+          <div className="font-bold text-blue-600 text-sm mb-4">GET /api/conversations/:sessionId</div>
+          <div className="my-2.5 p-2.5 bg-neutral-50 rounded">
+            <Label className="font-bold text-neutral-600 text-xs uppercase mb-1" htmlFor="detailSessionId">
+              Session ID <span className="text-red-500">*</span>
+            </Label>
+            <select 
+              value={detailSessionId} 
+              onChange={(e) => setDetailSessionId(e.target.value)} 
+              className="font-mono block my-1 p-2 w-full box-border border border-neutral-300 rounded bg-white mb-1"
+            >
               <option value="">Select a session...</option>
               {availableSessions.map(session => {
                 const summary = session.summary || 'No summary';
@@ -1106,26 +1337,30 @@ function InspectorApp() {
                 );
               })}
             </select>
-            <input type="text" value={detailSessionId} onChange={(e) => setDetailSessionId(e.target.value)} placeholder="claude-session-id or select from dropdown" />
+            <Input type="text" value={detailSessionId} onChange={(e) => setDetailSessionId(e.target.value)} placeholder="claude-session-id or select from dropdown" className="font-mono" />
           </div>
-          <button onClick={getConversationDetails}>Get Details</button>
-          <div id="detailsResult" className={styles.jsonViewerContainer}>
+          <Button onClick={getConversationDetails} className="bg-neutral-800 hover:bg-neutral-700">Get Details</Button>
+          <div className="max-h-96 overflow-auto border border-neutral-300 rounded bg-neutral-50 p-2.5 mt-2.5">
             {results.detailsResult && <JsonViewer data={results.detailsResult} resultId="detailsResult" />}
           </div>
         </div>
         
         {/* Stream */}
-        <div className={styles.section}>
-          <div className={styles.endpoint}>GET /api/stream/:streamingId</div>
-          <div className={styles.fieldGroup}>
-            <div className={styles.fieldLabel}>Streaming ID <span style={{ color: 'red' }}>*</span></div>
-            <input type="text" value={streamingId} onChange={(e) => setStreamingId(e.target.value)} placeholder="streaming-id" />
+        <div className="bg-white border-t border-b border-neutral-300 p-4 mb-0">
+          <div className="font-bold text-blue-600 text-sm mb-4">GET /api/stream/:streamingId</div>
+          <div className="my-2.5 p-2.5 bg-neutral-50 rounded">
+            <Label className="font-bold text-neutral-600 text-xs uppercase mb-1" htmlFor="streamingId">
+              Streaming ID <span className="text-red-500">*</span>
+            </Label>
+            <Input id="streamingId" type="text" value={streamingId} onChange={(e) => setStreamingId(e.target.value)} placeholder="streaming-id" className="font-mono" />
           </div>
-          <button onClick={() => startStream()}>Start Stream</button>
-          <button onClick={stopStream}>Stop Stream</button>
-          <button onClick={clearStream}>Clear</button>
-          <button onClick={(e) => copyStreamToClipboard(e.currentTarget)}>Copy Stream</button>
-          <div id="streamResult" className={styles.streamContainer} ref={streamResultRef}>
+          <div className="flex gap-2">
+            <Button onClick={() => startStream()} className="bg-neutral-800 hover:bg-neutral-700">Start Stream</Button>
+            <Button onClick={stopStream} className="bg-neutral-800 hover:bg-neutral-700">Stop Stream</Button>
+            <Button onClick={clearStream} className="bg-neutral-800 hover:bg-neutral-700">Clear</Button>
+            <Button onClick={(e) => copyStreamToClipboard(e.currentTarget)} className="bg-neutral-800 hover:bg-neutral-700">Copy Stream</Button>
+          </div>
+          <div className="bg-neutral-900 text-neutral-300 p-2.5 rounded mt-2.5 max-h-96 overflow-auto text-xs leading-relaxed" ref={streamResultRef}>
             {streamResult}
           </div>
         </div>
