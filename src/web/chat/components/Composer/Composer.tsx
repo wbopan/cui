@@ -225,7 +225,6 @@ interface AutocompleteDropdownProps {
   isOpen: boolean;
   focusedIndex: number;
   type: 'file' | 'command';
-  triggerRef: React.RefObject<HTMLElement>;
 }
 
 function AutocompleteDropdown({
@@ -235,7 +234,6 @@ function AutocompleteDropdown({
   isOpen,
   focusedIndex,
   type,
-  triggerRef,
 }: AutocompleteDropdownProps) {
   if (!isOpen) return null;
 
@@ -268,10 +266,9 @@ function AutocompleteDropdown({
         if (!open) onClose();
       }}
       showFilterInput={false}
-      maxVisibleItems={5}
+      maxVisibleItems={-1}
       initialFocusedIndex={focusedIndex}
       visualFocusOnly={true}
-      triggerElementRef={triggerRef}
       renderOption={type === 'command' ? (option) => (
         <div className="flex flex-col items-start gap-0.5 w-full">
           <span className="text-sm">{option.label}</span>
@@ -281,7 +278,7 @@ function AutocompleteDropdown({
         </div>
       ) : undefined}
       renderTrigger={() => (
-        <div className="w-px h-px pointer-events-none opacity-0" />
+        <div className="w-0 h-0 pointer-events-none opacity-0" />
       )}
     />
   );
@@ -350,6 +347,7 @@ export const Composer = forwardRef<ComposerRef, ComposerProps>(function Composer
     type: 'file',
   });
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const composerRef = useRef<HTMLFormElement>(null);
   
   // Audio recording state
   const { 
@@ -834,10 +832,14 @@ export const Composer = forwardRef<ComposerRef, ComposerProps>(function Composer
   };
 
   return (
-    <form className="w-full relative" onSubmit={(e) => {
-      e.preventDefault();
-      handleSubmit(selectedPermissionMode);
-    }}>
+    <form 
+      ref={composerRef}
+      className="w-full relative" 
+      onSubmit={(e) => {
+        e.preventDefault();
+        handleSubmit(selectedPermissionMode);
+      }}
+    >
       <div className="flex flex-col items-center justify-center w-full bg-background border border-border rounded-3xl shadow-sm cursor-text transition-all duration-300 dark:bg-neutral-800">
         <div className="relative flex items-end w-full min-h-[73px]">
           <div className="relative flex flex-1 items-start mx-5 min-h-[73px]">
@@ -873,6 +875,7 @@ export const Composer = forwardRef<ComposerRef, ComposerProps>(function Composer
                 disabled
               />
             )}
+            
           </div>
 
           {(showDirectorySelector || showModelSelector) && audioState === 'idle' && (
@@ -1094,7 +1097,6 @@ export const Composer = forwardRef<ComposerRef, ComposerProps>(function Composer
           isOpen={autocomplete.isActive && autocomplete.suggestions.length > 0}
           focusedIndex={autocomplete.focusedIndex}
           type={autocomplete.type}
-          triggerRef={textareaRef}
         />
       )}
       
