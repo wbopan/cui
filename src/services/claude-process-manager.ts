@@ -11,6 +11,7 @@ import { ToolMetricsService } from './ToolMetricsService.js';
 import { SessionInfoService } from './session-info-service.js';
 import { FileSystemService } from './file-system-service.js';
 import { NotificationService } from './notification-service.js';
+import path from 'path';
 
 /**
  * Manages Claude CLI processes and their lifecycle
@@ -36,12 +37,34 @@ export class ClaudeProcessManager extends EventEmitter {
     super();
     this.historyReader = historyReader;
     this.statusTracker = statusTracker;
-    this.claudeExecutablePath = claudeExecutablePath || 'claude';
+    this.claudeExecutablePath = claudeExecutablePath || this.findClaudeExecutable();
     this.logger = createLogger('ClaudeProcessManager');
     this.envOverrides = envOverrides || {};
     this.toolMetricsService = toolMetricsService;
     this.sessionInfoService = sessionInfoService;
     this.fileSystemService = fileSystemService;
+  }
+
+  /**
+   * Find the Claude executable from node_modules
+   * Since @anthropic-ai/claude-code is a dependency, claude should be in node_modules/.bin
+   */
+  private findClaudeExecutable(): string {
+    // __dirname points to the compiled dist/services directory
+    const cuiServerRoot = path.resolve(__dirname, '..', '..');
+    const claudePath = path.join(cuiServerRoot, 'node_modules', '.bin', 'claude');
+    
+    if (existsSync(claudePath)) {
+      return claudePath;
+    }
+    
+    // Fallback for development environment (running from src)
+    const devPath = path.join(__dirname, '..', '..', '..', 'node_modules', '.bin', 'claude');
+    if (existsSync(devPath)) {
+      return devPath;
+    }
+    
+    throw new Error('Claude executable not found in node_modules. Ensure @anthropic-ai/claude-code is installed.');
   }
 
   /**
