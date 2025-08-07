@@ -1,4 +1,3 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, spyOn } from 'bun:test';
 import { ClaudeProcessManager } from '@/services/claude-process-manager';
 import { ClaudeHistoryReader } from '@/services/claude-history-reader';
 import { ConversationStatusManager } from '@/services/conversation-status-manager';
@@ -43,7 +42,7 @@ describe('ClaudeProcessManager - Long Running Process', () => {
     // Create a mock history reader
     mockHistoryReader = new ClaudeHistoryReader();
     // Mock the getConversationWorkingDirectory method
-    spyOn(mockHistoryReader, 'getConversationWorkingDirectory').mockImplementation(() => Promise.resolve(process.cwd()));
+    jest.spyOn(mockHistoryReader, 'getConversationWorkingDirectory').mockResolvedValue(process.cwd());
     
     // Create a mock status tracker
     mockStatusTracker = new ConversationStatusManager();

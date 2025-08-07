@@ -1,5 +1,5 @@
 export default {
-  preset: 'ts-jest',
+  preset: 'ts-jest/presets/default-esm',
   testEnvironment: 'node',
   roots: ['<rootDir>/tests'],
   testMatch: ['**/*.test.ts', '**/*.test.tsx'],
@@ -27,5 +27,16 @@ export default {
   setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
   testTimeout: 10000,
   // Run integration tests serially to avoid resource conflicts
-  maxWorkers: 1
+  maxWorkers: 1,
+  // Transform ES modules from node_modules
+  transformIgnorePatterns: [
+    'node_modules/(?!(@google/genai|undici)/)'
+  ],
+  // Handle ES modules properly
+  extensionsToTreatAsEsm: ['.ts'],
+  transform: {
+    '^.+\\.tsx?$': ['ts-jest', {
+      useESM: true
+    }]
+  }
 };

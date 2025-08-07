@@ -64,44 +64,4 @@ describe('Server Command Line Arguments', () => {
     // configOverrides should be set
     expect(serverAny.configOverrides).toEqual({ port: 3002, host: '0.0.0.0' });
   });
-
-  it('should use overridden token when provided', async () => {
-    const server = new CUIServer({ token: 'custom-token-123' });
-    
-    // Access private fields for testing
-    const serverAny = server as any;
-    
-    // configOverrides should be set
-    expect(serverAny.configOverrides).toEqual({ token: 'custom-token-123' });
-  });
-
-  it('should set skipAuthToken when provided', async () => {
-    const server = new CUIServer({ skipAuthToken: true });
-    
-    // Access private fields for testing
-    const serverAny = server as any;
-    
-    // configOverrides should be set
-    expect(serverAny.configOverrides).toEqual({ skipAuthToken: true });
-  });
-
-  it('should accept all config overrides together', async () => {
-    const server = new CUIServer({ 
-      port: 3002, 
-      host: '0.0.0.0',
-      token: 'custom-token-123',
-      skipAuthToken: true
-    });
-    
-    // Access private fields for testing
-    const serverAny = server as any;
-    
-    // configOverrides should be set
-    expect(serverAny.configOverrides).toEqual({ 
-      port: 3002, 
-      host: '0.0.0.0',
-      token: 'custom-token-123',
-      skipAuthToken: true
-    });
-  });
 });

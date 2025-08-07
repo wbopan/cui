@@ -1,32 +1,28 @@
-import { describe, it, expect, beforeEach, mock } from 'bun:test';
 import { ClaudeProcessManager } from '@/services/claude-process-manager';
 import { SessionInfoService } from '@/services/session-info-service';
 import { FileSystemService } from '@/services/file-system-service';
-import { setupLoggerMock, createMockLogger } from '../../utils/mock-logger';
 
-// Use the complete logger mock
-setupLoggerMock();
-const mockLogger = createMockLogger();
+jest.mock('@/services/logger');
 
 describe('ClaudeProcessManager - Git Integration', () => {
-  let mockSessionInfoService: any;
-  let mockFileSystemService: any;
+  let mockSessionInfoService: jest.Mocked<SessionInfoService>;
+  let mockFileSystemService: jest.Mocked<FileSystemService>;
 
   beforeEach(() => {
     mockSessionInfoService = {
-      updateSessionInfo: mock(),
+      updateSessionInfo: jest.fn(),
     } as any;
 
     mockFileSystemService = {
-      isGitRepository: mock(),
-      getCurrentGitHead: mock(),
+      isGitRepository: jest.fn(),
+      getCurrentGitHead: jest.fn(),
     } as any;
   });
 
   describe('executeConversationFlow git integration', () => {
     it('should set initial_commit_head when in git repo', async () => {
-      mockFileSystemService.isGitRepository.mockImplementation(() => Promise.resolve(true));
-      mockFileSystemService.getCurrentGitHead.mockImplementation(() => Promise.resolve('abc123commit'));
+      mockFileSystemService.isGitRepository.mockResolvedValue(true);
+      mockFileSystemService.getCurrentGitHead.mockResolvedValue('abc123commit');
 
       // Test the git logic directly
       const processManager = new ClaudeProcessManager(
@@ -77,7 +73,7 @@ describe('ClaudeProcessManager - Git Integration', () => {
     });
 
     it('should not set initial_commit_head when not in git repo', async () => {
-      mockFileSystemService.isGitRepository.mockImplementation(() => Promise.resolve(false));
+      mockFileSystemService.isGitRepository.mockResolvedValue(false);
 
       const processManager = new ClaudeProcessManager(
         {} as any,

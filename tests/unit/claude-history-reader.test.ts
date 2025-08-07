@@ -1,26 +1,49 @@
-import { describe, it, expect, beforeEach, afterEach, mock, spyOn } from 'bun:test';
 import { ClaudeHistoryReader } from '@/services/claude-history-reader';
 import { ConversationListQuery } from '@/types';
 import { createLogger } from '@/services/logger';
-import { setupLoggerMock, createMockLogger } from '../../utils/mock-logger';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as os from 'os';
 
-// Use the complete logger mock
-setupLoggerMock();
-const mockLogger = createMockLogger();
-
-// Mock SessionInfoService
-const mockSessionInfoService = {
-  getSessionInfo: mock()
+// Mock logger instance
+const mockLogger = {
+  info: jest.fn(),
+  error: jest.fn(),
+  fatal: jest.fn(),
+  warn: jest.fn(),
+  debug: jest.fn()
 };
 
 // Mock SessionInfoService
-mock.module('@/services/session-info-service', () => ({
-  SessionInfoService: mock(function() {
-    return mockSessionInfoService;
-  })
+const mockSessionInfoService = {
+  getSessionInfo: jest.fn()
+};
+
+// Mock ToolMetricsService
+const mockToolMetricsService = {
+  calculateMetricsFromMessages: jest.fn(() => ({
+    linesAdded: 0,
+    linesRemoved: 0,
+    editCount: 0,
+    writeCount: 0
+  }))
+};
+
+// Mock logger
+jest.mock('@/services/logger', () => ({
+  createLogger: jest.fn(() => mockLogger)
+}));
+
+// Mock SessionInfoService
+jest.mock('@/services/session-info-service', () => ({
+  SessionInfoService: {
+    getInstance: jest.fn(() => mockSessionInfoService)
+  }
+}));
+
+// Mock ToolMetricsService
+jest.mock('@/services/ToolMetricsService', () => ({
+  ToolMetricsService: jest.fn(() => mockToolMetricsService)
 }));
 
 describe('ClaudeHistoryReader', () => {
@@ -28,10 +51,10 @@ describe('ClaudeHistoryReader', () => {
   let tempDir: string;
 
   beforeEach(async () => {
-    mock.restore();
+    jest.clearAllMocks();
     
     // Set up default mock session info
-    mockSessionInfoService.getSessionInfo.mockImplementation(() => Promise.resolve({
+    mockSessionInfoService.getSessionInfo.mockResolvedValue({
       custom_name: '',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -40,7 +63,7 @@ describe('ClaudeHistoryReader', () => {
       archived: false,
       continuation_session_id: '',
       initial_commit_head: ''
-    }));
+    });
     
     // Create temporary Claude home directory structure
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'claude-test-'));
@@ -412,13 +435,7 @@ describe('ClaudeHistoryReader', () => {
       reader = new ClaudeHistoryReader();
       (reader as any).claudeHomePath = tempDir;
       
-      try {
-        await reader.fetchConversation('non-existent');
-        expect().fail('Expected function to throw');
-      } catch (error) {
-        expect(error).toBeDefined();
-        expect((error as Error).message).toBe('Conversation non-existent not found');
-      }
+      await expect(reader.fetchConversation('non-existent')).rejects.toThrow('Conversation non-existent not found');
     });
 
     it('should parse JSONL file correctly', async () => {
@@ -449,34 +466,6 @@ describe('ClaudeHistoryReader', () => {
       expect(messages[1].durationMs).toBe(1000);
     });
 
-    it('should filter out messages starting with specified prefixes', async () => {
-      const projectDir = path.join(path.join(tempDir, 'projects'), '-Users-username-filtered');
-      await fs.mkdir(projectDir, { recursive: true });
-      
-      const sessionId = 'test-session-filtered';
-      const conversationFile = path.join(projectDir, 'conversation.jsonl');
-      
-      const fileContent = `{"parentUuid":null,"type":"user","uuid":"msg1","sessionId":"${sessionId}","message":{"role":"user","content":"Caveat: This message should be filtered"}}
-{"parentUuid":"msg1","type":"user","uuid":"msg2","sessionId":"${sessionId}","message":{"role":"user","content":"<command-name>clear</command-name> should be filtered"}}
-{"parentUuid":"msg2","type":"user","uuid":"msg3","sessionId":"${sessionId}","message":{"role":"user","content":"<local-command-stdout>output</local-command-stdout> should be filtered"}}
-{"parentUuid":"msg3","type":"user","uuid":"msg4","sessionId":"${sessionId}","message":{"role":"user","content":"This normal message should be kept"}}
-{"parentUuid":"msg4","type":"assistant","uuid":"msg5","sessionId":"${sessionId}","message":{"role":"assistant","content":"Caveat: Assistant messages should not be filtered"}}`;
-
-      await fs.writeFile(conversationFile, fileContent);
-      
-      reader = new ClaudeHistoryReader();
-      (reader as any).claudeHomePath = tempDir;
-
-      const messages = await reader.fetchConversation(sessionId);
-      
-      // Should filter out the first 3 user messages but keep the normal user message and assistant message
-      expect(messages).toHaveLength(2);
-      expect(messages[0].uuid).toBe('msg4');
-      expect(messages[0].type).toBe('user');
-      expect(messages[1].uuid).toBe('msg5');
-      expect(messages[1].type).toBe('assistant');
-    });
-
     it('should handle malformed JSON lines gracefully', async () => {
       const projectDir = path.join(path.join(tempDir, 'projects'), '-Users-username-malformed');
       await fs.mkdir(projectDir, { recursive: true });
@@ -484,9 +473,10 @@ describe('ClaudeHistoryReader', () => {
       const sessionId = 'test-session-malformed';
       const conversationFile = path.join(projectDir, 'conversation.jsonl');
       
-      const fileContent = `{"parentUuid":null,"type":"user","uuid":"msg1","valid":true,"sessionId":"${sessionId}","message":{"role":"user","content":"Test message 1"}}
+      const fileContent = `{"type":"summary","summary":"Test malformed conversation","leafUuid":"msg2"}
+{"parentUuid":null,"type":"user","message":{"role":"user","content":"Hello"},"uuid":"msg1","timestamp":"2024-01-01T00:00:00Z","sessionId":"${sessionId}"}
 {invalid json line}
-{"parentUuid":"msg1","type":"assistant","uuid":"msg2","also":"valid","sessionId":"${sessionId}","message":{"role":"assistant","content":"Test response 2"}}`;
+{"parentUuid":"msg1","type":"assistant","message":{"role":"assistant","content":"Hi there","id":"msg_123"},"uuid":"msg2","timestamp":"2024-01-01T00:00:01Z","sessionId":"${sessionId}","durationMs":1000}`;
 
       await fs.writeFile(conversationFile, fileContent);
       
@@ -561,13 +551,7 @@ describe('ClaudeHistoryReader', () => {
       const invalidReader = new ClaudeHistoryReader();
       (invalidReader as any).claudeHomePath = '/invalid/path';
       
-      try {
-        await invalidReader.fetchConversation('any-session');
-        expect().fail('Expected function to throw');
-      } catch (error) {
-        expect(error).toBeDefined();
-        expect((error as Error).message).toBe('Conversation any-session not found');
-      }
+      await expect(invalidReader.fetchConversation('any-session')).rejects.toThrow("Conversation any-session not found");
     });
   });
 

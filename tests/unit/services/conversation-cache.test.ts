@@ -1,10 +1,16 @@
-import { describe, it, expect, beforeEach, afterEach, mock } from 'bun:test';
-import { setupLoggerMock, createMockLogger } from '../../utils/mock-logger';
 import { ConversationCache, ConversationChain } from '../../../src/services/conversation-cache';
 
-// Use the complete logger mock
-setupLoggerMock();
-const mockLogger = createMockLogger();
+const mockLogger = {
+  debug: jest.fn(),
+  info: jest.fn(),
+  warn: jest.fn(),
+  error: jest.fn()
+};
+
+// Mock the logger module
+jest.mock('../../../src/services/logger', () => ({
+  createLogger: () => mockLogger
+}));
 
 // Mock RawJsonEntry type for testing
 interface RawJsonEntry {
@@ -30,6 +36,7 @@ describe('ConversationCache - File Level Caching', () => {
   let mockRawEntries: RawJsonEntry[];
 
   beforeEach(() => {
+    cache = new ConversationCache();
     mockFileModTimes = new Map([
       ['/path/projects/project1/session1.jsonl', 1000],
       ['/path/projects/project2/session2.jsonl', 2000]
@@ -67,30 +74,26 @@ describe('ConversationCache - File Level Caching', () => {
     ];
     
     // Clear mock calls between tests
-    mockLogger.debug.mockClear();
-    mockLogger.info.mockClear();
-    mockLogger.warn.mockClear();
-    mockLogger.error.mockClear();
+    jest.clearAllMocks();
   });
 
   describe('file-level caching', () => {
     it('should cache individual file entries and avoid re-parsing unchanged files', async () => {
-      const cache = new ConversationCache(); // Create instance inside test
       let parseCallCount = 0;
       const fileParseCalls: string[] = [];
       
-      const mockParseFile = mock().mockImplementation(async (filePath: string) => {
+      const mockParseFile = jest.fn().mockImplementation(async (filePath: string) => {
         parseCallCount++;
         fileParseCalls.push(filePath);
         // Return different entries based on file path
         return filePath.includes('session1') ? [mockRawEntries[0]] : [mockRawEntries[1]];
       });
 
-      const mockGetSourceProject = mock().mockImplementation((filePath: string) => {
+      const mockGetSourceProject = jest.fn().mockImplementation((filePath: string) => {
         return filePath.includes('project1') ? 'project1' : 'project2';
       });
 
-      const mockProcessAllEntries = mock().mockImplementation(() => mockConversations);
+      const mockProcessAllEntries = jest.fn().mockReturnValue(mockConversations);
 
       // First request - should parse all files
       const firstResult = await cache.getOrParseConversations(
@@ -107,12 +110,7 @@ describe('ConversationCache - File Level Caching', () => {
       expect(mockProcessAllEntries).toHaveBeenCalledTimes(1);
 
       // Second request with same file mod times - should use cached file entries
-      mockLogger.debug.mockClear();
-      mockLogger.info.mockClear();
-      mockLogger.warn.mockClear();
-      mockLogger.error.mockClear();
-      mockParseFile.mockClear();
-      mockProcessAllEntries.mockClear();
+      jest.clearAllMocks();
       parseCallCount = 0;
       fileParseCalls.length = 0;
 
@@ -129,21 +127,20 @@ describe('ConversationCache - File Level Caching', () => {
     });
 
     it('should re-parse only modified files when file modification times change', async () => {
-      const cache = new ConversationCache(); // Create instance inside test
       let parseCallCount = 0;
       const fileParseCalls: string[] = [];
       
-      const mockParseFile = mock().mockImplementation(async (filePath: string) => {
+      const mockParseFile = jest.fn().mockImplementation(async (filePath: string) => {
         parseCallCount++;
         fileParseCalls.push(filePath);
         return filePath.includes('session1') ? [mockRawEntries[0]] : [mockRawEntries[1]];
       });
 
-      const mockGetSourceProject = mock().mockImplementation((filePath: string) => {
+      const mockGetSourceProject = jest.fn().mockImplementation((filePath: string) => {
         return filePath.includes('project1') ? 'project1' : 'project2';
       });
 
-      const mockProcessAllEntries = mock().mockImplementation(() => mockConversations);
+      const mockProcessAllEntries = jest.fn().mockReturnValue(mockConversations);
 
       // First request - parse all files
       await cache.getOrParseConversations(
@@ -159,12 +156,7 @@ describe('ConversationCache - File Level Caching', () => {
       const modifiedFileModTimes = new Map(mockFileModTimes);
       modifiedFileModTimes.set('/path/projects/project1/session1.jsonl', 1500);
 
-      mockLogger.debug.mockClear();
-      mockLogger.info.mockClear();
-      mockLogger.warn.mockClear();
-      mockLogger.error.mockClear();
-      mockParseFile.mockClear();
-      mockProcessAllEntries.mockClear();
+      jest.clearAllMocks();
       parseCallCount = 0;
       fileParseCalls.length = 0;
 
@@ -184,16 +176,15 @@ describe('ConversationCache - File Level Caching', () => {
     });
 
     it('should handle new files being added', async () => {
-      const cache = new ConversationCache(); // Create instance inside test
-      const mockParseFile = mock().mockImplementation(async (filePath: string) => {
+      const mockParseFile = jest.fn().mockImplementation(async (filePath: string) => {
         return filePath.includes('session3') ? [{ ...mockRawEntries[0], sessionId: 'session3' }] : mockRawEntries;
       });
 
-      const mockGetSourceProject = mock().mockImplementation((filePath: string) => {
+      const mockGetSourceProject = jest.fn().mockImplementation((filePath: string) => {
         return filePath.includes('project3') ? 'project3' : 'project1';
       });
 
-      const mockProcessAllEntries = mock().mockImplementation(() => mockConversations);
+      const mockProcessAllEntries = jest.fn().mockReturnValue(mockConversations);
 
       // First request - parse initial files
       await cache.getOrParseConversations(
@@ -207,12 +198,7 @@ describe('ConversationCache - File Level Caching', () => {
       const newFileModTimes = new Map(mockFileModTimes);
       newFileModTimes.set('/path/projects/project3/session3.jsonl', 3000);
 
-      mockLogger.debug.mockClear();
-      mockLogger.info.mockClear();
-      mockLogger.warn.mockClear();
-      mockLogger.error.mockClear();
-      mockParseFile.mockClear();
-      mockProcessAllEntries.mockClear();
+      jest.clearAllMocks();
 
       // Second request with new file
       await cache.getOrParseConversations(
@@ -228,10 +214,9 @@ describe('ConversationCache - File Level Caching', () => {
     });
 
     it('should handle file deletion by removing cached entries', async () => {
-      const cache = new ConversationCache(); // Create instance inside test
-      const mockParseFile = mock().mockImplementation(() => Promise.resolve(mockRawEntries));
-      const mockGetSourceProject = mock().mockImplementation(() => 'project1');
-      const mockProcessAllEntries = mock().mockImplementation(() => mockConversations);
+      const mockParseFile = jest.fn().mockResolvedValue(mockRawEntries);
+      const mockGetSourceProject = jest.fn().mockReturnValue('project1');
+      const mockProcessAllEntries = jest.fn().mockReturnValue(mockConversations);
 
       // First request - parse all files
       await cache.getOrParseConversations(
@@ -245,12 +230,7 @@ describe('ConversationCache - File Level Caching', () => {
       const reducedFileModTimes = new Map(mockFileModTimes);
       reducedFileModTimes.delete('/path/projects/project2/session2.jsonl');
 
-      mockLogger.debug.mockClear();
-      mockLogger.info.mockClear();
-      mockLogger.warn.mockClear();
-      mockLogger.error.mockClear();
-      mockParseFile.mockClear();
-      mockProcessAllEntries.mockClear();
+      jest.clearAllMocks();
 
       // Second request with one file removed
       await cache.getOrParseConversations(
@@ -270,9 +250,8 @@ describe('ConversationCache - File Level Caching', () => {
     });
 
     it('should handle file parsing errors gracefully', async () => {
-      const cache = new ConversationCache(); // Create instance inside test
       let callCount = 0;
-      const mockParseFile = mock().mockImplementation(async (filePath: string) => {
+      const mockParseFile = jest.fn().mockImplementation(async (filePath: string) => {
         callCount++;
         if (filePath.includes('session1') && callCount === 1) {
           throw new Error('Failed to parse file');
@@ -280,8 +259,8 @@ describe('ConversationCache - File Level Caching', () => {
         return mockRawEntries;
       });
 
-      const mockGetSourceProject = mock().mockImplementation(() => 'project1');
-      const mockProcessAllEntries = mock().mockImplementation(() => mockConversations);
+      const mockGetSourceProject = jest.fn().mockReturnValue('project1');
+      const mockProcessAllEntries = jest.fn().mockReturnValue(mockConversations);
 
       // First request - one file should fail
       await cache.getOrParseConversations(
@@ -303,11 +282,10 @@ describe('ConversationCache - File Level Caching', () => {
 
   describe('concurrent request handling', () => {
     it('should handle multiple concurrent requests without duplicate parsing', async () => {
-      const cache = new ConversationCache(); // Create instance inside test
       let parseCallCount = 0;
       let parseStarted = false;
       
-      const mockParseFile = mock().mockImplementation(async (filePath: string) => {
+      const mockParseFile = jest.fn().mockImplementation(async (filePath: string) => {
         parseCallCount++;
         parseStarted = true;
         // Simulate parsing delay
@@ -315,8 +293,8 @@ describe('ConversationCache - File Level Caching', () => {
         return mockRawEntries;
       });
 
-      const mockGetSourceProject = mock().mockImplementation(() => 'project1');
-      const mockProcessAllEntries = mock().mockImplementation(() => mockConversations);
+      const mockGetSourceProject = jest.fn().mockReturnValue('project1');
+      const mockProcessAllEntries = jest.fn().mockReturnValue(mockConversations);
 
       // Start first request and give it time to start parsing
       const request1 = cache.getOrParseConversations(
@@ -354,10 +332,9 @@ describe('ConversationCache - File Level Caching', () => {
 
   describe('cache statistics', () => {
     it('should provide detailed file cache statistics', async () => {
-      const cache = new ConversationCache(); // Create instance inside test
-      const mockParseFile = mock().mockImplementation(() => Promise.resolve(mockRawEntries));
-      const mockGetSourceProject = mock().mockImplementation(() => 'project1');
-      const mockProcessAllEntries = mock().mockImplementation(() => mockConversations);
+      const mockParseFile = jest.fn().mockResolvedValue(mockRawEntries);
+      const mockGetSourceProject = jest.fn().mockReturnValue('project1');
+      const mockProcessAllEntries = jest.fn().mockReturnValue(mockConversations);
 
       // Before any operations
       let stats = cache.getStats();
@@ -384,10 +361,9 @@ describe('ConversationCache - File Level Caching', () => {
     });
 
     it('should include parsing status in statistics', async () => {
-      const cache = new ConversationCache(); // Create instance inside test
       let isParsingActive = false;
       
-      const mockParseFile = mock().mockImplementation(async (filePath: string) => {
+      const mockParseFile = jest.fn().mockImplementation(async (filePath: string) => {
         // Small delay and then check - by this point parsing promise should be set
         await new Promise(resolve => setTimeout(resolve, 10));
         
@@ -399,8 +375,8 @@ describe('ConversationCache - File Level Caching', () => {
         return mockRawEntries;
       });
 
-      const mockGetSourceProject = mock().mockImplementation(() => 'project1');
-      const mockProcessAllEntries = mock().mockImplementation(() => mockConversations);
+      const mockGetSourceProject = jest.fn().mockReturnValue('project1');
+      const mockProcessAllEntries = jest.fn().mockReturnValue(mockConversations);
 
       const parsingPromise = cache.getOrParseConversations(
         mockFileModTimes,
@@ -422,10 +398,9 @@ describe('ConversationCache - File Level Caching', () => {
 
   describe('cache management', () => {
     it('should clear all cache data when clear() is called', async () => {
-      const cache = new ConversationCache(); // Create instance inside test
-      const mockParseFile = mock().mockImplementation(() => Promise.resolve(mockRawEntries));
-      const mockGetSourceProject = mock().mockImplementation(() => 'project1');
-      const mockProcessAllEntries = mock().mockImplementation(() => mockConversations);
+      const mockParseFile = jest.fn().mockResolvedValue(mockRawEntries);
+      const mockGetSourceProject = jest.fn().mockReturnValue('project1');
+      const mockProcessAllEntries = jest.fn().mockReturnValue(mockConversations);
 
       // Build up cache
       await cache.getOrParseConversations(
@@ -449,7 +424,6 @@ describe('ConversationCache - File Level Caching', () => {
     });
 
     it('should verify file cache validity correctly', () => {
-      const cache = new ConversationCache(); // Create instance inside test
       // Test isFileCacheValid method
       expect(cache.isFileCacheValid('/some/file.jsonl', 1000)).toBe(false);
 

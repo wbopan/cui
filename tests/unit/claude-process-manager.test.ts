@@ -1,4 +1,3 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, spyOn } from 'bun:test';
 import { ClaudeProcessManager } from '@/services/claude-process-manager';
 import { ClaudeHistoryReader } from '@/services/claude-history-reader';
 import { ConversationStatusManager } from '@/services/conversation-status-manager';
@@ -42,7 +41,7 @@ describe('ClaudeProcessManager', () => {
     // Create a mock history reader
     mockHistoryReader = new ClaudeHistoryReader();
     // Mock the getConversationWorkingDirectory method
-    spyOn(mockHistoryReader, 'getConversationWorkingDirectory').mockImplementation(() => Promise.resolve(process.cwd()));
+    jest.spyOn(mockHistoryReader, 'getConversationWorkingDirectory').mockResolvedValue(process.cwd());
     
     // Create a mock status tracker
     mockStatusTracker = new ConversationStatusManager();
@@ -226,7 +225,7 @@ describe('ClaudeProcessManager', () => {
       const testDir = path.join(process.cwd(), 'src');
       
       // Mock the history reader to return our test directory
-      spyOn(mockHistoryReader, 'getConversationWorkingDirectory').mockImplementation(() => Promise.resolve(testDir));
+      jest.spyOn(mockHistoryReader, 'getConversationWorkingDirectory').mockResolvedValue(testDir);
 
       let systemInitMessage: any;
       manager.once('claude-message', ({ message }) => {

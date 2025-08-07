@@ -1,32 +1,26 @@
-import { describe, it, expect, beforeEach, mock } from 'bun:test';
-import { setupLoggerMock, createMockLogger } from '../../utils/mock-logger';
+import fetch from 'node-fetch';
 
-// Use the complete logger mock
-setupLoggerMock();
-const mockLogger = createMockLogger();
-
-const mockFetch = mock();
-
-mock.module('node-fetch', () => ({
-  default: mockFetch
-}));
+jest.mock('node-fetch');
+jest.mock('@/services/logger');
 
 describe('MCP Server Permission Polling Logic', () => {
+  const mockFetch = fetch as jest.MockedFunction<typeof fetch>;
+
   beforeEach(() => {
-    mockFetch.mockClear();
+    jest.clearAllMocks();
   });
 
   it('should handle approved permission flow', async () => {
     const permissionRequestId = 'test-permission-id';
     
     // Mock notification response
-    mockFetch.mockImplementation(() => Promise.resolve({
+    mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({ success: true, id: permissionRequestId }),
-    }));
+    } as any);
 
     // Mock first poll - still pending
-    mockFetch.mockImplementationOnce(() => Promise.resolve({
+    mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({
         permissions: [{
@@ -34,18 +28,18 @@ describe('MCP Server Permission Polling Logic', () => {
           status: 'pending',
         }],
       }),
-    }));
+    } as any);
 
     // Mock second poll - no longer pending
-    mockFetch.mockImplementationOnce(() => Promise.resolve({
+    mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({
         permissions: [],
       }),
-    }));
+    } as any);
 
     // Mock fetch all to get approved permission
-    mockFetch.mockImplementationOnce(() => Promise.resolve({
+    mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({
         permissions: [{
@@ -54,7 +48,7 @@ describe('MCP Server Permission Polling Logic', () => {
           modifiedInput: { test: 'modified' },
         }],
       }),
-    }));
+    } as any);
 
     // Verify the expected flow
     expect(mockFetch).toHaveBeenCalledTimes(0); // No calls yet
@@ -68,21 +62,21 @@ describe('MCP Server Permission Polling Logic', () => {
     const denyReason = 'User denied this action';
 
     // Mock notification response
-    mockFetch.mockImplementationOnce(() => Promise.resolve({
+    mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({ success: true, id: permissionRequestId }),
-    }));
+    } as any);
 
     // Mock poll - permission processed
-    mockFetch.mockImplementationOnce(() => Promise.resolve({
+    mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({
         permissions: [],
       }),
-    }));
+    } as any);
 
     // Mock fetch all to get denied permission
-    mockFetch.mockImplementationOnce(() => Promise.resolve({
+    mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({
         permissions: [{
@@ -91,7 +85,7 @@ describe('MCP Server Permission Polling Logic', () => {
           denyReason: denyReason,
         }],
       }),
-    }));
+    } as any);
 
     // Verify mock setup
     expect(mockFetch).toHaveBeenCalledTimes(0);
@@ -101,13 +95,13 @@ describe('MCP Server Permission Polling Logic', () => {
     const permissionRequestId = 'test-permission-id';
 
     // Mock notification response
-    mockFetch.mockImplementationOnce(() => Promise.resolve({
+    mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({ success: true, id: permissionRequestId }),
-    }));
+    } as any);
 
     // Mock polls - always pending
-    mockFetch.mockImplementation(() => Promise.resolve({
+    mockFetch.mockResolvedValue({
       ok: true,
       json: async () => ({
         permissions: [{
@@ -115,7 +109,7 @@ describe('MCP Server Permission Polling Logic', () => {
           status: 'pending',
         }],
       }),
-    }));
+    } as any);
 
     // After timeout, should return deny response
     expect(mockFetch).toHaveBeenCalledTimes(0);
@@ -123,11 +117,11 @@ describe('MCP Server Permission Polling Logic', () => {
 
   it('should handle notification error', async () => {
     // Mock failed notification
-    mockFetch.mockImplementationOnce(() => Promise.resolve({
+    mockFetch.mockResolvedValueOnce({
       ok: false,
       status: 500,
       text: async () => 'Internal Server Error',
-    }));
+    } as any);
 
     // Should return deny response on error
     expect(mockFetch).toHaveBeenCalledTimes(0);

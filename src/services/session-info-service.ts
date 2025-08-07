@@ -12,6 +12,7 @@ import { JsonFileManager } from './json-file-manager';
  * Provides fast lookups and updates for session-specific data with race condition protection
  */
 export class SessionInfoService {
+  private static instance: SessionInfoService;
   private jsonManager!: JsonFileManager<SessionInfoDatabase>;
   private logger: Logger;
   private dbPath!: string;
@@ -21,6 +22,20 @@ export class SessionInfoService {
   constructor(customConfigDir?: string) {
     this.logger = createLogger('SessionInfoService');
     this.initializePaths(customConfigDir);
+  }
+
+  static getInstance(): SessionInfoService {
+    if (!SessionInfoService.instance) {
+      SessionInfoService.instance = new SessionInfoService();
+    }
+    return SessionInfoService.instance;
+  }
+
+  static resetInstance(): void {
+    if (SessionInfoService.instance) {
+      SessionInfoService.instance.isInitialized = false;
+    }
+    SessionInfoService.instance = null as unknown as SessionInfoService;
   }
 
   /**

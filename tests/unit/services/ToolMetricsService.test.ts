@@ -1,4 +1,3 @@
-// No imports needed - using Jest globals
 import { ToolMetricsService } from '@/services/ToolMetricsService';
 import { EventEmitter } from 'events';
 import { StreamEvent, AssistantStreamMessage } from '@/types';

@@ -1,28 +1,24 @@
-import { describe, it, expect, beforeEach, mock } from 'bun:test';
 import request from 'supertest';
-import { setupLoggerMock, createMockLogger } from '../../utils/mock-logger';
-
-// Use the complete logger mock
-setupLoggerMock();
-const mockLogger = createMockLogger();
 import express from 'express';
 import { createPermissionRoutes } from '@/routes/permission.routes';
 import { PermissionTracker } from '@/services/permission-tracker';
 import { CUIError } from '@/types';
 
+jest.mock('@/services/logger');
+
 describe('Permission Routes', () => {
   let app: express.Application;
-  let permissionTracker: any;
+  let permissionTracker: jest.Mocked<PermissionTracker>;
 
   beforeEach(() => {
     app = express();
     app.use(express.json());
 
     permissionTracker = {
-      addPermissionRequest: mock(),
-      getPermissionRequests: mock(),
-      updatePermissionStatus: mock(),
-      clearExpiredRequests: mock(),
+      addPermissionRequest: jest.fn(),
+      getPermissionRequests: jest.fn(),
+      updatePermissionStatus: jest.fn(),
+      clearExpiredRequests: jest.fn(),
     } as any;
 
     app.use('/api/permissions', createPermissionRoutes(permissionTracker));

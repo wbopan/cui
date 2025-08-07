@@ -1,24 +1,20 @@
-import { describe, it, expect, beforeEach, mock } from 'bun:test';
 import request from 'supertest';
-import { setupLoggerMock, createMockLogger } from '../../utils/mock-logger';
-
-// Use the complete logger mock
-setupLoggerMock();
-const mockLogger = createMockLogger();
 import express from 'express';
 import { createPreferencesRoutes } from '@/routes/preferences.routes';
 import { PreferencesService } from '@/services/preferences-service';
 
+jest.mock('@/services/logger');
+
 describe('Preferences Routes', () => {
   let app: express.Application;
-  let service: any;
+  let service: jest.Mocked<PreferencesService>;
 
   beforeEach(() => {
     app = express();
     app.use(express.json());
     service = {
-      getPreferences: mock(),
-      updatePreferences: mock(),
+      getPreferences: jest.fn(),
+      updatePreferences: jest.fn(),
     } as any;
 
     app.use('/api/preferences', createPreferencesRoutes(service));
@@ -28,7 +24,7 @@ describe('Preferences Routes', () => {
   });
 
   it('GET / should return preferences', async () => {
-    service.getPreferences.mockImplementation(() => Promise.resolve({ colorScheme: 'light', language: 'en' }));
+    service.getPreferences.mockResolvedValue({ colorScheme: 'light', language: 'en' });
     const res = await request(app).get('/api/preferences');
     expect(res.status).toBe(200);
     expect(res.body.colorScheme).toBe('light');
@@ -36,7 +32,7 @@ describe('Preferences Routes', () => {
   });
 
   it('PUT / should update preferences', async () => {
-    service.updatePreferences.mockImplementation(() => Promise.resolve({ colorScheme: 'dark', language: 'en' }));
+    service.updatePreferences.mockResolvedValue({ colorScheme: 'dark', language: 'en' });
     const res = await request(app)
       .put('/api/preferences')
       .send({ colorScheme: 'dark' });

@@ -15,6 +15,7 @@ interface PreferenceDB {
 }
 
 export class PreferencesService {
+  private static instance: PreferencesService;
   private jsonManager!: JsonFileManager<PreferenceDB>;
   private logger: Logger;
   private dbPath!: string;
@@ -24,6 +25,20 @@ export class PreferencesService {
   constructor(customConfigDir?: string) {
     this.logger = createLogger('PreferencesService');
     this.initializePaths(customConfigDir);
+  }
+
+  static getInstance(): PreferencesService {
+    if (!PreferencesService.instance) {
+      PreferencesService.instance = new PreferencesService();
+    }
+    return PreferencesService.instance;
+  }
+
+  static resetInstance(): void {
+    if (PreferencesService.instance) {
+      PreferencesService.instance.isInitialized = false;
+    }
+    PreferencesService.instance = null as unknown as PreferencesService;
   }
 
   private initializePaths(customConfigDir?: string): void {
