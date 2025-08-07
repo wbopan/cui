@@ -402,7 +402,7 @@ export class FileSystemService {
       // Check if file is executable
       try {
         await fs.access(executablePath, constants.X_OK);
-      } catch (error) {
+      } catch (_error) {
         throw new CUIError(
           'NOT_EXECUTABLE',
           `File exists but is not executable: ${executablePath}`,
