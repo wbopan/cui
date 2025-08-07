@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { Highlight, Language } from 'prism-react-renderer';
 import { Maximize2, Minimize2 } from 'lucide-react';
 import { useTheme } from '../../hooks/useTheme';
-import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { cn } from '@/lib/utils';
+import { Button } from '@/web/chat/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/web/chat/components/ui/tooltip';
+import { cn } from "@/web/chat/lib/utils";
 
 interface CodeHighlightProps {
   code: string;

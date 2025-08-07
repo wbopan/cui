@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { StopCircle, Archive } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Button } from '@/web/chat/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/web/chat/components/ui/tooltip';
 import type { StreamStatus } from '../../types';
 
 interface TaskItemProps {

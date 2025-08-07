@@ -1,5 +1,5 @@
 import React from 'react';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/web/chat/components/ui/tabs';
 
 interface TaskTabsProps {
   activeTab: 'tasks' | 'history' | 'archive';

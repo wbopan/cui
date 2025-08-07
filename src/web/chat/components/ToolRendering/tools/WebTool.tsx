@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { CornerDownRight, Globe } from 'lucide-react';
 import { extractDomain } from '../../../utils/tool-utils';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/web/chat/components/ui/collapsible';
 
 interface WebToolProps {
   input: any;

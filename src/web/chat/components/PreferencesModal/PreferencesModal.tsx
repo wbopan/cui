@@ -4,12 +4,12 @@ import { api } from '../../services/api';
 import type { Preferences } from '@/types/preferences';
 import type { GeminiHealthResponse } from '@/types';
 import { Dialog } from '../Dialog';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/web/chat/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/web/chat/components/ui/select';
+import { Switch } from '@/web/chat/components/ui/switch';
+import { Input } from '@/web/chat/components/ui/input';
+import { Label } from '@/web/chat/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/web/chat/components/ui/tabs';
 
 interface Props {
   onClose: () => void;

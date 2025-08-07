@@ -12,7 +12,7 @@ import { WebTool } from './tools/WebTool';
 import { TaskTool } from './tools/TaskTool';
 import { PlanTool } from './tools/PlanTool';
 import { FallbackTool } from './tools/FallbackTool';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/web/chat/components/ui/collapsible';
 
 interface ToolContentProps {
   toolName: string;

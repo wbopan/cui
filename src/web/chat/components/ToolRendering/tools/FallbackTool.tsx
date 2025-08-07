@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { CornerDownRight } from 'lucide-react';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/web/chat/components/ui/collapsible';
 
 interface FallbackToolProps {
   toolName: string;

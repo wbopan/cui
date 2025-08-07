@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Settings } from 'lucide-react';
 import { useTheme } from '../../hooks/useTheme';
 import { PreferencesModal } from '../PreferencesModal/PreferencesModal';
-import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Button } from '@/web/chat/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/web/chat/components/ui/tooltip';
 
 export function Header() {
   const theme = useTheme();

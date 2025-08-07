@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ChevronDown, ChevronRight, Copy, Check } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
+import { cn } from "@/web/chat/lib/utils";
+import { Button } from '@/web/chat/components/ui/button';
 
 interface JsonViewerProps {
   data: any;

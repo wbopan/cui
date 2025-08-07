@@ -3,7 +3,7 @@ import ReactDiffViewer from 'react-diff-viewer-continued';
 import Prism from 'prismjs';
 import { Maximize2, Minimize2 } from 'lucide-react';
 import { useTheme } from '../../../hooks/useTheme';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/web/chat/components/ui/button';
 import 'prismjs/components/prism-javascript';
 import 'prismjs/components/prism-typescript';
 import 'prismjs/components/prism-jsx';

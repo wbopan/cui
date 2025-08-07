@@ -5,7 +5,7 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover';
+} from '@/web/chat/components/ui/popover';
 import {
   Command,
   CommandEmpty,
@@ -13,9 +13,9 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from '@/components/ui/command';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+} from '@/web/chat/components/ui/command';
+import { Button } from '@/web/chat/components/ui/button';
+import { cn } from "@/web/chat/lib/utils";
 
 export interface DropdownOption<T = string> {
   value: T;

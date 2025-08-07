@@ -210,10 +210,10 @@ function InspectorApp() {
         initialPrompt: initialPrompt
       };
 
-      if (model) body.model = model;
+      if (model && model !== 'default-model') body.model = model;
       if (systemPrompt) body.systemPrompt = systemPrompt;
       if (claudeExecutablePath) body.claudeExecutablePath = claudeExecutablePath;
-      if (permissionMode) body.permissionMode = permissionMode;
+      if (permissionMode && permissionMode !== 'default-mode') body.permissionMode = permissionMode;
 
       const data = await api.startConversation(body);
       showJson('startResult', data);
@@ -335,7 +335,7 @@ function InspectorApp() {
     try {
       const data = await api.getPermissions({
         streamingId: permissionsStreamingId || undefined,
-        status: permissionsStatus as 'pending' | 'approved' | 'denied' | undefined
+        status: (permissionsStatus === 'all' ? undefined : permissionsStatus) as 'pending' | 'approved' | 'denied' | undefined
       });
       showJson('permissionsResult', data);
     } catch (e: any) {
@@ -391,7 +391,7 @@ function InspectorApp() {
       updateData.archived = sessionArchived;
       if (continuationSessionId.trim() !== '') updateData.continuationSessionId = continuationSessionId.trim();
       if (initialCommitHead.trim() !== '') updateData.initialCommitHead = initialCommitHead.trim();
-      if (sessionPermissionMode.trim() !== '') updateData.permissionMode = sessionPermissionMode.trim();
+      if (sessionPermissionMode.trim() !== '' && sessionPermissionMode !== 'keep-current') updateData.permissionMode = sessionPermissionMode.trim();
       
       const data = await api.updateSession(renameSessionId, updateData);
       showJson('renameResult', data);
@@ -786,7 +786,7 @@ function InspectorApp() {
                   <SelectValue placeholder="Default" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Default</SelectItem>
+                  <SelectItem value="default-model">Default</SelectItem>
                   <SelectItem value="claude-3-opus-20240229">Claude 3 Opus</SelectItem>
                   <SelectItem value="claude-3-sonnet-20240229">Claude 3 Sonnet</SelectItem>
                   <SelectItem value="claude-3-haiku-20240307">Claude 3 Haiku</SelectItem>
@@ -815,7 +815,7 @@ function InspectorApp() {
                   <SelectValue placeholder="Default" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Default</SelectItem>
+                  <SelectItem value="default-mode">Default</SelectItem>
                   <SelectItem value="default">default</SelectItem>
                   <SelectItem value="acceptEdits">acceptEdits</SelectItem>
                   <SelectItem value="bypassPermissions">bypassPermissions</SelectItem>
@@ -989,7 +989,7 @@ function InspectorApp() {
                   <SelectValue placeholder="Keep current" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Keep current</SelectItem>
+                  <SelectItem value="keep-current">Keep current</SelectItem>
                   <SelectItem value="default">default</SelectItem>
                   <SelectItem value="acceptEdits">acceptEdits</SelectItem>
                   <SelectItem value="bypassPermissions">bypassPermissions</SelectItem>
@@ -1035,7 +1035,7 @@ function InspectorApp() {
                       <SelectValue placeholder="All" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All</SelectItem>
+                      <SelectItem value="all">All</SelectItem>
                       <SelectItem value="pending">Pending</SelectItem>
                       <SelectItem value="approved">Approved</SelectItem>
                       <SelectItem value="denied">Denied</SelectItem>

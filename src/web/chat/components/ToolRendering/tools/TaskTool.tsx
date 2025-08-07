@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Maximize2, Minimize2, CornerDownRight } from 'lucide-react';
 import type { ChatMessage } from '../../../types';
 import { MessageItem } from '../../MessageList/MessageItem';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/web/chat/components/ui/button';
 
 interface TaskToolProps {
   input: any;

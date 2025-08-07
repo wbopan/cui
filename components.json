@@ -11,11 +11,11 @@
     "prefix": ""
   },
   "aliases": {
-    "components": "@/components",
-    "utils": "@/lib/utils",
-    "ui": "@/components/ui",
-    "lib": "@/lib",
-    "hooks": "@/hooks"
+    "components": "@/web/chat/components",
+    "utils": "@/web/chat/lib/utils",
+    "ui": "@/web/chat/components/ui",
+    "lib": "@/web/chat/lib",
+    "hooks": "@/web/chat/hooks"
   },
   "iconLibrary": "lucide"
 }

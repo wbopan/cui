@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import styles from './styles/inspector.module.css';
 import { api } from '../chat/services/api';
+import { Button } from '@/web/chat/components/ui/button';
+import { Input } from '@/web/chat/components/ui/input';
+import { cn } from '@/web/chat/lib/utils';
 
 interface LogEntry {
   timestamp: string;
@@ -105,24 +107,24 @@ function LogMonitor({ isVisible, onToggle }: LogMonitorProps) {
       
       // Determine color based on log level
       const levelColors: Record<string, string> = {
-        'debug': '#868e96',
-        'info': '#51cf66',
-        'warn': '#ffd43b',
-        'error': '#ff6b6b',
-        'fatal': '#ff0000'
+        'debug': 'text-neutral-500',
+        'info': 'text-green-400',
+        'warn': 'text-yellow-300',
+        'error': 'text-red-400',
+        'fatal': 'text-red-600'
       };
-      const levelColor = levelColors[level] || '#d4d4d4';
+      const levelColorClass = levelColors[level] || 'text-neutral-300';
 
       // Build compact display
       const formatted = (
-        <div className={styles.logEntry}>
-          <span className={styles.logTime}>{timestamp}</span>
-          <span className={styles.logLevel} style={{ color: levelColor }}>[{level?.toUpperCase() || 'LOG'}]</span>
-          {component && <span className={styles.logComponent}>[{component}]</span>}
-          <span className={styles.logMessage}>{msg}</span>
-          {requestId && <span className={styles.logExtra}> (req: {requestId})</span>}
+        <div className="flex items-baseline gap-2 py-0.5 border-b border-neutral-700">
+          <span className="text-neutral-500 text-[11px]">{timestamp}</span>
+          <span className={cn("font-bold text-[11px]", levelColorClass)}>[{level?.toUpperCase() || 'LOG'}]</span>
+          {component && <span className="text-blue-400 text-[11px]">[{component}]</span>}
+          <span className="flex-1 text-neutral-300">{msg}</span>
+          {requestId && <span className="text-neutral-500 text-[11px]"> (req: {requestId})</span>}
           {Object.keys(rest).length > 0 && (
-            <span className={styles.logExtra}> {JSON.stringify(rest)}</span>
+            <span className="text-neutral-500 text-[11px]"> {JSON.stringify(rest)}</span>
           )}
         </div>
       );
@@ -130,7 +132,7 @@ function LogMonitor({ isVisible, onToggle }: LogMonitorProps) {
       return { formatted, matchesFilter };
     } catch {
       // Not JSON, display as plain text
-      const formatted = <div className={`${styles.logEntry} ${styles.logPlain}`}>{line}</div>;
+      const formatted = <div className="text-neutral-300 border-0">{line}</div>;
       return { formatted, matchesFilter };
     }
   };
@@ -139,7 +141,7 @@ function LogMonitor({ isVisible, onToggle }: LogMonitorProps) {
     .map((log, index) => {
       const { formatted, matchesFilter } = parseLogLine(log);
       return matchesFilter ? (
-        <div key={index} className={styles.logLine}>
+        <div key={index} className="my-0.5">
           {formatted}
         </div>
       ) : null;
@@ -147,34 +149,49 @@ function LogMonitor({ isVisible, onToggle }: LogMonitorProps) {
     .filter(Boolean);
 
   return (
-    <div className={`${styles.logMonitor} ${isVisible ? styles.visible : styles.hidden}`}>
-      <div className={styles.logHeader}>
-        <button className={styles.logToggle} onClick={onToggle}>
+    <div className={cn(
+      "flex flex-col border-t-2 border-neutral-300 bg-neutral-900",
+      isVisible ? "absolute top-0 left-0 right-0 bottom-0 h-full z-[100]" : "h-10"
+    )}>
+      <div className="flex items-center p-2.5 bg-neutral-800 border-b border-neutral-600 gap-2.5">
+        <Button 
+          className="bg-neutral-700 hover:bg-neutral-600 text-white border-0 py-1 px-4 text-xs rounded h-auto"
+          onClick={onToggle}
+          aria-label={isVisible ? "Collapse log monitor" : "Expand log monitor"}
+        >
           {isVisible ? '▼' : '▲'} Logs
-        </button>
-        <input
+        </Button>
+        <Input
           type="text"
-          className={styles.logFilter}
+          className="flex-1 bg-neutral-900 text-neutral-300 border border-neutral-600 py-1 px-2.5 text-xs rounded disabled:opacity-50 disabled:cursor-not-allowed"
           placeholder="Filter logs..."
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
           disabled={!isVisible}
+          aria-label="Filter log entries"
         />
-        <button 
-          className={styles.logToggle} 
+        <Button 
+          className="bg-neutral-700 hover:bg-neutral-600 text-white border-0 py-1 px-4 text-xs rounded h-auto disabled:opacity-50 disabled:cursor-not-allowed"
           onClick={() => setLogs([])}
           disabled={!isVisible}
+          aria-label="Clear all log entries"
         >
           Clear
-        </button>
-        <span className={`${styles.connectionStatus} ${isConnected ? styles.connected : styles.disconnected}`}>
+        </Button>
+        <span className={cn(
+          "text-xs",
+          isConnected ? "text-green-400" : "text-neutral-500"
+        )}>
           {isConnected ? '● Connected' : '○ Disconnected'}
         </span>
       </div>
       {isVisible && (
-        <div className={styles.logContainer} ref={logContainerRef}>
+        <div 
+          className="flex-1 overflow-y-auto p-2.5 bg-neutral-900 text-neutral-300 font-mono text-xs leading-relaxed min-h-0"
+          ref={logContainerRef}
+        >
           {filteredLogs.length > 0 ? filteredLogs : (
-            <div className={styles.noLogs}>No logs to display</div>
+            <div className="text-neutral-500 text-center py-5">No logs to display</div>
           )}
         </div>
       )}

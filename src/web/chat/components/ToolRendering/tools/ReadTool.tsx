@@ -3,7 +3,7 @@ import { CornerDownRight } from 'lucide-react';
 import { countLines } from '../../../utils/tool-utils';
 import { detectLanguageFromPath } from '../../../utils/language-detection';
 import { CodeHighlight } from '../../CodeHighlight';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/web/chat/components/ui/collapsible';
 
 interface ReadToolProps {
   input: any;

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ArrowUp } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Button } from '@/web/chat/components/ui/button';
+import { Input } from '@/web/chat/components/ui/input';
 
 interface LoginProps {
   onLogin: (token: string) => void;
