@@ -32,10 +32,14 @@ export function createFileSystemRoutes(
         throw new CUIError('MISSING_PATH', 'path query parameter is required', 400);
       }
       
+      // Convert string values to boolean for backward compatibility
+      const recursive = req.query.recursive === true || req.query.recursive === 'true';
+      const respectGitignore = req.query.respectGitignore === true || req.query.respectGitignore === 'true';
+      
       const result = await fileSystemService.listDirectory(
         req.query.path,
-        req.query.recursive || false,
-        req.query.respectGitignore || false
+        recursive,
+        respectGitignore
       );
       
       logger.debug('Directory listed successfully', {

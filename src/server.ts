@@ -5,23 +5,27 @@ import { parseArgs } from './cli-parser.js';
 
 const logger = createLogger('Server');
 
+let globalServer: CUIServer | null = null;
+
 async function main() {
   const cliConfig = parseArgs(process.argv);
-  const server = new CUIServer(cliConfig);
+  globalServer = new CUIServer(cliConfig);
+  
+  // Handle graceful shutdown
+  const shutdown = async (signal: string) => {
+    logger.info(`Received ${signal}, shutting down...`);
+    if (globalServer) {
+      await globalServer.stop();
+    }
+    process.exit(0);
+  };
+  
+  // Set up signal handlers before starting server
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
   
   try {
-    await server.start();
-    
-    // Handle graceful shutdown
-    const shutdown = async (signal: string) => {
-      logger.info(`Received ${signal}, shutting down...`);
-      await server.stop();
-      process.exit(0);
-    };
-    
-    process.on('SIGTERM', () => shutdown('SIGTERM'));
-    process.on('SIGINT', () => shutdown('SIGINT'));
-    
+    await globalServer.start();
   } catch (error) {
     logger.error('Failed to start server:', error);
     process.exit(1);
