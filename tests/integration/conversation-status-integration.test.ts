@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest';
 import { CUIServer } from '@/cui-server';
 import { ConversationStatusManager } from '@/services/conversation-status-manager';
 import * as path from 'path';

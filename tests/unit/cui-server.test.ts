@@ -1,16 +1,17 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest';
 // Mock all dependencies BEFORE importing anything
 // Need to mock the actual paths that CUIServer imports (relative paths)
-jest.mock('@/services/claude-process-manager', () => ({
-  ClaudeProcessManager: jest.fn()
+vi.mock('@/services/claude-process-manager', () => ({
+  ClaudeProcessManager: vi.fn()
 }));
-jest.mock('@/services/claude-history-reader', () => ({
-  ClaudeHistoryReader: jest.fn()
+vi.mock('@/services/claude-history-reader', () => ({
+  ClaudeHistoryReader: vi.fn()
 }));
-jest.mock('@/services/stream-manager', () => ({
-  StreamManager: jest.fn()
+vi.mock('@/services/stream-manager', () => ({
+  StreamManager: vi.fn()
 }));
-jest.mock('@/services/conversation-status-manager', () => ({
-  ConversationStatusManager: jest.fn()
+vi.mock('@/services/conversation-status-manager', () => ({
+  ConversationStatusManager: vi.fn()
 }));
 
 // Mock web-push
@@ -26,18 +27,14 @@ import { TestHelpers } from '../utils/test-helpers';
 import * as path from 'path';
 
 // Mock child_process for execSync and exec calls
-jest.mock('child_process', () => ({
-  execSync: jest.fn(),
-  exec: jest.fn((cmd, callback) => {
+vi.mock('child_process', () => ({
+  execSync: vi.fn(),
+  exec: vi.fn((cmd, callback) => {
     // Default mock implementation for exec
     callback(null, '', '');
   })
 }));
 
-const MockedClaudeProcessManager = ClaudeProcessManager as jest.MockedClass<typeof ClaudeProcessManager>;
-const MockedClaudeHistoryReader = ClaudeHistoryReader as jest.MockedClass<typeof ClaudeHistoryReader>;
-const MockedStreamManager = StreamManager as jest.MockedClass<typeof StreamManager>;
-const MockedConversationStatusManager = ConversationStatusManager as jest.MockedClass<typeof ConversationStatusManager>;
 
 // Get mock Claude executable path
 function getMockClaudeExecutablePath(): string {
@@ -46,14 +43,13 @@ function getMockClaudeExecutablePath(): string {
 
 // Mock execSync for system status tests
 const { execSync } = require('child_process');
-const mockExecSync = execSync as jest.MockedFunction<typeof execSync>;
 
 describe('CUIServer', () => {
   let server: CUIServer;
-  let mockProcessManager: jest.Mocked<ClaudeProcessManager>;
-  let mockHistoryReader: jest.Mocked<ClaudeHistoryReader>;
-  let mockStreamManager: jest.Mocked<StreamManager>;
-  let mockStatusTracker: jest.Mocked<ConversationStatusManager>;
+  let mockProcessManager: vi.Mocked<ClaudeProcessManager>;
+  let mockHistoryReader: vi.Mocked<ClaudeHistoryReader>;
+  let mockStreamManager: vi.Mocked<StreamManager>;
+  let mockStatusTracker: vi.Mocked<ConversationStatusManager>;
 
   // Track any running servers for cleanup
   const runningServers: CUIServer[] = [];
@@ -61,65 +57,58 @@ describe('CUIServer', () => {
   beforeEach(() => {
     // Setup mock implementations
     mockProcessManager = {
-      startConversation: jest.fn(),
-      stopConversation: jest.fn(),
-      getActiveSessions: jest.fn(),
-      isSessionActive: jest.fn(),
-      setMCPConfigPath: jest.fn(),
-      setStreamManager: jest.fn(),
-      setPermissionTracker: jest.fn(),
-      setConversationStatusManager: jest.fn(),
-      on: jest.fn(),
-      emit: jest.fn()
+      startConversation: vi.fn(),
+      stopConversation: vi.fn(),
+      getActiveSessions: vi.fn(),
+      isSessionActive: vi.fn(),
+      setMCPConfigPath: vi.fn(),
+      setStreamManager: vi.fn(),
+      setPermissionTracker: vi.fn(),
+      setConversationStatusManager: vi.fn(),
+      on: vi.fn(),
+      emit: vi.fn()
     } as any;
 
     mockHistoryReader = {
-      listConversations: jest.fn(),
-      fetchConversation: jest.fn(),
-      getConversationMetadata: jest.fn(),
+      listConversations: vi.fn(),
+      fetchConversation: vi.fn(),
+      getConversationMetadata: vi.fn(),
       homePath: '/test/home/.claude'
     } as any;
 
     mockStreamManager = {
-      addClient: jest.fn(),
-      broadcast: jest.fn(),
-      closeSession: jest.fn(),
-      disconnectAll: jest.fn(),
-      on: jest.fn()
+      addClient: vi.fn(),
+      broadcast: vi.fn(),
+      closeSession: vi.fn(),
+      disconnectAll: vi.fn(),
+      on: vi.fn()
     } as any;
 
     mockStatusTracker = {
-      registerActiveSession: jest.fn(),
-      unregisterActiveSession: jest.fn(),
-      getConversationContext: jest.fn(),
-      getConversationStatus: jest.fn(),
-      isSessionActive: jest.fn(),
-      getStreamingId: jest.fn(),
-      getSessionId: jest.fn(),
-      getActiveSessionIds: jest.fn(),
-      getActiveStreamingIds: jest.fn(),
-      clear: jest.fn(),
-      getStats: jest.fn(),
-      on: jest.fn(),
-      emit: jest.fn()
+      registerActiveSession: vi.fn(),
+      unregisterActiveSession: vi.fn(),
+      getConversationContext: vi.fn(),
+      getConversationStatus: vi.fn(),
+      isSessionActive: vi.fn(),
+      getStreamingId: vi.fn(),
+      getSessionId: vi.fn(),
+      getActiveSessionIds: vi.fn(),
+      getActiveStreamingIds: vi.fn(),
+      clear: vi.fn(),
+      getStats: vi.fn(),
+      on: vi.fn(),
+      emit: vi.fn()
     } as any;
 
     // Clear and reset mock constructors
-    MockedClaudeProcessManager.mockClear();
-    MockedClaudeHistoryReader.mockClear();
-    MockedStreamManager.mockClear();
-    MockedConversationStatusManager.mockClear();
-    
-    // Set up mock implementations
-    MockedClaudeProcessManager.mockImplementation(() => mockProcessManager);
-    MockedClaudeHistoryReader.mockImplementation(() => mockHistoryReader);
-    MockedStreamManager.mockImplementation(() => mockStreamManager);
-    MockedConversationStatusManager.mockImplementation(() => mockStatusTracker);
+    vi.clearAllMocks();
   });
 
   afterEach(async () => {
     // Reset execSync mock to prevent interference between tests
-    mockExecSync.mockReset();
+    if (vi.isMockFunction(execSync)) {
+      vi.mocked(execSync).mockClear();
+    }
     
     // Clean up any running servers to prevent hanging handles
     await Promise.allSettled(
@@ -135,7 +124,7 @@ describe('CUIServer', () => {
     );
     // Clear the array
     runningServers.length = 0;
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   // Helper function to generate random test ports in a safe range
@@ -150,10 +139,11 @@ describe('CUIServer', () => {
     const testPort = config?.port || generateTestPort();
     
     // Mock ConfigService for this test
-    const { ConfigService } = require('@/services/config-service');
-    jest.spyOn(ConfigService, 'getInstance').mockReturnValue({
-      initialize: jest.fn().mockResolvedValue(undefined),
-      getConfig: jest.fn().mockReturnValue({
+    vi.doMock('@/services/config-service', () => ({
+      ConfigService: {
+        getInstance: () => ({
+      initialize: vi.fn().mockResolvedValue(undefined),
+      getConfig: vi.fn().mockReturnValue({
         machine_id: 'test-machine-12345678',
         server: {
           host: 'localhost',
@@ -163,12 +153,14 @@ describe('CUIServer', () => {
           level: 'silent'
         }
       }),
-      getVapidConfig: jest.fn().mockResolvedValue({
+      getVapidConfig: vi.fn().mockResolvedValue({
         publicKey: 'BKd0G9dqTPnwWba7v77i8E9Ph7pZUPfxcBJZxtZoWo-6kEoGyplF5fhAJhcuNPDQ9_VQQPqSZcl-n8RDtlNh_CM',
         privateKey: 'dH6JNyWikNBNDp_sJGhTzS4BQp0_vfvo5MFzHM6Hhvg',
         email: 'test@example.com'
       })
-    });
+        })
+      }
+    }));
     
     const server = new CUIServer({
       port: testPort,
@@ -228,13 +220,13 @@ describe('CUIServer', () => {
   describe('request validation', () => {
     let mockReq: any;
     let mockRes: any;
-    let mockNext: jest.Mock;
+    let mockNext: any;
 
     beforeEach(() => {
-      mockNext = jest.fn();
+      mockNext = vi.fn();
       mockRes = {
-        json: jest.fn(),
-        status: jest.fn().mockReturnThis()
+        json: vi.fn(),
+        status: vi.fn().mockReturnThis()
       };
     });
 
@@ -405,11 +397,11 @@ describe('CUIServer', () => {
       };
 
       const mockRes = {
-        status: jest.fn().mockReturnThis(),
-        json: jest.fn()
+        status: vi.fn().mockReturnThis(),
+        json: vi.fn()
       };
 
-      mockErrorHandler(error, {}, mockRes, jest.fn());
+      mockErrorHandler(error, {}, mockRes, vi.fn());
 
       expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.json).toHaveBeenCalledWith({
@@ -431,11 +423,11 @@ describe('CUIServer', () => {
       };
 
       const mockRes = {
-        status: jest.fn().mockReturnThis(),
-        json: jest.fn()
+        status: vi.fn().mockReturnThis(),
+        json: vi.fn()
       };
 
-      mockErrorHandler(error, {}, mockRes, jest.fn());
+      mockErrorHandler(error, {}, mockRes, vi.fn());
 
       expect(mockRes.status).toHaveBeenCalledWith(500);
       expect(mockRes.json).toHaveBeenCalledWith({ error: 'Internal server error' });
@@ -456,15 +448,15 @@ describe('CUIServer', () => {
         const server = createTestServer();
         
         // Mock server.listen to trigger error event
-        const mockListen = jest.fn((port, callback) => {
+        const mockListen = vi.fn((port, callback) => {
           const mockServer = {
-            on: jest.fn((event, handler) => {
+            on: vi.fn((event, handler) => {
               if (event === 'error') {
                 // Simulate port already in use error
                 setTimeout(() => handler(new Error('EADDRINUSE')), 0);
               }
             }),
-            close: jest.fn((cb) => cb())
+            close: vi.fn((cb) => cb())
           };
           return mockServer;
         });
@@ -481,8 +473,8 @@ describe('CUIServer', () => {
         await server.start();
         
         // Mock the getActiveSessions method on the actual instance
-        jest.spyOn((server as any).processManager, 'getActiveSessions').mockReturnValue([]);
-        jest.spyOn((server as any).streamManager, 'disconnectAll').mockImplementation(() => {});
+        vi.spyOn((server as any).processManager, 'getActiveSessions').mockReturnValue([]);
+        vi.spyOn((server as any).streamManager, 'disconnectAll').mockImplementation(() => {});
 
         await server.stop();
 
@@ -494,9 +486,9 @@ describe('CUIServer', () => {
         await server.start();
         
         const activeSessions = ['session-1', 'session-2', 'session-3'];
-        jest.spyOn((server as any).processManager, 'getActiveSessions').mockReturnValue(activeSessions);
-        jest.spyOn((server as any).processManager, 'stopConversation').mockResolvedValue(true);
-        jest.spyOn((server as any).streamManager, 'disconnectAll').mockImplementation(() => {});
+        vi.spyOn((server as any).processManager, 'getActiveSessions').mockReturnValue(activeSessions);
+        vi.spyOn((server as any).processManager, 'stopConversation').mockResolvedValue(true);
+        vi.spyOn((server as any).streamManager, 'disconnectAll').mockImplementation(() => {});
 
         await server.stop();
 
@@ -512,11 +504,11 @@ describe('CUIServer', () => {
         await server.start();
         
         const activeSessions = ['session-1', 'session-2'];
-        jest.spyOn((server as any).processManager, 'getActiveSessions').mockReturnValue(activeSessions);
-        jest.spyOn((server as any).processManager, 'stopConversation')
+        vi.spyOn((server as any).processManager, 'getActiveSessions').mockReturnValue(activeSessions);
+        vi.spyOn((server as any).processManager, 'stopConversation')
           .mockResolvedValueOnce(true)
           .mockRejectedValueOnce(new Error('Failed to stop session'));
-        jest.spyOn((server as any).streamManager, 'disconnectAll').mockImplementation(() => {});
+        vi.spyOn((server as any).streamManager, 'disconnectAll').mockImplementation(() => {});
 
         await server.stop();
 
@@ -551,11 +543,11 @@ describe('CUIServer', () => {
       }
       
       // Set up method spies on the actual instances
-      jest.spyOn((server as any).processManager, 'getActiveSessions').mockReturnValue([]);
-      jest.spyOn((server as any).historyReader, 'fetchConversation').mockResolvedValue([]);
-      jest.spyOn((server as any).historyReader, 'getConversationMetadata').mockResolvedValue(null);
-      jest.spyOn((server as any).processManager, 'stopConversation').mockResolvedValue(true);
-      jest.spyOn((server as any).streamManager, 'addClient').mockImplementation(() => {});
+      vi.spyOn((server as any).processManager, 'getActiveSessions').mockReturnValue([]);
+      vi.spyOn((server as any).historyReader, 'fetchConversation').mockResolvedValue([]);
+      vi.spyOn((server as any).historyReader, 'getConversationMetadata').mockResolvedValue(null);
+      vi.spyOn((server as any).processManager, 'stopConversation').mockResolvedValue(true);
+      vi.spyOn((server as any).streamManager, 'addClient').mockImplementation(() => {});
     });
 
     afterEach(async () => {
@@ -577,7 +569,7 @@ describe('CUIServer', () => {
 
     describe('GET /api/system/status', () => {
       it('should return system status successfully', async () => {
-        mockExecSync.mockImplementation((command: string) => {
+        const mockedExecSync = vi.fn((command: string) => {
           if (command === 'which claude') {
             return Buffer.from('/usr/local/bin/claude\n');
           }
@@ -586,8 +578,9 @@ describe('CUIServer', () => {
           }
           throw new Error('Command not found');
         });
+        require('child_process').execSync = mockedExecSync;
 
-        jest.spyOn((server as any).processManager, 'getActiveSessions').mockReturnValue(['session-1', 'session-2']);
+        vi.spyOn((server as any).processManager, 'getActiveSessions').mockReturnValue(['session-1', 'session-2']);
 
         const response = await request(app)
           .get('/api/system/status')
@@ -604,7 +597,7 @@ describe('CUIServer', () => {
 
       it('should handle system status error', async () => {
         // Mock getActiveSessions to throw error
-        jest.spyOn((server as any).processManager, 'getActiveSessions').mockImplementation(() => {
+        vi.spyOn((server as any).processManager, 'getActiveSessions').mockImplementation(() => {
           throw new Error('Process manager error');
         });
 
@@ -641,8 +634,8 @@ describe('CUIServer', () => {
           model: 'claude-3-5-sonnet'
         };
 
-        jest.spyOn((server as any).historyReader, 'fetchConversation').mockResolvedValue(mockMessages);
-        jest.spyOn((server as any).historyReader, 'getConversationMetadata').mockResolvedValue(mockMetadata);
+        vi.spyOn((server as any).historyReader, 'fetchConversation').mockResolvedValue(mockMessages);
+        vi.spyOn((server as any).historyReader, 'getConversationMetadata').mockResolvedValue(mockMetadata);
 
         const response = await request(app)
           .get('/api/conversations/test-session-123')
@@ -660,8 +653,8 @@ describe('CUIServer', () => {
       });
 
       it('should return 404 for non-existent conversation', async () => {
-        jest.spyOn((server as any).historyReader, 'fetchConversation').mockResolvedValue([]);
-        jest.spyOn((server as any).historyReader, 'getConversationMetadata').mockResolvedValue(null);
+        vi.spyOn((server as any).historyReader, 'fetchConversation').mockResolvedValue([]);
+        vi.spyOn((server as any).historyReader, 'getConversationMetadata').mockResolvedValue(null);
 
         const response = await request(app)
           .get('/api/conversations/non-existent');
@@ -671,7 +664,7 @@ describe('CUIServer', () => {
       });
 
       it('should handle history reader errors', async () => {
-        jest.spyOn((server as any).historyReader, 'fetchConversation').mockRejectedValue(new Error('Read error'));
+        vi.spyOn((server as any).historyReader, 'fetchConversation').mockRejectedValue(new Error('Read error'));
 
         const response = await request(app)
           .get('/api/conversations/error-session');
@@ -690,12 +683,12 @@ describe('CUIServer', () => {
         };
 
         // Mock history reader to throw not found error
-        jest.spyOn((server as any).historyReader, 'fetchConversation')
+        vi.spyOn((server as any).historyReader, 'fetchConversation')
           .mockRejectedValue(new CUIError('CONVERSATION_NOT_FOUND', 'Conversation not found', 404));
         
         // Mock status tracker to indicate session is active with context
-        jest.spyOn((server as any).statusTracker, 'isSessionActive').mockReturnValue(true);
-        jest.spyOn((server as any).statusTracker, 'getConversationContext').mockReturnValue(mockContext);
+        vi.spyOn((server as any).statusTracker, 'isSessionActive').mockReturnValue(true);
+        vi.spyOn((server as any).statusTracker, 'getConversationContext').mockReturnValue(mockContext);
 
         const response = await request(app)
           .get(`/api/conversations/${sessionId}`)
@@ -726,12 +719,12 @@ describe('CUIServer', () => {
         const sessionId = 'inactive-session-456';
 
         // Mock history reader to throw not found error
-        jest.spyOn((server as any).historyReader, 'fetchConversation')
+        vi.spyOn((server as any).historyReader, 'fetchConversation')
           .mockRejectedValue(new CUIError('CONVERSATION_NOT_FOUND', 'Conversation not found', 404));
         
         // Mock status tracker to indicate session is not active
-        jest.spyOn((server as any).statusTracker, 'isSessionActive').mockReturnValue(false);
-        jest.spyOn((server as any).statusTracker, 'getConversationContext').mockReturnValue(undefined);
+        vi.spyOn((server as any).statusTracker, 'isSessionActive').mockReturnValue(false);
+        vi.spyOn((server as any).statusTracker, 'getConversationContext').mockReturnValue(undefined);
 
         const response = await request(app)
           .get(`/api/conversations/${sessionId}`);
@@ -770,20 +763,20 @@ describe('CUIServer', () => {
         ];
 
         // Mock history reader to return conversations
-        jest.spyOn((server as any).historyReader, 'listConversations').mockResolvedValue({
+        vi.spyOn((server as any).historyReader, 'listConversations').mockResolvedValue({
           conversations: mockConversations,
           total: 2
         });
 
         // Mock status tracker to return different statuses
-        jest.spyOn((server as any).statusTracker, 'getConversationStatus')
+        vi.spyOn((server as any).statusTracker, 'getConversationStatus')
           .mockImplementation((sessionId) => {
             if (sessionId === 'session-1') return 'ongoing';
             return 'completed';
           });
 
         // Mock getStreamingId to return streamingId for ongoing conversations
-        jest.spyOn((server as any).statusTracker, 'getStreamingId')
+        vi.spyOn((server as any).statusTracker, 'getStreamingId')
           .mockImplementation((sessionId) => {
             if (sessionId === 'session-1') return 'streaming-id-123';
             return undefined;
@@ -813,7 +806,7 @@ describe('CUIServer', () => {
       });
 
       it('should handle empty conversation list', async () => {
-        jest.spyOn((server as any).historyReader, 'listConversations').mockResolvedValue({
+        vi.spyOn((server as any).historyReader, 'listConversations').mockResolvedValue({
           conversations: [],
           total: 0
         });
@@ -829,7 +822,7 @@ describe('CUIServer', () => {
       });
 
       it('should handle history reader errors', async () => {
-        jest.spyOn((server as any).historyReader, 'listConversations')
+        vi.spyOn((server as any).historyReader, 'listConversations')
           .mockRejectedValue(new Error('Failed to read history'));
 
         const response = await request(app)
@@ -841,7 +834,7 @@ describe('CUIServer', () => {
 
     describe('POST /api/conversations/:streamingId/stop', () => {
       it('should stop conversation successfully', async () => {
-        jest.spyOn((server as any).processManager, 'stopConversation').mockResolvedValue(true);
+        vi.spyOn((server as any).processManager, 'stopConversation').mockResolvedValue(true);
 
         const response = await request(app)
           .post('/api/conversations/session-123/stop')
@@ -854,7 +847,7 @@ describe('CUIServer', () => {
       });
 
       it('should handle non-existent session', async () => {
-        jest.spyOn((server as any).processManager, 'stopConversation').mockResolvedValue(false);
+        vi.spyOn((server as any).processManager, 'stopConversation').mockResolvedValue(false);
 
         const response = await request(app)
           .post('/api/conversations/non-existent/stop')
@@ -866,7 +859,7 @@ describe('CUIServer', () => {
       });
 
       it('should handle stop conversation error', async () => {
-        jest.spyOn((server as any).processManager, 'stopConversation').mockRejectedValue(new Error('Stop failed'));
+        vi.spyOn((server as any).processManager, 'stopConversation').mockRejectedValue(new Error('Stop failed'));
 
         const response = await request(app)
           .post('/api/conversations/error-session/stop');
@@ -879,7 +872,7 @@ describe('CUIServer', () => {
     describe('GET /api/stream/:streamingId', () => {
       it('should set up streaming connection', async () => {
         // Mock addClient to simulate the real behavior but end response for testing
-        jest.spyOn((server as any).streamManager, 'addClient').mockImplementation((streamingId, res: any) => {
+        vi.spyOn((server as any).streamManager, 'addClient').mockImplementation((streamingId, res: any) => {
           
           // Simulate the headers being set (like the real implementation)
           res.setHeader('Content-Type', 'application/x-ndjson');
@@ -930,7 +923,7 @@ describe('CUIServer', () => {
           apiKeySource: 'env'
         };
 
-        jest.spyOn((server as any).processManager, 'startConversation')
+        vi.spyOn((server as any).processManager, 'startConversation')
           .mockResolvedValue({ streamingId: 'stream-123', systemInit: mockSystemInit });
 
         const response = await request(app)
@@ -965,11 +958,11 @@ describe('CUIServer', () => {
   });
 
 
-  // Global cleanup for all tests to prevent Jest hanging
+  // Global cleanup for all tests to prevent hanging
   afterAll(() => {
     // Force clear any remaining timers
-    jest.clearAllTimers();
-    jest.useRealTimers();
-    jest.restoreAllMocks();
+    vi.clearAllTimers();
+    vi.useRealTimers();
+    vi.restoreAllMocks();
   });
 });

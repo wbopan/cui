@@ -1,9 +1,10 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest';
 import { WorkingDirectoriesService } from '@/services/working-directories-service';
 import { ClaudeHistoryReader } from '@/services/claude-history-reader';
 import { createLogger } from '@/services/logger';
 import { ConversationSummary } from '@/types';
 
-jest.mock('@/services/claude-history-reader');
+vi.mock('@/services/claude-history-reader');
 
 // Helper to create a ConversationSummary with default values
 const createConversation = (overrides: Partial<ConversationSummary>): ConversationSummary => ({
@@ -32,17 +33,17 @@ const createConversation = (overrides: Partial<ConversationSummary>): Conversati
 
 describe('WorkingDirectoriesService', () => {
   let service: WorkingDirectoriesService;
-  let mockHistoryReader: jest.Mocked<ClaudeHistoryReader>;
+  let mockHistoryReader: vi.Mocked<ClaudeHistoryReader>;
   let logger: ReturnType<typeof createLogger>;
 
   beforeEach(() => {
-    mockHistoryReader = new ClaudeHistoryReader() as jest.Mocked<ClaudeHistoryReader>;
+    mockHistoryReader = new ClaudeHistoryReader() as vi.Mocked<ClaudeHistoryReader>;
     logger = createLogger('test');
     service = new WorkingDirectoriesService(mockHistoryReader, logger);
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('getWorkingDirectories', () => {

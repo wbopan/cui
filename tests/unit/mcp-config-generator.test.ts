@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest';
 import { MCPConfigGenerator } from '@/services/mcp-config-generator';
 import { readFileSync, existsSync } from 'fs';
 

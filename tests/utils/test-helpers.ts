@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { CUIServer } from '@/cui-server';
 import { ClaudeProcessManager } from '@/services/claude-process-manager';
 import { ClaudeHistoryReader } from '@/services/claude-history-reader';
@@ -31,9 +32,9 @@ export class MockClaudeProcess extends EventEmitter {
     this.stdout = new EventEmitter();
     this.stderr = new EventEmitter();
     this.stdin = { 
-      write: jest.fn(), 
-      end: jest.fn(),
-      destroy: jest.fn()
+      write: vi.fn(), 
+      end: vi.fn(),
+      destroy: vi.fn()
     };
     this.pid = Math.floor(Math.random() * 10000) + 1000;
     this.messages = messages;
@@ -179,9 +180,9 @@ export class TestHelpers {
   }): CUIServer {
     // Mock ConfigService for tests
     const { ConfigService } = require('@/services/config-service');
-    jest.spyOn(ConfigService, 'getInstance').mockReturnValue({
-      initialize: jest.fn().mockResolvedValue(undefined),
-      getConfig: jest.fn().mockReturnValue({
+    vi.spyOn(ConfigService, 'getInstance').mockReturnValue({
+      initialize: vi.fn().mockResolvedValue(undefined),
+      getConfig: vi.fn().mockReturnValue({
         machine_id: 'test-machine-12345678',
         server: {
           host: 'localhost',
@@ -203,7 +204,7 @@ export class TestHelpers {
     // Create a mock history reader
     const mockHistoryReader = new ClaudeHistoryReader();
     // Mock the getConversationWorkingDirectory method to return current directory
-    jest.spyOn(mockHistoryReader, 'getConversationWorkingDirectory').mockResolvedValue(process.cwd());
+    vi.spyOn(mockHistoryReader, 'getConversationWorkingDirectory').mockResolvedValue(process.cwd());
     
     // Create a mock status tracker
     const mockStatusTracker = new ConversationStatusManager();
@@ -257,9 +258,9 @@ export class TestHelpers {
     
     // Mock ConfigService for integration tests
     const { ConfigService } = require('@/services/config-service');
-    jest.spyOn(ConfigService, 'getInstance').mockReturnValue({
-      initialize: jest.fn().mockResolvedValue(undefined),
-      getConfig: jest.fn().mockReturnValue({
+    vi.spyOn(ConfigService, 'getInstance').mockReturnValue({
+      initialize: vi.fn().mockResolvedValue(undefined),
+      getConfig: vi.fn().mockReturnValue({
         machine_id: 'test-machine-12345678',
         server: {
           host: host,
@@ -278,9 +279,9 @@ export class TestHelpers {
   /**
    * Setup child_process.spawn mock for integration tests
    */
-  static setupClaudeProcessMock(mockProcess: MockClaudeProcess): jest.SpyInstance {
+  static setupClaudeProcessMock(mockProcess: MockClaudeProcess): vi.SpyInstance {
     const { spawn } = require('child_process');
-    const mockSpawn = jest.spyOn(require('child_process'), 'spawn');
+    const mockSpawn = vi.spyOn(require('child_process'), 'spawn');
     
     mockSpawn.mockImplementation((...args: any[]) => {
       const [command, spawnArgs, options] = args;

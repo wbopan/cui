@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest';
 import { ClaudeProcessManager } from '@/services/claude-process-manager';
 import { ClaudeHistoryReader } from '@/services/claude-history-reader';
 import { ConversationStatusManager } from '@/services/conversation-status-manager';
@@ -42,7 +43,7 @@ describe('ClaudeProcessManager - Long Running Process', () => {
     // Create a mock history reader
     mockHistoryReader = new ClaudeHistoryReader();
     // Mock the getConversationWorkingDirectory method
-    jest.spyOn(mockHistoryReader, 'getConversationWorkingDirectory').mockResolvedValue(process.cwd());
+    vi.spyOn(mockHistoryReader, 'getConversationWorkingDirectory').mockResolvedValue(process.cwd());
     
     // Create a mock status tracker
     mockStatusTracker = new ConversationStatusManager();

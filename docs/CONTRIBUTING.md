@@ -99,12 +99,6 @@ npm run test:watch          # Watch mode for TDD
 npm run test:debug          # Verbose output for debugging
 ```
 
-To run a specific test:
-```bash
-npx jest tests/unit/services/ClaudeProcessManager.test.ts
-npx jest -t "test name"  # Run by name pattern
-```
-
 ### Test Coverage Requirements
 
 All pull requests must meet the following coverage thresholds:

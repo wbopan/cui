@@ -1,13 +1,14 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest';
 import fetch from 'node-fetch';
 
-jest.mock('node-fetch');
-jest.mock('@/services/logger');
+vi.mock('node-fetch');
+vi.mock('@/services/logger');
 
 describe('MCP Server Permission Polling Logic', () => {
-  const mockFetch = fetch as jest.MockedFunction<typeof fetch>;
+  const mockFetch = fetch as any<typeof fetch>;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('should handle approved permission flow', async () => {

@@ -1,12 +1,13 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest';
 import { CUIServer } from '@/cui-server';
 import { ConfigService } from '@/services/config-service';
 
 describe('Server Command Line Arguments', () => {
   beforeEach(() => {
     // Mock ConfigService
-    jest.spyOn(ConfigService, 'getInstance').mockReturnValue({
-      initialize: jest.fn().mockResolvedValue(undefined),
-      getConfig: jest.fn().mockReturnValue({
+    vi.spyOn(ConfigService, 'getInstance').mockReturnValue({
+      initialize: vi.fn().mockResolvedValue(undefined),
+      getConfig: vi.fn().mockReturnValue({
         machine_id: 'test-machine-12345678',
         server: {
           host: 'localhost',
@@ -17,7 +18,7 @@ describe('Server Command Line Arguments', () => {
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('should use default port when no overrides provided', async () => {

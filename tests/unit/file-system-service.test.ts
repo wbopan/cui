@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest';
 import { FileSystemService } from '@/services/file-system-service';
 import { CUIError } from '@/types';
 import * as fs from 'fs/promises';

@@ -1,21 +1,22 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest';
 import { ClaudeProcessManager } from '@/services/claude-process-manager';
 import { SessionInfoService } from '@/services/session-info-service';
 import { FileSystemService } from '@/services/file-system-service';
 
-jest.mock('@/services/logger');
+vi.mock('@/services/logger');
 
 describe('ClaudeProcessManager - Git Integration', () => {
-  let mockSessionInfoService: jest.Mocked<SessionInfoService>;
-  let mockFileSystemService: jest.Mocked<FileSystemService>;
+  let mockSessionInfoService: vi.Mocked<SessionInfoService>;
+  let mockFileSystemService: vi.Mocked<FileSystemService>;
 
   beforeEach(() => {
     mockSessionInfoService = {
-      updateSessionInfo: jest.fn(),
+      updateSessionInfo: vi.fn(),
     } as any;
 
     mockFileSystemService = {
-      isGitRepository: jest.fn(),
-      getCurrentGitHead: jest.fn(),
+      isGitRepository: vi.fn(),
+      getCurrentGitHead: vi.fn(),
     } as any;
   });
 

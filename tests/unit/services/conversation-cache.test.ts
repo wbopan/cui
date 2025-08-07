@@ -1,14 +1,15 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest';
 import { ConversationCache, ConversationChain } from '../../../src/services/conversation-cache';
 
 const mockLogger = {
-  debug: jest.fn(),
-  info: jest.fn(),
-  warn: jest.fn(),
-  error: jest.fn()
+  debug: vi.fn(),
+  info: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn()
 };
 
 // Mock the logger module
-jest.mock('../../../src/services/logger', () => ({
+vi.mock('../../../src/services/logger', () => ({
   createLogger: () => mockLogger
 }));
 
@@ -74,7 +75,7 @@ describe('ConversationCache - File Level Caching', () => {
     ];
     
     // Clear mock calls between tests
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('file-level caching', () => {
@@ -82,18 +83,18 @@ describe('ConversationCache - File Level Caching', () => {
       let parseCallCount = 0;
       const fileParseCalls: string[] = [];
       
-      const mockParseFile = jest.fn().mockImplementation(async (filePath: string) => {
+      const mockParseFile = vi.fn().mockImplementation(async (filePath: string) => {
         parseCallCount++;
         fileParseCalls.push(filePath);
         // Return different entries based on file path
         return filePath.includes('session1') ? [mockRawEntries[0]] : [mockRawEntries[1]];
       });
 
-      const mockGetSourceProject = jest.fn().mockImplementation((filePath: string) => {
+      const mockGetSourceProject = vi.fn().mockImplementation((filePath: string) => {
         return filePath.includes('project1') ? 'project1' : 'project2';
       });
 
-      const mockProcessAllEntries = jest.fn().mockReturnValue(mockConversations);
+      const mockProcessAllEntries = vi.fn().mockReturnValue(mockConversations);
 
       // First request - should parse all files
       const firstResult = await cache.getOrParseConversations(
@@ -110,7 +111,7 @@ describe('ConversationCache - File Level Caching', () => {
       expect(mockProcessAllEntries).toHaveBeenCalledTimes(1);
 
       // Second request with same file mod times - should use cached file entries
-      jest.clearAllMocks();
+      vi.clearAllMocks();
       parseCallCount = 0;
       fileParseCalls.length = 0;
 
@@ -130,17 +131,17 @@ describe('ConversationCache - File Level Caching', () => {
       let parseCallCount = 0;
       const fileParseCalls: string[] = [];
       
-      const mockParseFile = jest.fn().mockImplementation(async (filePath: string) => {
+      const mockParseFile = vi.fn().mockImplementation(async (filePath: string) => {
         parseCallCount++;
         fileParseCalls.push(filePath);
         return filePath.includes('session1') ? [mockRawEntries[0]] : [mockRawEntries[1]];
       });
 
-      const mockGetSourceProject = jest.fn().mockImplementation((filePath: string) => {
+      const mockGetSourceProject = vi.fn().mockImplementation((filePath: string) => {
         return filePath.includes('project1') ? 'project1' : 'project2';
       });
 
-      const mockProcessAllEntries = jest.fn().mockReturnValue(mockConversations);
+      const mockProcessAllEntries = vi.fn().mockReturnValue(mockConversations);
 
       // First request - parse all files
       await cache.getOrParseConversations(
@@ -156,7 +157,7 @@ describe('ConversationCache - File Level Caching', () => {
       const modifiedFileModTimes = new Map(mockFileModTimes);
       modifiedFileModTimes.set('/path/projects/project1/session1.jsonl', 1500);
 
-      jest.clearAllMocks();
+      vi.clearAllMocks();
       parseCallCount = 0;
       fileParseCalls.length = 0;
 
@@ -176,15 +177,15 @@ describe('ConversationCache - File Level Caching', () => {
     });
 
     it('should handle new files being added', async () => {
-      const mockParseFile = jest.fn().mockImplementation(async (filePath: string) => {
+      const mockParseFile = vi.fn().mockImplementation(async (filePath: string) => {
         return filePath.includes('session3') ? [{ ...mockRawEntries[0], sessionId: 'session3' }] : mockRawEntries;
       });
 
-      const mockGetSourceProject = jest.fn().mockImplementation((filePath: string) => {
+      const mockGetSourceProject = vi.fn().mockImplementation((filePath: string) => {
         return filePath.includes('project3') ? 'project3' : 'project1';
       });
 
-      const mockProcessAllEntries = jest.fn().mockReturnValue(mockConversations);
+      const mockProcessAllEntries = vi.fn().mockReturnValue(mockConversations);
 
       // First request - parse initial files
       await cache.getOrParseConversations(
@@ -198,7 +199,7 @@ describe('ConversationCache - File Level Caching', () => {
       const newFileModTimes = new Map(mockFileModTimes);
       newFileModTimes.set('/path/projects/project3/session3.jsonl', 3000);
 
-      jest.clearAllMocks();
+      vi.clearAllMocks();
 
       // Second request with new file
       await cache.getOrParseConversations(
@@ -214,9 +215,9 @@ describe('ConversationCache - File Level Caching', () => {
     });
 
     it('should handle file deletion by removing cached entries', async () => {
-      const mockParseFile = jest.fn().mockResolvedValue(mockRawEntries);
-      const mockGetSourceProject = jest.fn().mockReturnValue('project1');
-      const mockProcessAllEntries = jest.fn().mockReturnValue(mockConversations);
+      const mockParseFile = vi.fn().mockResolvedValue(mockRawEntries);
+      const mockGetSourceProject = vi.fn().mockReturnValue('project1');
+      const mockProcessAllEntries = vi.fn().mockReturnValue(mockConversations);
 
       // First request - parse all files
       await cache.getOrParseConversations(
@@ -230,7 +231,7 @@ describe('ConversationCache - File Level Caching', () => {
       const reducedFileModTimes = new Map(mockFileModTimes);
       reducedFileModTimes.delete('/path/projects/project2/session2.jsonl');
 
-      jest.clearAllMocks();
+      vi.clearAllMocks();
 
       // Second request with one file removed
       await cache.getOrParseConversations(
@@ -251,7 +252,7 @@ describe('ConversationCache - File Level Caching', () => {
 
     it('should handle file parsing errors gracefully', async () => {
       let callCount = 0;
-      const mockParseFile = jest.fn().mockImplementation(async (filePath: string) => {
+      const mockParseFile = vi.fn().mockImplementation(async (filePath: string) => {
         callCount++;
         if (filePath.includes('session1') && callCount === 1) {
           throw new Error('Failed to parse file');
@@ -259,8 +260,8 @@ describe('ConversationCache - File Level Caching', () => {
         return mockRawEntries;
       });
 
-      const mockGetSourceProject = jest.fn().mockReturnValue('project1');
-      const mockProcessAllEntries = jest.fn().mockReturnValue(mockConversations);
+      const mockGetSourceProject = vi.fn().mockReturnValue('project1');
+      const mockProcessAllEntries = vi.fn().mockReturnValue(mockConversations);
 
       // First request - one file should fail
       await cache.getOrParseConversations(
@@ -285,7 +286,7 @@ describe('ConversationCache - File Level Caching', () => {
       let parseCallCount = 0;
       let parseStarted = false;
       
-      const mockParseFile = jest.fn().mockImplementation(async (filePath: string) => {
+      const mockParseFile = vi.fn().mockImplementation(async (filePath: string) => {
         parseCallCount++;
         parseStarted = true;
         // Simulate parsing delay
@@ -293,8 +294,8 @@ describe('ConversationCache - File Level Caching', () => {
         return mockRawEntries;
       });
 
-      const mockGetSourceProject = jest.fn().mockReturnValue('project1');
-      const mockProcessAllEntries = jest.fn().mockReturnValue(mockConversations);
+      const mockGetSourceProject = vi.fn().mockReturnValue('project1');
+      const mockProcessAllEntries = vi.fn().mockReturnValue(mockConversations);
 
       // Start first request and give it time to start parsing
       const request1 = cache.getOrParseConversations(
@@ -332,9 +333,9 @@ describe('ConversationCache - File Level Caching', () => {
 
   describe('cache statistics', () => {
     it('should provide detailed file cache statistics', async () => {
-      const mockParseFile = jest.fn().mockResolvedValue(mockRawEntries);
-      const mockGetSourceProject = jest.fn().mockReturnValue('project1');
-      const mockProcessAllEntries = jest.fn().mockReturnValue(mockConversations);
+      const mockParseFile = vi.fn().mockResolvedValue(mockRawEntries);
+      const mockGetSourceProject = vi.fn().mockReturnValue('project1');
+      const mockProcessAllEntries = vi.fn().mockReturnValue(mockConversations);
 
       // Before any operations
       let stats = cache.getStats();
@@ -363,7 +364,7 @@ describe('ConversationCache - File Level Caching', () => {
     it('should include parsing status in statistics', async () => {
       let isParsingActive = false;
       
-      const mockParseFile = jest.fn().mockImplementation(async (filePath: string) => {
+      const mockParseFile = vi.fn().mockImplementation(async (filePath: string) => {
         // Small delay and then check - by this point parsing promise should be set
         await new Promise(resolve => setTimeout(resolve, 10));
         
@@ -375,8 +376,8 @@ describe('ConversationCache - File Level Caching', () => {
         return mockRawEntries;
       });
 
-      const mockGetSourceProject = jest.fn().mockReturnValue('project1');
-      const mockProcessAllEntries = jest.fn().mockReturnValue(mockConversations);
+      const mockGetSourceProject = vi.fn().mockReturnValue('project1');
+      const mockProcessAllEntries = vi.fn().mockReturnValue(mockConversations);
 
       const parsingPromise = cache.getOrParseConversations(
         mockFileModTimes,
@@ -398,9 +399,9 @@ describe('ConversationCache - File Level Caching', () => {
 
   describe('cache management', () => {
     it('should clear all cache data when clear() is called', async () => {
-      const mockParseFile = jest.fn().mockResolvedValue(mockRawEntries);
-      const mockGetSourceProject = jest.fn().mockReturnValue('project1');
-      const mockProcessAllEntries = jest.fn().mockReturnValue(mockConversations);
+      const mockParseFile = vi.fn().mockResolvedValue(mockRawEntries);
+      const mockGetSourceProject = vi.fn().mockReturnValue('project1');
+      const mockProcessAllEntries = vi.fn().mockReturnValue(mockConversations);
 
       // Build up cache
       await cache.getOrParseConversations(

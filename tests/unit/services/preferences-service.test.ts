@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
@@ -11,11 +12,11 @@ describe('PreferencesService', () => {
   beforeAll(() => {
     testDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cui-prefs-test-'));
     originalHome = os.homedir();
-    jest.spyOn(os, 'homedir').mockReturnValue(testDir);
+    vi.spyOn(os, 'homedir').mockReturnValue(testDir);
   });
 
   afterAll(() => {
-    (os.homedir as jest.MockedFunction<typeof os.homedir>).mockRestore();
+    (os.homedir as any<typeof os.homedir>).mockRestore();
     if (fs.existsSync(testDir)) {
       fs.rmSync(testDir, { recursive: true, force: true });
     }

@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest';
 import { Request, Response, NextFunction } from 'express';
 import { queryParser } from '@/middleware/query-parser';
 
@@ -9,7 +10,7 @@ describe('queryParser middleware', () => {
   beforeEach(() => {
     req = { query: {} };
     res = {};
-    next = jest.fn();
+    next = vi.fn();
   });
 
   it('should convert string numbers to numbers', () => {

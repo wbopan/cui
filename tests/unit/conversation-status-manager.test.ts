@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest';
 import { ConversationStatusManager } from '@/services/conversation-status-manager';
 
 describe('ConversationStatusManager', () => {
@@ -23,17 +24,19 @@ describe('ConversationStatusManager', () => {
       expect(tracker.getSessionId(streamingId)).toBe(claudeSessionId);
     });
 
-    it('should emit session-started event when registering', (done) => {
-      const streamingId = 'streaming-123';
-      const claudeSessionId = 'claude-session-456';
+    it('should emit session-started event when registering', () => {
+      return new Promise<void>((resolve) => {
+        const streamingId = 'streaming-123';
+        const claudeSessionId = 'claude-session-456';
 
-      tracker.on('session-started', ({ streamingId: emittedStreamingId, claudeSessionId: emittedClaudeSessionId }) => {
-        expect(emittedStreamingId).toBe(streamingId);
-        expect(emittedClaudeSessionId).toBe(claudeSessionId);
-        done();
+        tracker.on('session-started', ({ streamingId: emittedStreamingId, claudeSessionId: emittedClaudeSessionId }) => {
+          expect(emittedStreamingId).toBe(streamingId);
+          expect(emittedClaudeSessionId).toBe(claudeSessionId);
+          resolve();
+        });
+
+        tracker.registerActiveSession(streamingId, claudeSessionId);
       });
-
-      tracker.registerActiveSession(streamingId, claudeSessionId);
     });
 
     it('should replace existing mapping for Claude session when re-registering', () => {
@@ -68,19 +71,21 @@ describe('ConversationStatusManager', () => {
       expect(tracker.getSessionId(streamingId)).toBeUndefined();
     });
 
-    it('should emit session-ended event when unregistering', (done) => {
-      const streamingId = 'streaming-123';
-      const claudeSessionId = 'claude-session-456';
+    it('should emit session-ended event when unregistering', () => {
+      return new Promise<void>((resolve) => {
+        const streamingId = 'streaming-123';
+        const claudeSessionId = 'claude-session-456';
 
-      tracker.registerActiveSession(streamingId, claudeSessionId);
+        tracker.registerActiveSession(streamingId, claudeSessionId);
 
-      tracker.on('session-ended', ({ streamingId: emittedStreamingId, claudeSessionId: emittedClaudeSessionId }) => {
-        expect(emittedStreamingId).toBe(streamingId);
-        expect(emittedClaudeSessionId).toBe(claudeSessionId);
-        done();
+        tracker.on('session-ended', ({ streamingId: emittedStreamingId, claudeSessionId: emittedClaudeSessionId }) => {
+          expect(emittedStreamingId).toBe(streamingId);
+          expect(emittedClaudeSessionId).toBe(claudeSessionId);
+          resolve();
+        });
+
+        tracker.unregisterActiveSession(streamingId);
       });
-
-      tracker.unregisterActiveSession(streamingId);
     });
 
     it('should handle unregistering unknown streaming ID gracefully', () => {

@@ -1,5 +1,6 @@
 // Test setup file
 import { TestHelpers } from './utils/test-helpers';
+import { afterAll, vi } from 'vitest';
 
 // Set test environment variables
 process.env.NODE_ENV = 'test';
@@ -10,14 +11,11 @@ process.env.NODE_ENV = 'test';
 // Enable test logging for debugging
 TestHelpers.setupTestLogging(false);
 
-// Configure Jest timeout for integration tests
-jest.setTimeout(30000);
-
 // Global cleanup to ensure all timers are cleared after tests
 afterAll(async () => {
   // Clear all timers
-  jest.clearAllTimers();
-  jest.useRealTimers();
+  vi.clearAllTimers();
+  vi.useRealTimers();
   
   // Give async operations a chance to complete
   await new Promise(resolve => setTimeout(resolve, 0));

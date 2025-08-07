@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
@@ -14,12 +15,12 @@ describe('SessionInfoService', () => {
     
     // Mock the home directory to use our test directory
     originalHome = os.homedir();
-    jest.spyOn(os, 'homedir').mockReturnValue(testConfigDir);
+    vi.spyOn(os, 'homedir').mockReturnValue(testConfigDir);
   });
 
   afterAll(() => {
     // Restore original home directory
-    (os.homedir as jest.MockedFunction<typeof os.homedir>).mockRestore();
+    (os.homedir as any<typeof os.homedir>).mockRestore();
     
     // Clean up test config directory
     if (fs.existsSync(testConfigDir)) {
@@ -108,15 +109,15 @@ describe('SessionInfoService', () => {
       const service = SessionInfoService.getInstance();
       
       // Mock fs to throw error
-      jest.spyOn(fs, 'mkdirSync').mockImplementation(() => {
+      vi.spyOn(fs, 'mkdirSync').mockImplementation(() => {
         throw new Error('Permission denied');
       });
 
       await expect(service.initialize()).rejects.toThrow('Session info database initialization failed');
       
       // Restore mock
-      jest.restoreAllMocks();
-      jest.spyOn(os, 'homedir').mockReturnValue(testConfigDir);
+      vi.restoreAllMocks();
+      vi.spyOn(os, 'homedir').mockReturnValue(testConfigDir);
     });
 
     it('should prevent multiple initializations', async () => {
@@ -185,7 +186,7 @@ describe('SessionInfoService', () => {
     it('should return default values on read error', async () => {
       // Mock JsonFileManager to throw error
       const mockError = new Error('Database error');
-      jest.spyOn(service['jsonManager'], 'read').mockRejectedValue(mockError);
+      vi.spyOn(service['jsonManager'], 'read').mockRejectedValue(mockError);
       
       const sessionInfo = await service.getSessionInfo('test-session');
       
@@ -197,15 +198,15 @@ describe('SessionInfoService', () => {
       expect(sessionInfo.initial_commit_head).toBe('');
       
       // Restore mock
-      jest.restoreAllMocks();
-      jest.spyOn(os, 'homedir').mockReturnValue(testConfigDir);
+      vi.restoreAllMocks();
+      vi.spyOn(os, 'homedir').mockReturnValue(testConfigDir);
     });
 
     it('should return default values when creation fails', async () => {
       const sessionId = 'creation-fail-session';
       
       // Mock read to return empty sessions (session doesn't exist)
-      jest.spyOn(service['jsonManager'], 'read').mockResolvedValue({
+      vi.spyOn(service['jsonManager'], 'read').mockResolvedValue({
         sessions: {},
         metadata: {
           schema_version: 3,
@@ -215,7 +216,7 @@ describe('SessionInfoService', () => {
       });
       
       // Mock update to throw error (creation fails)
-      jest.spyOn(service['jsonManager'], 'update').mockRejectedValue(new Error('Update failed'));
+      vi.spyOn(service['jsonManager'], 'update').mockRejectedValue(new Error('Update failed'));
       
       const sessionInfo = await service.getSessionInfo(sessionId);
       
@@ -230,8 +231,8 @@ describe('SessionInfoService', () => {
       expect(sessionInfo.updated_at).toBeDefined();
       
       // Restore mocks
-      jest.restoreAllMocks();
-      jest.spyOn(os, 'homedir').mockReturnValue(testConfigDir);
+      vi.restoreAllMocks();
+      vi.spyOn(os, 'homedir').mockReturnValue(testConfigDir);
     });
   });
 
@@ -317,13 +318,13 @@ describe('SessionInfoService', () => {
       
       // Mock JsonFileManager to throw error
       const mockError = new Error('Write error');
-      jest.spyOn(service['jsonManager'], 'update').mockRejectedValue(mockError);
+      vi.spyOn(service['jsonManager'], 'update').mockRejectedValue(mockError);
       
       await expect(service.updateCustomName(testSessionId, testCustomName)).rejects.toThrow('Failed to update session info');
       
       // Restore mock
-      jest.restoreAllMocks();
-      jest.spyOn(os, 'homedir').mockReturnValue(testConfigDir);
+      vi.restoreAllMocks();
+      vi.spyOn(os, 'homedir').mockReturnValue(testConfigDir);
     });
   });
 
@@ -409,13 +410,13 @@ describe('SessionInfoService', () => {
       
       // Mock JsonFileManager to throw error
       const mockError = new Error('Write error');
-      jest.spyOn(service['jsonManager'], 'update').mockRejectedValue(mockError);
+      vi.spyOn(service['jsonManager'], 'update').mockRejectedValue(mockError);
       
       await expect(service.updateSessionInfo(testSessionId, { custom_name: 'Test' })).rejects.toThrow('Failed to update session info');
       
       // Restore mock
-      jest.restoreAllMocks();
-      jest.spyOn(os, 'homedir').mockReturnValue(testConfigDir);
+      vi.restoreAllMocks();
+      vi.spyOn(os, 'homedir').mockReturnValue(testConfigDir);
     });
   });
 
@@ -453,13 +454,13 @@ describe('SessionInfoService', () => {
       
       // Mock JsonFileManager to throw error
       const mockError = new Error('Delete error');
-      jest.spyOn(service['jsonManager'], 'update').mockRejectedValue(mockError);
+      vi.spyOn(service['jsonManager'], 'update').mockRejectedValue(mockError);
       
       await expect(service.deleteSession(testSessionId)).rejects.toThrow('Failed to delete session info');
       
       // Restore mock
-      jest.restoreAllMocks();
-      jest.spyOn(os, 'homedir').mockReturnValue(testConfigDir);
+      vi.restoreAllMocks();
+      vi.spyOn(os, 'homedir').mockReturnValue(testConfigDir);
     });
   });
 
@@ -501,15 +502,15 @@ describe('SessionInfoService', () => {
     it('should return empty object on error', async () => {
       // Mock JsonFileManager to throw error
       const mockError = new Error('Read error');
-      jest.spyOn(service['jsonManager'], 'read').mockRejectedValue(mockError);
+      vi.spyOn(service['jsonManager'], 'read').mockRejectedValue(mockError);
       
       const allSessionInfo = await service.getAllSessionInfo();
       
       expect(allSessionInfo).toEqual({});
       
       // Restore mock
-      jest.restoreAllMocks();
-      jest.spyOn(os, 'homedir').mockReturnValue(testConfigDir);
+      vi.restoreAllMocks();
+      vi.spyOn(os, 'homedir').mockReturnValue(testConfigDir);
     });
   });
 
@@ -547,7 +548,7 @@ describe('SessionInfoService', () => {
     it('should return default stats on error', async () => {
       // Mock JsonFileManager to throw error
       const mockError = new Error('Stats error');
-      jest.spyOn(service['jsonManager'], 'read').mockRejectedValue(mockError);
+      vi.spyOn(service['jsonManager'], 'read').mockRejectedValue(mockError);
       
       const stats = await service.getStats();
       
@@ -556,8 +557,8 @@ describe('SessionInfoService', () => {
       expect(stats.lastUpdated).toBeDefined();
       
       // Restore mock
-      jest.restoreAllMocks();
-      jest.spyOn(os, 'homedir').mockReturnValue(testConfigDir);
+      vi.restoreAllMocks();
+      vi.spyOn(os, 'homedir').mockReturnValue(testConfigDir);
     });
   });
 
@@ -674,13 +675,13 @@ describe('SessionInfoService', () => {
     it('should throw error on archive failure', async () => {
       // Mock JsonFileManager to throw error
       const mockError = new Error('Archive error');
-      jest.spyOn(service['jsonManager'], 'update').mockRejectedValue(mockError);
+      vi.spyOn(service['jsonManager'], 'update').mockRejectedValue(mockError);
 
       await expect(service.archiveAllSessions()).rejects.toThrow('Failed to archive all sessions');
 
       // Restore mock
-      jest.restoreAllMocks();
-      jest.spyOn(os, 'homedir').mockReturnValue(testConfigDir);
+      vi.restoreAllMocks();
+      vi.spyOn(os, 'homedir').mockReturnValue(testConfigDir);
     });
   });
 

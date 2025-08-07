@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest';
 import { ClaudeHistoryReader } from '@/services/claude-history-reader';
 import { ConversationListQuery } from '@/types';
 import { createLogger } from '@/services/logger';
@@ -7,21 +8,21 @@ import * as os from 'os';
 
 // Mock logger instance
 const mockLogger = {
-  info: jest.fn(),
-  error: jest.fn(),
-  fatal: jest.fn(),
-  warn: jest.fn(),
-  debug: jest.fn()
+  info: vi.fn(),
+  error: vi.fn(),
+  fatal: vi.fn(),
+  warn: vi.fn(),
+  debug: vi.fn()
 };
 
 // Mock SessionInfoService
 const mockSessionInfoService = {
-  getSessionInfo: jest.fn()
+  getSessionInfo: vi.fn()
 };
 
 // Mock ToolMetricsService
 const mockToolMetricsService = {
-  calculateMetricsFromMessages: jest.fn(() => ({
+  calculateMetricsFromMessages: vi.fn(() => ({
     linesAdded: 0,
     linesRemoved: 0,
     editCount: 0,
@@ -30,20 +31,20 @@ const mockToolMetricsService = {
 };
 
 // Mock logger
-jest.mock('@/services/logger', () => ({
-  createLogger: jest.fn(() => mockLogger)
+vi.mock('@/services/logger', () => ({
+  createLogger: vi.fn(() => mockLogger)
 }));
 
 // Mock SessionInfoService
-jest.mock('@/services/session-info-service', () => ({
+vi.mock('@/services/session-info-service', () => ({
   SessionInfoService: {
-    getInstance: jest.fn(() => mockSessionInfoService)
+    getInstance: vi.fn(() => mockSessionInfoService)
   }
 }));
 
 // Mock ToolMetricsService
-jest.mock('@/services/ToolMetricsService', () => ({
-  ToolMetricsService: jest.fn(() => mockToolMetricsService)
+vi.mock('@/services/ToolMetricsService', () => ({
+  ToolMetricsService: vi.fn(() => mockToolMetricsService)
 }));
 
 describe('ClaudeHistoryReader', () => {
@@ -51,7 +52,7 @@ describe('ClaudeHistoryReader', () => {
   let tempDir: string;
 
   beforeEach(async () => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     
     // Set up default mock session info
     mockSessionInfoService.getSessionInfo.mockResolvedValue({

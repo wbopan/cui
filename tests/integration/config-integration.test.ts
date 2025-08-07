@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
@@ -16,12 +17,12 @@ describe('Configuration System Basic Integration', () => {
     
     // Mock the home directory to use our test directory
     originalHome = os.homedir();
-    jest.spyOn(os, 'homedir').mockReturnValue(testConfigDir);
+    vi.spyOn(os, 'homedir').mockReturnValue(testConfigDir);
   });
 
   afterAll(() => {
     // Restore original home directory
-    (os.homedir as jest.MockedFunction<typeof os.homedir>).mockRestore();
+    (os.homedir as any<typeof os.homedir>).mockRestore();
     
     // Clean up test config directory
     if (fs.existsSync(testConfigDir)) {

@@ -6,7 +6,7 @@
     "rootDir": "./src",
     "declaration": true,
     "declarationMap": true,
-    "types": ["node", "jest", "bun"],
+    "types": ["node", "bun"],
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"]

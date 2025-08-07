@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest';
 import request from 'supertest';
 import express from 'express';
 import { createConversationRoutes } from '@/routes/conversation.routes';
@@ -7,34 +8,34 @@ import { SessionInfoService } from '@/services/session-info-service';
 import { ConversationStatusManager } from '@/services/conversation-status-manager';
 import { ToolMetricsService } from '@/services/ToolMetricsService';
 
-jest.mock('@/services/logger');
+vi.mock('@/services/logger');
 
 describe('Conversation Routes - Unified Start/Resume Endpoint', () => {
   let app: express.Application;
-  let processManager: jest.Mocked<ClaudeProcessManager>;
-  let sessionInfoService: jest.Mocked<SessionInfoService>;
-  let historyReader: jest.Mocked<ClaudeHistoryReader>;
-  let conversationStatusManager: jest.Mocked<ConversationStatusManager>;
+  let processManager: vi.Mocked<ClaudeProcessManager>;
+  let sessionInfoService: vi.Mocked<SessionInfoService>;
+  let historyReader: vi.Mocked<ClaudeHistoryReader>;
+  let conversationStatusManager: vi.Mocked<ConversationStatusManager>;
 
   beforeEach(() => {
     app = express();
     app.use(express.json());
 
     processManager = {
-      startConversation: jest.fn(),
+      startConversation: vi.fn(),
     } as any;
 
     sessionInfoService = {
-      updateSessionInfo: jest.fn(),
-      getSessionInfo: jest.fn(),
+      updateSessionInfo: vi.fn(),
+      getSessionInfo: vi.fn(),
     } as any;
 
     historyReader = {
-      fetchConversation: jest.fn(),
+      fetchConversation: vi.fn(),
     } as any;
 
     conversationStatusManager = {
-      registerActiveSession: jest.fn(),
+      registerActiveSession: vi.fn(),
     } as any;
 
     const mockServices = {
@@ -225,7 +226,7 @@ describe('Conversation Routes - Unified Start/Resume Endpoint', () => {
 
   describe('POST /api/conversations/archive-all', () => {
     beforeEach(() => {
-      sessionInfoService.archiveAllSessions = jest.fn();
+      sessionInfoService.archiveAllSessions = vi.fn();
     });
 
     it('should archive all sessions successfully', async () => {

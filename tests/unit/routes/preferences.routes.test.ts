@@ -1,20 +1,21 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest';
 import request from 'supertest';
 import express from 'express';
 import { createPreferencesRoutes } from '@/routes/preferences.routes';
 import { PreferencesService } from '@/services/preferences-service';
 
-jest.mock('@/services/logger');
+vi.mock('@/services/logger');
 
 describe('Preferences Routes', () => {
   let app: express.Application;
-  let service: jest.Mocked<PreferencesService>;
+  let service: vi.Mocked<PreferencesService>;
 
   beforeEach(() => {
     app = express();
     app.use(express.json());
     service = {
-      getPreferences: jest.fn(),
-      updatePreferences: jest.fn(),
+      getPreferences: vi.fn(),
+      updatePreferences: vi.fn(),
     } as any;
 
     app.use('/api/preferences', createPreferencesRoutes(service));

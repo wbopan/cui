@@ -1,24 +1,25 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest';
 import request from 'supertest';
 import express from 'express';
 import { createPermissionRoutes } from '@/routes/permission.routes';
 import { PermissionTracker } from '@/services/permission-tracker';
 import { CUIError } from '@/types';
 
-jest.mock('@/services/logger');
+vi.mock('@/services/logger');
 
 describe('Permission Routes', () => {
   let app: express.Application;
-  let permissionTracker: jest.Mocked<PermissionTracker>;
+  let permissionTracker: vi.Mocked<PermissionTracker>;
 
   beforeEach(() => {
     app = express();
     app.use(express.json());
 
     permissionTracker = {
-      addPermissionRequest: jest.fn(),
-      getPermissionRequests: jest.fn(),
-      updatePermissionStatus: jest.fn(),
-      clearExpiredRequests: jest.fn(),
+      addPermissionRequest: vi.fn(),
+      getPermissionRequests: vi.fn(),
+      updatePermissionStatus: vi.fn(),
+      clearExpiredRequests: vi.fn(),
     } as any;
 
     app.use('/api/permissions', createPermissionRoutes(permissionTracker));

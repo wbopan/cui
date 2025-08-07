@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest';
 import { ToolMetricsService } from '@/services/ToolMetricsService';
 import { EventEmitter } from 'events';
 import { StreamEvent, AssistantStreamMessage } from '@/types';

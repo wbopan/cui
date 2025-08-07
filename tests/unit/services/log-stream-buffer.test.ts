@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest';
 import { LogStreamBuffer } from '@/services/log-stream-buffer';
 
 describe('LogStreamBuffer', () => {
@@ -32,15 +33,17 @@ describe('LogStreamBuffer', () => {
       expect(logs).toEqual(['test log 1', 'test log 2']);
     });
 
-    it('should emit log event when adding entries', (done) => {
-      const testLog = 'test log entry';
-      
-      buffer.on('log', (logLine) => {
-        expect(logLine).toBe(testLog);
-        done();
-      });
+    it('should emit log event when adding entries', () => {
+      return new Promise<void>((resolve) => {
+        const testLog = 'test log entry';
+        
+        buffer.on('log', (logLine) => {
+          expect(logLine).toBe(testLog);
+          resolve();
+        });
 
-      buffer.addLog(testLog);
+        buffer.addLog(testLog);
+      });
     });
 
     it('should maintain buffer size limit', () => {
@@ -123,31 +126,33 @@ describe('LogStreamBuffer', () => {
   });
 
   describe('event handling', () => {
-    it('should support multiple event listeners', (done) => {
-      let listener1Called = false;
-      let listener2Called = false;
+    it('should support multiple event listeners', () => {
+      return new Promise<void>((resolve) => {
+        let listener1Called = false;
+        let listener2Called = false;
 
-      buffer.on('log', () => {
-        listener1Called = true;
-        checkCompletion();
-      });
+        buffer.on('log', () => {
+          listener1Called = true;
+          checkCompletion();
+        });
 
-      buffer.on('log', () => {
-        listener2Called = true;
-        checkCompletion();
-      });
+        buffer.on('log', () => {
+          listener2Called = true;
+          checkCompletion();
+        });
 
-      function checkCompletion() {
-        if (listener1Called && listener2Called) {
-          done();
+        function checkCompletion() {
+          if (listener1Called && listener2Called) {
+            resolve();
+          }
         }
-      }
 
-      buffer.addLog('test log');
+        buffer.addLog('test log');
+      });
     });
 
     it('should handle event listener removal', () => {
-      const listener = jest.fn();
+      const listener = vi.fn();
       
       buffer.on('log', listener);
       buffer.addLog('test 1');

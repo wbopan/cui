@@ -1,14 +1,15 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest';
 import { StreamManager } from '@/services/stream-manager';
 import { Response } from 'express';
 import { StreamEvent, AssistantStreamMessage } from '@/types';
 import { EventEmitter } from 'events';
 
 // Mock Express Response
-const createMockResponse = (): jest.Mocked<Response> => {
+const createMockResponse = (): vi.Mocked<Response> => {
   const res = new EventEmitter() as any;
-  res.setHeader = jest.fn();
-  res.write = jest.fn();
-  res.end = jest.fn();
+  res.setHeader = vi.fn();
+  res.write = vi.fn();
+  res.end = vi.fn();
   // Use a property descriptor to make writableEnded assignable
   let _writableEnded = false;
   Object.defineProperty(res, 'writableEnded', {
@@ -22,7 +23,7 @@ const createMockResponse = (): jest.Mocked<Response> => {
 
 describe('StreamManager', () => {
   let manager: StreamManager;
-  let mockResponse: jest.Mocked<Response>;
+  let mockResponse: vi.Mocked<Response>;
 
   beforeEach(() => {
     manager = new StreamManager();
@@ -32,7 +33,7 @@ describe('StreamManager', () => {
   afterEach(() => {
     // Clean up any active StreamManager resources (intervals, clients)
     manager.disconnectAll();
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('addClient', () => {
@@ -120,16 +121,18 @@ describe('StreamManager', () => {
       expect(manager.getActiveSessions()).not.toContain(streamingId);
     });
 
-    it('should emit client-disconnected event', (done) => {
-      const streamingId = 'test-streaming-123';
-      
-      manager.on('client-disconnected', (event) => {
-        expect(event.streamingId).toBe(streamingId);
-        done();
+    it('should emit client-disconnected event', () => {
+      return new Promise<void>((resolve) => {
+        const streamingId = 'test-streaming-123';
+        
+        manager.on('client-disconnected', (event) => {
+          expect(event.streamingId).toBe(streamingId);
+          resolve();
+        });
+        
+        manager.addClient(streamingId, mockResponse);
+        manager.removeClient(streamingId, mockResponse);
       });
-      
-      manager.addClient(streamingId, mockResponse);
-      manager.removeClient(streamingId, mockResponse);
     });
   });
 

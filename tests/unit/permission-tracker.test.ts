@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest';
 import { PermissionTracker } from '@/services/permission-tracker';
 import { PermissionRequest } from '@/types';
 
@@ -30,14 +31,16 @@ describe('PermissionTracker', () => {
       expect(request.streamingId).toBe('unknown');
     });
 
-    it('should emit permission_request event', (done) => {
-      tracker.on('permission_request', (request: PermissionRequest) => {
-        expect(request.toolName).toBe('Write');
-        expect(request.toolInput).toEqual({ file_path: '/tmp/output.txt', content: 'Hello' });
-        done();
-      });
+    it('should emit permission_request event', () => {
+      return new Promise<void>((resolve) => {
+        tracker.on('permission_request', (request: PermissionRequest) => {
+          expect(request.toolName).toBe('Write');
+          expect(request.toolInput).toEqual({ file_path: '/tmp/output.txt', content: 'Hello' });
+          resolve();
+        });
 
-      tracker.addPermissionRequest('Write', { file_path: '/tmp/output.txt', content: 'Hello' });
+        tracker.addPermissionRequest('Write', { file_path: '/tmp/output.txt', content: 'Hello' });
+      });
     });
   });
 
@@ -163,16 +166,18 @@ describe('PermissionTracker', () => {
       expect(success).toBe(false);
     });
 
-    it('should emit permission_updated event', (done) => {
-      const request = tracker.addPermissionRequest('Edit', { file_path: '/tmp/test.txt' });
+    it('should emit permission_updated event', () => {
+      return new Promise<void>((resolve) => {
+        const request = tracker.addPermissionRequest('Edit', { file_path: '/tmp/test.txt' });
 
-      tracker.on('permission_updated', (updated: PermissionRequest) => {
-        expect(updated.id).toBe(request.id);
-        expect(updated.status).toBe('approved');
-        done();
+        tracker.on('permission_updated', (updated: PermissionRequest) => {
+          expect(updated.id).toBe(request.id);
+          expect(updated.status).toBe('approved');
+          resolve();
+        });
+
+        tracker.updatePermissionStatus(request.id, 'approved');
       });
-
-      tracker.updatePermissionStatus(request.id, 'approved');
     });
   });
 
