@@ -1,19 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { Request, Response, NextFunction } from 'express';
 import { authMiddleware, createAuthMiddleware, clearRateLimitStore } from '@/middleware/auth';
-import { ConfigService } from '@/services/config-service';
+import { ConfigService } from '@/services/config-service.js';
 
-vi.mock('@/services/config-service', () => ({
-  ConfigService: {
-    getInstance: vi.fn(() => ({
-      getConfig: vi.fn(() => ({
-        authToken: 'test-token-123',
-      })),
-    })),
-  },
-}));
-
-vi.mock('@/services/logger', () => ({
+vi.mock('@/services/logger.js', () => ({
   createLogger: vi.fn(() => ({
     debug: vi.fn(),
     warn: vi.fn(),
@@ -30,6 +20,10 @@ describe('Auth Middleware', () => {
   beforeEach(() => {
     originalEnv = { ...process.env };
     clearRateLimitStore();
+
+    vi.spyOn(ConfigService, 'getInstance').mockReturnValue({
+      getConfig: vi.fn(() => ({ authToken: 'test-token-123' }))
+    } as any);
     
     req = {
       headers: {},
@@ -48,6 +42,7 @@ describe('Auth Middleware', () => {
   afterEach(() => {
     process.env = originalEnv;
     vi.clearAllMocks();
+    vi.restoreAllMocks();
   });
 
   describe('authMiddleware', () => {

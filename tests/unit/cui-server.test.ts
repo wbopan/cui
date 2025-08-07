@@ -1,26 +1,26 @@
 import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest';
 // Mock all dependencies BEFORE importing anything
 // Need to mock the actual paths that CUIServer imports (relative paths)
-vi.mock('@/services/claude-process-manager', () => ({
+vi.mock('@/services/claude-process-manager.js', () => ({
   ClaudeProcessManager: vi.fn()
 }));
-vi.mock('@/services/claude-history-reader', () => ({
+vi.mock('@/services/claude-history-reader.js', () => ({
   ClaudeHistoryReader: vi.fn()
 }));
-vi.mock('@/services/stream-manager', () => ({
+vi.mock('@/services/stream-manager.js', () => ({
   StreamManager: vi.fn()
 }));
-vi.mock('@/services/conversation-status-manager', () => ({
+vi.mock('@/services/conversation-status-manager.js', () => ({
   ConversationStatusManager: vi.fn()
 }));
 
 // Mock web-push
 
 import { CUIServer } from '@/cui-server';
-import { ClaudeProcessManager } from '@/services/claude-process-manager';
-import { ClaudeHistoryReader } from '@/services/claude-history-reader';
-import { StreamManager } from '@/services/stream-manager';
-import { ConversationStatusManager } from '@/services/conversation-status-manager';
+import { ClaudeProcessManager } from '@/services/claude-process-manager.js';
+import { ClaudeHistoryReader } from '@/services/claude-history-reader.js';
+import { StreamManager } from '@/services/stream-manager.js';
+import { ConversationStatusManager } from '@/services/conversation-status-manager.js';
 import { CUIError } from '@/types';
 import request from 'supertest';
 import { TestHelpers } from '../utils/test-helpers';
@@ -139,7 +139,7 @@ describe('CUIServer', () => {
     const testPort = config?.port || generateTestPort();
     
     // Mock ConfigService for this test
-    vi.doMock('@/services/config-service', () => ({
+    vi.doMock('@/services/config-service.js', () => ({
       ConfigService: {
         getInstance: () => ({
       initialize: vi.fn().mockResolvedValue(undefined),

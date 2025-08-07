@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest';
 import { WorkingDirectoriesService } from '@/services/working-directories-service';
-import { ClaudeHistoryReader } from '@/services/claude-history-reader';
-import { createLogger } from '@/services/logger';
+import { ClaudeHistoryReader } from '@/services/claude-history-reader.js';
+import { createLogger } from '@/services/logger.js';
 import { ConversationSummary } from '@/types';
 
-vi.mock('@/services/claude-history-reader');
+vi.mock('@/services/claude-history-reader.js');
 
 // Helper to create a ConversationSummary with default values
 const createConversation = (overrides: Partial<ConversationSummary>): ConversationSummary => ({

@@ -5,7 +5,7 @@ import { createPermissionRoutes } from '@/routes/permission.routes';
 import { PermissionTracker } from '@/services/permission-tracker';
 import { CUIError } from '@/types';
 
-vi.mock('@/services/logger');
+vi.mock('@/services/logger.js');
 
 describe('Permission Routes', () => {
   let app: express.Application;

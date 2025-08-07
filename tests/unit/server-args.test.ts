@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest';
 import { CUIServer } from '@/cui-server';
-import { ConfigService } from '@/services/config-service';
+import { ConfigService } from '@/services/config-service.js';
 
 describe('Server Command Line Arguments', () => {
   beforeEach(() => {

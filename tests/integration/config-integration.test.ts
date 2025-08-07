@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import crypto from 'crypto';
-import { ConfigService } from '@/services/config-service';
+import { ConfigService } from '@/services/config-service.js';
 import { generateMachineId } from '@/utils/machine-id';
 import { CUIConfig } from '@/types/config';
 

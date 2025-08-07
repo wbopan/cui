@@ -4,7 +4,7 @@ import express from 'express';
 import { createPreferencesRoutes } from '@/routes/preferences.routes';
 import { PreferencesService } from '@/services/preferences-service';
 
-vi.mock('@/services/logger');
+vi.mock('@/services/logger.js');
 
 describe('Preferences Routes', () => {
   let app: express.Application;

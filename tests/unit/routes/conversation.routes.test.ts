@@ -8,7 +8,7 @@ import { SessionInfoService } from '@/services/session-info-service';
 import { ConversationStatusManager } from '@/services/conversation-status-manager';
 import { ToolMetricsService } from '@/services/ToolMetricsService';
 
-vi.mock('@/services/logger');
+vi.mock('@/services/logger.js');
 
 describe('Conversation Routes - Unified Start/Resume Endpoint', () => {
   let app: express.Application;

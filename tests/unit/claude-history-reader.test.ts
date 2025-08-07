@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest';
 import { ClaudeHistoryReader } from '@/services/claude-history-reader';
 import { ConversationListQuery } from '@/types';
-import { createLogger } from '@/services/logger';
+import { createLogger } from '@/services/logger.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as os from 'os';
@@ -31,19 +31,19 @@ const mockToolMetricsService = {
 };
 
 // Mock logger
-vi.mock('@/services/logger', () => ({
+vi.mock('@/services/logger.js', () => ({
   createLogger: vi.fn(() => mockLogger)
 }));
 
 // Mock SessionInfoService
-vi.mock('@/services/session-info-service', () => ({
+vi.mock('@/services/session-info-service.js', () => ({
   SessionInfoService: {
     getInstance: vi.fn(() => mockSessionInfoService)
   }
 }));
 
 // Mock ToolMetricsService
-vi.mock('@/services/ToolMetricsService', () => ({
+vi.mock('@/services/ToolMetricsService.js', () => ({
   ToolMetricsService: vi.fn(() => mockToolMetricsService)
 }));
 

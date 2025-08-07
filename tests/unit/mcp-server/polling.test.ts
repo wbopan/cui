@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } 
 import fetch from 'node-fetch';
 
 vi.mock('node-fetch');
-vi.mock('@/services/logger');
+vi.mock('@/services/logger.js');
 
 describe('MCP Server Permission Polling Logic', () => {
   const mockFetch = fetch as any<typeof fetch>;

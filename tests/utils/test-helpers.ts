@@ -3,7 +3,7 @@ import { CUIServer } from '@/cui-server';
 import { ClaudeProcessManager } from '@/services/claude-process-manager';
 import { ClaudeHistoryReader } from '@/services/claude-history-reader';
 import { ConversationStatusManager } from '@/services/conversation-status-manager';
-import { ConfigService } from '@/services/config-service';
+import { ConfigService } from '@/services/config-service.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as os from 'os';

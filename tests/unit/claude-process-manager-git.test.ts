@@ -3,7 +3,7 @@ import { ClaudeProcessManager } from '@/services/claude-process-manager';
 import { SessionInfoService } from '@/services/session-info-service';
 import { FileSystemService } from '@/services/file-system-service';
 
-vi.mock('@/services/logger');
+vi.mock('@/services/logger.js');
 
 describe('ClaudeProcessManager - Git Integration', () => {
   let mockSessionInfoService: vi.Mocked<SessionInfoService>;
