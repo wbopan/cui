@@ -22,7 +22,10 @@ jobs:
           bun-version: '1.1.35'
 
       - name: Install dependencies
-        run: bun install
+        run: |
+          bun install
+          # Ensure lightningcss platform-specific binaries are installed
+          bun add -d lightningcss-linux-x64-gnu
 
       - name: Build project
         run: bun run build
@@ -85,7 +88,10 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
-        run: bun install
+        run: |
+          bun install
+          # Ensure lightningcss platform-specific binaries are installed
+          bun add -d lightningcss-linux-x64-gnu
 
       - name: Build project
         run: bun run build
