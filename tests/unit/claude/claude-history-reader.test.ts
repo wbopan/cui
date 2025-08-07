@@ -16,27 +16,11 @@ const mockSessionInfoService = {
   getSessionInfo: mock()
 };
 
-// Mock ToolMetricsService
-const mockToolMetricsService = {
-  calculateMetricsFromMessages: mock(() => ({
-    linesAdded: 0,
-    linesRemoved: 0,
-    editCount: 0,
-    writeCount: 0
-  }))
-};
-
-
 // Mock SessionInfoService
 mock.module('@/services/session-info-service', () => ({
   SessionInfoService: mock(function() {
     return mockSessionInfoService;
   })
-}));
-
-// Mock ToolMetricsService
-mock.module('@/services/ToolMetricsService', () => ({
-  ToolMetricsService: mock(() => mockToolMetricsService)
 }));
 
 describe('ClaudeHistoryReader', () => {

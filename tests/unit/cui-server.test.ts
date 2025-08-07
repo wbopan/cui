@@ -7,6 +7,7 @@ import { ConversationStatusManager } from '@/services/conversation-status-manage
 import { CUIError } from '@/types';
 import request from 'supertest';
 import { TestHelpers } from '../utils/test-helpers';
+import { createMockConversationStatusManager } from '../utils/mock-event-emitter';
 import * as path from 'path';
 
 // Create global mocks that will be used by the mocked modules
@@ -109,21 +110,7 @@ describe('CUIServer', () => {
       on: mock()
     };
 
-    mockStatusTracker = globalMockStatusTracker = {
-      registerActiveSession: mock(),
-      unregisterActiveSession: mock(),
-      getConversationContext: mock(),
-      getConversationStatus: mock(),
-      isSessionActive: mock(),
-      getStreamingId: mock(),
-      getSessionId: mock(),
-      getActiveSessionIds: mock(),
-      getActiveStreamingIds: mock(),
-      clear: mock(),
-      getStats: mock(),
-      on: mock(),
-      emit: mock()
-    };
+    mockStatusTracker = globalMockStatusTracker = createMockConversationStatusManager();
 
     // The global mocks are now set up, constructors will return them automatically
   });
