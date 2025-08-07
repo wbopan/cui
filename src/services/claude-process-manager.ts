@@ -3,6 +3,8 @@ import { ConversationConfig, CUIError, SystemInitMessage, StreamEvent } from '@/
 import { v4 as uuidv4 } from 'uuid';
 import { EventEmitter } from 'events';
 import { existsSync, readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 import { JsonLinesParser } from './json-lines-parser.js';
 import { createLogger, type Logger } from './logger.js';
 import { ClaudeHistoryReader } from './claude-history-reader.js';
@@ -12,6 +14,10 @@ import { SessionInfoService } from './session-info-service.js';
 import { FileSystemService } from './file-system-service.js';
 import { NotificationService } from './notification-service.js';
 import path from 'path';
+
+// Get the directory of this module
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 /**
  * Manages Claude CLI processes and their lifecycle
@@ -50,18 +56,25 @@ export class ClaudeProcessManager extends EventEmitter {
    * Since @anthropic-ai/claude-code is a dependency, claude should be in node_modules/.bin
    */
   private findClaudeExecutable(): string {
-    // __dirname points to the compiled dist/services directory
-    const cuiServerRoot = path.resolve(__dirname, '..', '..');
-    const claudePath = path.join(cuiServerRoot, 'node_modules', '.bin', 'claude');
+    // When running as an npm package, find claude relative to this module
+    // __dirname will be something like /path/to/node_modules/cui-server/dist/services
+    const packageRoot = path.resolve(__dirname, '..', '..');
+    const claudePath = path.join(packageRoot, 'node_modules', '.bin', 'claude');
     
     if (existsSync(claudePath)) {
       return claudePath;
     }
     
-    // Fallback for development environment (running from src)
-    const devPath = path.join(__dirname, '..', '..', '..', 'node_modules', '.bin', 'claude');
-    if (existsSync(devPath)) {
-      return devPath;
+    // Try from the parent node_modules (when cui-server is installed as a dependency)
+    const parentModulesPath = path.resolve(packageRoot, '..', '..', '.bin', 'claude');
+    if (existsSync(parentModulesPath)) {
+      return parentModulesPath;
+    }
+    
+    // Fallback: try from current working directory (for local development)
+    const cwdPath = path.join(process.cwd(), 'node_modules', '.bin', 'claude');
+    if (existsSync(cwdPath)) {
+      return cwdPath;
     }
     
     throw new Error('Claude executable not found in node_modules. Ensure @anthropic-ai/claude-code is installed.');

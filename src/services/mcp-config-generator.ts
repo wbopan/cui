@@ -2,8 +2,13 @@ import { writeFileSync, mkdirSync, unlinkSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { tmpdir } from 'os';
 import { v4 as uuidv4 } from 'uuid';
+import { fileURLToPath } from 'url';
 import { logger } from '@/services/logger.js';
 import { FileSystemService } from '@/services/file-system-service.js';
+
+// Get the directory of this module
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 export interface MCPConfig {
   mcpServers: {
@@ -34,12 +39,19 @@ export class MCPConfigGenerator {
    * Generate MCP config with the permission server
    */
   async generateConfig(port: number): Promise<string> {
-    // In production/compiled code, __dirname will be in dist/services
-    // We need to go up to dist and then to mcp-server
-    const isCompiled = __dirname.includes('dist');
-    const mcpServerPath = isCompiled 
-      ? join(__dirname, '..', 'mcp-server', 'index.js')
-      : join(__dirname, '..', '..', 'dist', 'mcp-server', 'index.js');
+    // Find MCP server relative to this module
+    // In production: __dirname is /path/to/node_modules/cui-server/dist/services
+    // In development: __dirname is /path/to/cui-server/src/services
+    // MCP server is always in dist/mcp-server/index.js
+    
+    let mcpServerPath: string;
+    if (__dirname.includes('/dist/') || __dirname.includes('\\dist\\')) {
+      // Production: we're in dist/services, go up to dist then to mcp-server
+      mcpServerPath = join(__dirname, '..', 'mcp-server', 'index.js');
+    } else {
+      // Development: we're in src/services, go up to root then to dist/mcp-server
+      mcpServerPath = join(__dirname, '..', '..', 'dist', 'mcp-server', 'index.js');
+    }
     
     // Validate that the MCP server file and Node.js executable exist
     if (this.fileSystemService) {

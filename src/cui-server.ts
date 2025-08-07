@@ -1,5 +1,11 @@
 import express, { Express } from 'express';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+// Get the directory of this module for serving static files
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 import { ClaudeProcessManager } from './services/claude-process-manager.js';
 import { StreamManager } from './services/stream-manager.js';
 import { ClaudeHistoryReader } from './services/claude-history-reader.js';
@@ -242,7 +248,8 @@ export class CUIServer {
       
       // Import ViteExpress dynamically if in development mode
       if (isDev && !ViteExpress) {
-        ViteExpress = await import('vite-express');
+        const viteExpressModule = await import('vite-express');
+        ViteExpress = viteExpressModule.default;
       }
       
       await new Promise<void>((resolve, reject) => {
@@ -412,6 +419,8 @@ export class CUIServer {
     const isDev = process.env.NODE_ENV === 'development';
     if (!isDev) {
       // In production/test, serve built static files
+      // In production, __dirname will be /path/to/node_modules/cui-server/dist
+      // We need to serve from dist/web
       const staticPath = path.join(__dirname, 'web');
       this.logger.debug('Serving static files from', { path: staticPath });
       this.app.use(express.static(staticPath));
@@ -469,7 +478,7 @@ export class CUIServer {
     if (!isDev) {
       // In production/test, serve index.html for all non-API routes
       this.app.get('*', (req, res) => {
-        res.sendFile(path.join(__dirname, 'web/index.html'));
+        res.sendFile(path.join(__dirname, 'web', 'index.html'));
       });
     }
     // In development, ViteExpress handles React routing
