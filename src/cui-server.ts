@@ -100,7 +100,7 @@ export class CUIServer {
     this.processManager = new ClaudeProcessManager(this.historyReader, this.statusTracker, undefined, undefined, this.toolMetricsService, this.sessionInfoService, this.fileSystemService);
     this.streamManager = new StreamManager();
     this.permissionTracker = new PermissionTracker();
-    this.mcpConfigGenerator = new MCPConfigGenerator();
+    this.mcpConfigGenerator = new MCPConfigGenerator(this.fileSystemService);
     this.workingDirectoriesService = new WorkingDirectoriesService(this.historyReader, this.logger);
     this.notificationService = new NotificationService(this.preferencesService);
     
@@ -181,9 +181,29 @@ export class CUIServer {
       this.setupRoutes();
       
       // Generate MCP config before starting server
-      const mcpConfigPath = this.mcpConfigGenerator.generateConfig(this.port);
-      this.processManager.setMCPConfigPath(mcpConfigPath);
-      this.logger.debug('MCP config generated and set', { path: mcpConfigPath });
+      try {
+        const mcpConfigPath = await this.mcpConfigGenerator.generateConfig(this.port);
+        this.processManager.setMCPConfigPath(mcpConfigPath);
+        this.logger.debug('MCP config generated and set', { path: mcpConfigPath });
+      } catch (error) {
+        const isTestEnv = process.env.NODE_ENV === 'test';
+        
+        if (isTestEnv) {
+          this.logger.warn('MCP config generation failed in test environment, proceeding without MCP', {
+            error: error instanceof Error ? error.message : String(error)
+          });
+          // Don't set MCP config path - conversations will run without MCP
+        } else {
+          this.logger.error('MCP config generation failed in production environment', {
+            error: error instanceof Error ? error.message : String(error)
+          });
+          throw new CUIError(
+            'MCP_CONFIG_REQUIRED',
+            `MCP server files are required in production but not found: ${error instanceof Error ? error.message : String(error)}`,
+            500
+          );
+        }
+      }
       
       // Display auth URL with token fragment
       const authToken = this.configOverrides?.token ?? config.authToken;

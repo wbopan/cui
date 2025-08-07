@@ -2,6 +2,7 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import { existsSync, constants } from 'fs';
 import ignore from 'ignore';
 import { CUIError, FileSystemEntry } from '@/types';
 import { createLogger } from './logger';
@@ -379,6 +380,48 @@ export class FileSystemService {
     } catch (error) {
       this.logger.debug('Failed to get git HEAD', { dirPath, error });
       return null;
+    }
+  }
+
+  /**
+   * Validate that an executable exists and has executable permissions
+   */
+  async validateExecutable(executablePath: string): Promise<void> {
+    this.logger.debug('Validating executable', { executablePath });
+
+    try {
+      // Check if file exists
+      if (!existsSync(executablePath)) {
+        throw new CUIError(
+          'EXECUTABLE_NOT_FOUND',
+          `Executable not found: ${executablePath}`,
+          404
+        );
+      }
+
+      // Check if file is executable
+      try {
+        await fs.access(executablePath, constants.X_OK);
+      } catch (error) {
+        throw new CUIError(
+          'NOT_EXECUTABLE',
+          `File exists but is not executable: ${executablePath}`,
+          403
+        );
+      }
+
+      this.logger.debug('Executable validation successful', { executablePath });
+    } catch (error) {
+      if (error instanceof CUIError) {
+        throw error;
+      }
+      
+      this.logger.error('Error validating executable', error, { executablePath });
+      throw new CUIError(
+        'EXECUTABLE_VALIDATION_FAILED',
+        `Failed to validate executable: ${error}`,
+        500
+      );
     }
   }
 }

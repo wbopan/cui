@@ -424,6 +424,11 @@ export class ClaudeProcessManager extends EventEmitter {
     this.conversationConfigs.set(streamingId, config);
     
     try {
+      // Validate Claude executable before proceeding
+      if (this.fileSystemService) {
+        await this.fileSystemService.validateExecutable(spawnConfig.executablePath);
+      }
+      
       this.logger.debug(`${operation.charAt(0).toUpperCase() + operation.slice(1)} conversation`, { 
         streamingId,
         operation,

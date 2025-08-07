@@ -16,9 +16,9 @@ describe('MCPConfigGenerator', () => {
   });
 
   describe('generateConfig', () => {
-    it('should generate MCP config file with correct structure', () => {
+    it('should generate MCP config file with correct structure', async () => {
       const port = 3001;
-      const configPath = generator.generateConfig(port);
+      const configPath = await generator.generateConfig(port);
 
       // Check file exists
       expect(existsSync(configPath)).toBe(true);
@@ -44,12 +44,12 @@ describe('MCPConfigGenerator', () => {
       });
     });
 
-    it('should generate unique config file paths', () => {
+    it('should generate unique config file paths', async () => {
       const generator1 = new MCPConfigGenerator();
       const generator2 = new MCPConfigGenerator();
 
-      const path1 = generator1.generateConfig(3001);
-      const path2 = generator2.generateConfig(3002);
+      const path1 = await generator1.generateConfig(3001);
+      const path2 = await generator2.generateConfig(3002);
 
       expect(path1).not.toBe(path2);
 
@@ -58,9 +58,9 @@ describe('MCPConfigGenerator', () => {
       generator2.cleanup();
     });
 
-    it('should use provided port in environment variables', () => {
+    it('should use provided port in environment variables', async () => {
       const port = 4567;
-      const configPath = generator.generateConfig(port);
+      const configPath = await generator.generateConfig(port);
 
       const configContent = readFileSync(configPath, 'utf-8');
       const config = JSON.parse(configContent);
@@ -71,9 +71,9 @@ describe('MCPConfigGenerator', () => {
   });
 
   describe('getConfigPath', () => {
-    it('should return the generated config path', () => {
+    it('should return the generated config path', async () => {
       const port = 3001;
-      const generatedPath = generator.generateConfig(port);
+      const generatedPath = await generator.generateConfig(port);
       const retrievedPath = generator.getConfigPath();
 
       expect(retrievedPath).toBe(generatedPath);
@@ -81,8 +81,8 @@ describe('MCPConfigGenerator', () => {
   });
 
   describe('cleanup', () => {
-    it('should remove the generated config file', () => {
-      const configPath = generator.generateConfig(3001);
+    it('should remove the generated config file', async () => {
+      const configPath = await generator.generateConfig(3001);
       
       expect(existsSync(configPath)).toBe(true);
 
@@ -91,9 +91,9 @@ describe('MCPConfigGenerator', () => {
       expect(existsSync(configPath)).toBe(false);
     });
 
-    it('should handle cleanup when file does not exist', () => {
+    it('should handle cleanup when file does not exist', async () => {
       // Get path without generating file
-      generator.generateConfig(3001);
+      await generator.generateConfig(3001);
       const configPath = generator.getConfigPath();
       
       // Manually remove file
