@@ -35,11 +35,8 @@ import { createCorsMiddleware } from './middleware/cors-setup.js';
 import { queryParser } from './middleware/query-parser.js';
 import { authMiddleware, createAuthMiddleware } from './middleware/auth.js';
 
-// Conditionally import ViteExpress only in development environment
+// ViteExpress will be imported dynamically in initialize() if needed
 let ViteExpress: typeof import('vite-express') | undefined;
-if (process.env.NODE_ENV === 'development') {
-  ViteExpress = require('vite-express');
-}
 
 /**
  * Main CUI server class
@@ -242,6 +239,11 @@ export class CUIServer {
         useViteExpress: isDev,
         environment: process.env.NODE_ENV 
       });
+      
+      // Import ViteExpress dynamically if in development mode
+      if (isDev && !ViteExpress) {
+        ViteExpress = await import('vite-express');
+      }
       
       await new Promise<void>((resolve, reject) => {
         // Use ViteExpress only in development

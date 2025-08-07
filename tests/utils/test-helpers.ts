@@ -3,11 +3,12 @@ import { CUIServer } from '@/cui-server';
 import { ClaudeProcessManager } from '@/services/claude-process-manager';
 import { ClaudeHistoryReader } from '@/services/claude-history-reader';
 import { ConversationStatusManager } from '@/services/conversation-status-manager';
+import { ConfigService } from '@/services/config-service';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as os from 'os';
 import { EventEmitter } from 'events';
-import { ChildProcess } from 'child_process';
+import { ChildProcess, spawn } from 'child_process';
 
 /**
  * Mock Claude process that simulates realistic Claude CLI behavior
@@ -179,7 +180,6 @@ export class TestHelpers {
     port?: number;
   }): CUIServer {
     // Mock ConfigService for tests
-    const { ConfigService } = require('@/services/config-service');
     vi.spyOn(ConfigService, 'getInstance').mockReturnValue({
       initialize: vi.fn().mockResolvedValue(undefined),
       getConfig: vi.fn().mockReturnValue({
@@ -257,7 +257,6 @@ export class TestHelpers {
     const host = config?.host || 'localhost';
     
     // Mock ConfigService for integration tests
-    const { ConfigService } = require('@/services/config-service');
     vi.spyOn(ConfigService, 'getInstance').mockReturnValue({
       initialize: vi.fn().mockResolvedValue(undefined),
       getConfig: vi.fn().mockReturnValue({
@@ -280,8 +279,7 @@ export class TestHelpers {
    * Setup child_process.spawn mock for integration tests
    */
   static setupClaudeProcessMock(mockProcess: MockClaudeProcess): vi.SpyInstance {
-    const { spawn } = require('child_process');
-    const mockSpawn = vi.spyOn(require('child_process'), 'spawn');
+    const mockSpawn = vi.fn();
     
     mockSpawn.mockImplementation((...args: any[]) => {
       const [command, spawnArgs, options] = args;

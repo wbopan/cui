@@ -41,8 +41,8 @@ function getMockClaudeExecutablePath(): string {
   return path.join(process.cwd(), 'tests', '__mocks__', 'claude');
 }
 
-// Mock execSync for system status tests
-const { execSync } = require('child_process');
+// Import execSync from child_process
+import { execSync } from 'child_process';
 
 describe('CUIServer', () => {
   let server: CUIServer;
@@ -578,7 +578,7 @@ describe('CUIServer', () => {
           }
           throw new Error('Command not found');
         });
-        require('child_process').execSync = mockedExecSync;
+        // The execSync is already mocked via vi.mock
 
         vi.spyOn((server as any).processManager, 'getActiveSessions').mockReturnValue(['session-1', 'session-2']);
 
