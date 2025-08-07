@@ -64,7 +64,6 @@ export interface ComposerProps {
   // File autocomplete
   fileSystemEntries?: FileSystemEntry[];
   onFetchFileSystem?: (directory: string) => Promise<FileSystemEntry[]>;
-  dropdownPosition?: 'above' | 'below';
 
   // Command autocomplete
   availableCommands?: Command[];
@@ -225,9 +224,8 @@ interface AutocompleteDropdownProps {
   onClose: () => void;
   isOpen: boolean;
   focusedIndex: number;
-  position?: 'above' | 'below';
-  triggerRef?: React.RefObject<HTMLElement>;
   type: 'file' | 'command';
+  triggerRef: React.RefObject<HTMLElement>;
 }
 
 function AutocompleteDropdown({
@@ -236,9 +234,8 @@ function AutocompleteDropdown({
   onClose,
   isOpen,
   focusedIndex,
-  position = 'below',
-  triggerRef,
   type,
+  triggerRef,
 }: AutocompleteDropdownProps) {
   if (!isOpen) return null;
 
@@ -262,32 +259,31 @@ function AutocompleteDropdown({
   });
 
   return (
-    <div className={cn(
-      "w-full"
-    )}>
-      <DropdownSelector
-        options={options}
-        value={undefined}
-        onChange={onSelect}
-        isOpen={true}
-        onOpenChange={(open) => {
-          if (!open) onClose();
-        }}
-        showFilterInput={false}
-        maxVisibleItems={5}
-        initialFocusedIndex={focusedIndex}
-        visualFocusOnly={true}
-        triggerElementRef={triggerRef}
-        renderOption={type === 'command' ? (option) => (
-          <div className="flex flex-col items-start gap-0.5 w-full">
-            <span className="text-sm">{option.label}</span>
-            {option.description && (
-              <span className="text-xs text-muted-foreground/80">{option.description}</span>
-            )}
-          </div>
-        ) : undefined}
-      />
-    </div>
+    <DropdownSelector
+      options={options}
+      value={undefined}
+      onChange={onSelect}
+      isOpen={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+      showFilterInput={false}
+      maxVisibleItems={5}
+      initialFocusedIndex={focusedIndex}
+      visualFocusOnly={true}
+      triggerElementRef={triggerRef}
+      renderOption={type === 'command' ? (option) => (
+        <div className="flex flex-col items-start gap-0.5 w-full">
+          <span className="text-sm">{option.label}</span>
+          {option.description && (
+            <span className="text-xs text-muted-foreground/80">{option.description}</span>
+          )}
+        </div>
+      ) : undefined}
+      renderTrigger={() => (
+        <div className="w-px h-px pointer-events-none opacity-0" />
+      )}
+    />
   );
 }
 
@@ -320,7 +316,6 @@ export const Composer = forwardRef<ComposerRef, ComposerProps>(function Composer
   onStop,
   fileSystemEntries = [],
   onFetchFileSystem,
-  dropdownPosition = 'below',
   availableCommands = [],
   onFetchCommands,
 }: ComposerProps, ref: React.Ref<ComposerRef>) {
@@ -635,6 +630,7 @@ export const Composer = forwardRef<ComposerRef, ComposerProps>(function Composer
     const commandAutocompleteInfo = detectSlashCommandAutocomplete(newValue, cursorPos);
     if (commandAutocompleteInfo && onFetchCommands) {
       const suggestions = filterCommandSuggestions(commandAutocompleteInfo.query);
+      
       setAutocomplete(prev => ({
         isActive: true,
         triggerIndex: commandAutocompleteInfo.triggerIndex,
@@ -652,6 +648,7 @@ export const Composer = forwardRef<ComposerRef, ComposerProps>(function Composer
       const fileAutocompleteInfo = detectAutocomplete(newValue, cursorPos);
       if (fileAutocompleteInfo) {
         const suggestions = filterSuggestions(fileAutocompleteInfo.query);
+        
         setAutocomplete(prev => ({
           isActive: true,
           triggerIndex: fileAutocompleteInfo.triggerIndex,
@@ -841,17 +838,6 @@ export const Composer = forwardRef<ComposerRef, ComposerProps>(function Composer
       e.preventDefault();
       handleSubmit(selectedPermissionMode);
     }}>
-      {(enableFileAutocomplete || onFetchCommands) && dropdownPosition === 'above' && (
-        <AutocompleteDropdown
-          suggestions={autocomplete.suggestions}
-          onSelect={handleAutocompleteSelection}
-          onClose={resetAutocomplete}
-          isOpen={autocomplete.isActive && autocomplete.suggestions.length > 0}
-          focusedIndex={autocomplete.focusedIndex}
-          position={dropdownPosition}
-          type={autocomplete.type}
-        />
-      )}
       <div className="flex flex-col items-center justify-center w-full bg-background border border-border rounded-3xl shadow-sm cursor-text transition-all duration-300 dark:bg-neutral-800">
         <div className="relative flex items-end w-full min-h-[73px]">
           <div className="relative flex flex-1 items-start mx-5 min-h-[73px]">
@@ -1098,16 +1084,17 @@ export const Composer = forwardRef<ComposerRef, ComposerProps>(function Composer
           </div>
         </div>
       </div>
-      {(enableFileAutocomplete || onFetchCommands) && dropdownPosition === 'below' && (
+      
+      {/* Autocomplete Dropdown */}
+      {(enableFileAutocomplete || onFetchCommands) && (
         <AutocompleteDropdown
           suggestions={autocomplete.suggestions}
           onSelect={handleAutocompleteSelection}
           onClose={resetAutocomplete}
           isOpen={autocomplete.isActive && autocomplete.suggestions.length > 0}
           focusedIndex={autocomplete.focusedIndex}
-          position={dropdownPosition}
-          triggerRef={textareaRef}
           type={autocomplete.type}
+          triggerRef={textareaRef}
         />
       )}
       
