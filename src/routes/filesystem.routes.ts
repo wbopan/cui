@@ -16,6 +16,18 @@ export function createFileSystemRoutes(
   const router = Router();
   const logger = createLogger('FileSystemRoutes');
 
+  // Helper to strictly parse boolean query params (accepts "true"/"false" and booleans)
+  const parseBooleanParam = (value: unknown, paramName: string): boolean | undefined => {
+    if (value === undefined) return undefined;
+    if (typeof value === 'boolean') return value;
+    if (typeof value === 'string') {
+      if (value.toLowerCase() === 'true') return true;
+      if (value.toLowerCase() === 'false') return false;
+    }
+    throw new CUIError('INVALID_PARAM', `${paramName} must be boolean (true/false)`, 400);
+  };
+
+
   // List directory contents
   router.get('/list', async (req: Request<Record<string, never>, FileSystemListResponse, Record<string, never>, FileSystemListQuery> & RequestWithRequestId, res, next) => {
     const requestId = req.requestId;
@@ -32,9 +44,9 @@ export function createFileSystemRoutes(
         throw new CUIError('MISSING_PATH', 'path query parameter is required', 400);
       }
       
-      // Convert string values to boolean for backward compatibility
-      const recursive = req.query.recursive === true || req.query.recursive === 'true';
-      const respectGitignore = req.query.respectGitignore === true || req.query.respectGitignore === 'true';
+      // Parse boolean query parameters
+      const recursive = parseBooleanParam(req.query.recursive, 'recursive') ?? false;
+      const respectGitignore = parseBooleanParam(req.query.respectGitignore, 'respectGitignore') ?? false;
       
       const result = await fileSystemService.listDirectory(
         req.query.path,
