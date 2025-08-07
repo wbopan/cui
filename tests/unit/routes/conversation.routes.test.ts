@@ -1,4 +1,10 @@
 import { describe, it, expect, beforeEach, mock, spyOn } from 'bun:test';
+import { setupLoggerMock, createMockLogger } from '../../utils/mock-logger';
+
+// Use the complete logger mock
+setupLoggerMock();
+const mockLogger = createMockLogger();
+
 import request from 'supertest';
 import express from 'express';
 import Anthropic from '@anthropic-ai/sdk';
@@ -9,15 +15,6 @@ import { SessionInfoService } from '@/services/session-info-service';
 import { ConversationStatusManager } from '@/services/conversation-status-manager';
 import { ToolMetricsService } from '@/services/ToolMetricsService';
 import { ConversationSummary, ConversationMessage, ToolMetrics, CUIError } from '@/types';
-
-mock.module('@/services/logger', () => ({
-  createLogger: mock(() => ({
-    debug: mock(),
-    info: mock(),
-    error: mock(),
-    warn: mock()
-  }))
-}));
 
 describe('Conversation Routes - Unified Start/Resume Endpoint', () => {
   let app: express.Application;

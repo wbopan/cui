@@ -143,7 +143,7 @@ export function Home() {
                 <h1 className="text-2xl font-semibold font-sans text-foreground">What is the next task?</h1>
               </div>
               
-              <div className="w-full pt-px px-3">
+              <div className="w-full">
                 <Composer 
                   ref={composerRef}
                   workingDirectory={recentWorkingDirectory}
