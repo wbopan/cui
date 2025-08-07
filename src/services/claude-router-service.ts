@@ -41,7 +41,7 @@ export class ClaudeRouterService {
       
       // Add routing transformation hook BEFORE the server starts
       // This hook runs BEFORE the @musistudio/llms preHandler that splits by comma
-      this.server.addHook('preHandler', async (req: any, reply: any) => {
+      this.server.addHook('preHandler', async (req: any, _reply: any) => {
         // Only process /v1/messages requests (Claude API format)
         if (!req.url.startsWith('/v1/messages') || req.method !== 'POST') {
           return;
