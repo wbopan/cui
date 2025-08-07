@@ -1,5 +1,4 @@
 import React, { useRef, useEffect, useCallback } from 'react';
-import styles from './WaveformVisualizer.module.css';
 
 interface WaveformVisualizerProps {
   audioData: Uint8Array | null;
@@ -27,8 +26,8 @@ export function WaveformVisualizer({
 
   const getBarColor = useCallback(() => {
     if (typeof window !== 'undefined') {
-      const computedStyle = getComputedStyle(document.documentElement);
-      return computedStyle.getPropertyValue('--color-text-primary').trim();
+      const isDark = document.documentElement.classList.contains('dark');
+      return isDark ? '#ececec' : '#0d0d0d';
     }
     return '#000000';
   }, []);
@@ -175,10 +174,15 @@ export function WaveformVisualizer({
   }, [drawWaveform]);
 
   return (
-    <div ref={containerRef} className={styles.container}>
+    <div 
+      ref={containerRef} 
+      className="w-full bg-transparent flex items-center justify-start"
+      aria-label="Audio waveform visualization"
+    >
       <canvas
         ref={canvasRef}
-        className={styles.canvas}
+        className="bg-transparent w-full"
+        aria-hidden="true"
       />
     </div>
   );
