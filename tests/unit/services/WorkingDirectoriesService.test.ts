@@ -1,23 +1,12 @@
 import { describe, it, expect, beforeEach, afterEach, mock } from 'bun:test';
+import { setupLoggerMock } from '../../utils/mock-logger';
 
 mock.module('@/services/claude-history-reader', () => ({
   ClaudeHistoryReader: mock()
 }));
 
-mock.module('@/services/logger', () => ({
-  createLogger: mock(() => ({
-    child: mock(() => ({
-      debug: mock(),
-      info: mock(),
-      error: mock(),
-      warn: mock()
-    })),
-    debug: mock(),
-    info: mock(),
-    error: mock(),
-    warn: mock()
-  }))
-}));
+// Use the complete logger mock that properly implements child() recursively
+setupLoggerMock();
 
 import { WorkingDirectoriesService } from '@/services/working-directories-service';
 import { ClaudeHistoryReader } from '@/services/claude-history-reader';

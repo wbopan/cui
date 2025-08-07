@@ -1,18 +1,10 @@
 import { describe, it, expect, beforeEach, mock } from 'bun:test';
 import type { SessionInfo, SessionInfoDatabase } from '@/types';
+import { setupLoggerMock, createMockLogger } from '../../utils/mock-logger';
 
-// Mock logger
-const mockLogger = {
-  debug: mock(() => {}),
-  info: mock(() => {}),
-  error: mock(() => {}),
-  warn: mock(() => {})
-};
-
-// Mock the logger module
-mock.module('@/services/logger', () => ({
-  createLogger: mock(() => mockLogger)
-}));
+// Use the complete logger mock
+setupLoggerMock();
+const mockLogger = createMockLogger();
 
 // Create mock JsonFileManager instance
 const mockJsonManager = {

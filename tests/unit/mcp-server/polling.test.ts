@@ -1,18 +1,14 @@
 import { describe, it, expect, beforeEach, mock } from 'bun:test';
+import { setupLoggerMock, createMockLogger } from '../../utils/mock-logger';
+
+// Use the complete logger mock
+setupLoggerMock();
+const mockLogger = createMockLogger();
 
 const mockFetch = mock();
 
 mock.module('node-fetch', () => ({
   default: mockFetch
-}));
-
-mock.module('@/services/logger', () => ({
-  createLogger: mock(() => ({
-    debug: mock(),
-    info: mock(),
-    error: mock(),
-    warn: mock()
-  }))
 }));
 
 describe('MCP Server Permission Polling Logic', () => {

@@ -1,18 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach, mock, spyOn } from 'bun:test';
 import { parseArgs } from '@/cli-parser';
+import { setupLoggerMock, createMockLogger } from '../utils/mock-logger';
 
-// Mock logger instance
-const mockLogger = {
-  error: mock(),
-  info: mock(),
-  debug: mock(),
-  warn: mock()
-};
-
-// Mock the logger
-mock.module('@/services/logger', () => ({
-  createLogger: mock(() => mockLogger)
-}));
+// Use the complete logger mock
+setupLoggerMock();
+const mockLogger = createMockLogger();
 
 describe('CLI Parser', () => {
   let mockExit: any;

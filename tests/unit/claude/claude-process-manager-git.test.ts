@@ -2,14 +2,11 @@ import { describe, it, expect, beforeEach, mock } from 'bun:test';
 import { ClaudeProcessManager } from '@/services/claude-process-manager';
 import { SessionInfoService } from '@/services/session-info-service';
 import { FileSystemService } from '@/services/file-system-service';
+import { setupLoggerMock, createMockLogger } from '../../utils/mock-logger';
 
-mock.module('@/services/logger', () => ({
-  createLogger: mock(() => ({
-    debug: mock(),
-    info: mock(),
-    error: mock()
-  }))
-}));
+// Use the complete logger mock
+setupLoggerMock();
+const mockLogger = createMockLogger();
 
 describe('ClaudeProcessManager - Git Integration', () => {
   let mockSessionInfoService: any;

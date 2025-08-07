@@ -2,12 +2,13 @@ import { describe, it, expect, beforeEach, afterEach, mock, spyOn } from 'bun:te
 import { ClaudeHistoryReader } from '@/services/claude-history-reader';
 import { ConversationListQuery } from '@/types';
 import { createLogger } from '@/services/logger';
-import { createMockLogger } from '../../utils/test-helpers';
+import { setupLoggerMock, createMockLogger } from '../../utils/mock-logger';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as os from 'os';
 
-// Mock logger instance
+// Use the complete logger mock
+setupLoggerMock();
 const mockLogger = createMockLogger();
 
 // Mock SessionInfoService
@@ -25,10 +26,6 @@ const mockToolMetricsService = {
   }))
 };
 
-// Mock logger
-mock.module('@/services/logger', () => ({
-  createLogger: mock(() => mockLogger)
-}));
 
 // Mock SessionInfoService
 mock.module('@/services/session-info-service', () => ({
