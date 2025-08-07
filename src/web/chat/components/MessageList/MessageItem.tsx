@@ -151,7 +151,7 @@ export function MessageItem({
             <div className="w-4 h-5 flex-shrink-0 flex items-center justify-center text-neutral-900 relative">
               <div className="w-2.5 h-2.5 bg-neutral-900 rounded-full" />
             </div>
-            <div className="flex-1 text-sm leading-relaxed text-neutral-900 min-w-0 break-words prose-headings:font-semibold prose-headings:text-neutral-900 prose-p:my-2 prose-ul:my-2 prose-ul:pl-8 prose-li:my-1 prose-code:bg-neutral-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-xs prose-pre:bg-neutral-100 prose-pre:p-2 prose-pre:rounded prose-pre:overflow-x-auto prose-pre:whitespace-pre-wrap prose-pre:break-words prose-pre:my-2 prose-blockquote:border-l-2 prose-blockquote:border-neutral-300 prose-blockquote:pl-2 prose-blockquote:my-2 prose-blockquote:text-neutral-600 prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline prose-hr:border-neutral-300 prose-hr:my-4 prose-table:border-collapse prose-table:w-full prose-table:my-2 prose-th:border prose-th:border-neutral-300 prose-th:p-2 prose-th:text-left prose-th:bg-neutral-100 prose-th:font-semibold prose-td:border prose-td:border-neutral-300 prose-td:p-2 prose-img:max-w-full prose-img:h-auto prose-img:rounded prose-img:my-2">
+            <div className="flex-1 min-w-0 prose prose-sm prose-neutral max-w-none">
               <ReactMarkdown components={markdownComponents}>{message.content}</ReactMarkdown>
             </div>
           </div>
@@ -169,7 +169,7 @@ export function MessageItem({
                 <div className="w-4 h-5 flex-shrink-0 flex items-center justify-center text-neutral-900 relative">
                   <div className="w-2.5 h-2.5 bg-neutral-900 rounded-full" />
                 </div>
-                <div className="flex-1 text-sm leading-relaxed text-neutral-900 min-w-0 break-words prose-headings:font-semibold prose-headings:text-neutral-900 prose-p:my-2 prose-ul:my-2 prose-ul:pl-8 prose-li:my-1 prose-code:bg-neutral-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-xs prose-pre:bg-neutral-100 prose-pre:p-2 prose-pre:rounded prose-pre:overflow-x-auto prose-pre:whitespace-pre-wrap prose-pre:break-words prose-pre:my-2 prose-blockquote:border-l-2 prose-blockquote:border-neutral-300 prose-blockquote:pl-2 prose-blockquote:my-2 prose-blockquote:text-neutral-600 prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline prose-hr:border-neutral-300 prose-hr:my-4 prose-table:border-collapse prose-table:w-full prose-table:my-2 prose-th:border prose-th:border-neutral-300 prose-th:p-2 prose-th:text-left prose-th:bg-neutral-100 prose-th:font-semibold prose-td:border prose-td:border-neutral-300 prose-td:p-2 prose-img:max-w-full prose-img:h-auto prose-img:rounded prose-img:my-2">
+                <div className="flex-1 min-w-0 prose prose-sm prose-neutral max-w-none">
                   <ReactMarkdown components={markdownComponents}>{block.text}</ReactMarkdown>
                 </div>
               </div>
@@ -182,7 +182,7 @@ export function MessageItem({
                 <div className="w-4 h-5 flex-shrink-0 flex items-center justify-center text-neutral-900 relative">
                   <div className="w-2.5 h-2.5 bg-neutral-900 rounded-full" />
                 </div>
-                <div className="flex-1 text-sm leading-relaxed text-neutral-600 italic prose-headings:font-semibold prose-headings:text-neutral-600 prose-headings:italic prose-p:my-2 prose-p:italic prose-ul:my-2 prose-ul:pl-8 prose-ul:italic prose-li:my-1 prose-li:italic prose-code:bg-neutral-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-xs prose-code:not-italic prose-code:text-neutral-600 prose-pre:bg-neutral-100 prose-pre:p-2 prose-pre:rounded prose-pre:overflow-x-auto prose-pre:whitespace-pre-wrap prose-pre:break-words prose-pre:my-2 prose-pre:not-italic prose-blockquote:border-l-2 prose-blockquote:border-neutral-300 prose-blockquote:pl-2 prose-blockquote:my-2 prose-blockquote:text-neutral-600 prose-blockquote:italic prose-a:text-neutral-600 prose-a:no-underline prose-a:italic hover:prose-a:underline">
+                <div className="flex-1 min-w-0 prose prose-sm prose-neutral max-w-none italic text-neutral-600">
                   <ReactMarkdown components={markdownComponents}>{block.thinking}</ReactMarkdown>
                 </div>
               </div>
