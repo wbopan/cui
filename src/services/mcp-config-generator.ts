@@ -3,7 +3,7 @@ import { join, dirname } from 'path';
 import { tmpdir } from 'os';
 import { v4 as uuidv4 } from 'uuid';
 import { fileURLToPath } from 'url';
-import { logger } from '@/services/logger.js';
+import { createLogger, type Logger } from '@/services/logger.js';
 import { FileSystemService } from '@/services/file-system-service.js';
 
 // Get the directory of this module
@@ -26,8 +26,10 @@ export interface MCPConfig {
 export class MCPConfigGenerator {
   private configPath: string;
   private fileSystemService?: FileSystemService;
+  private logger: Logger;
 
   constructor(fileSystemService?: FileSystemService) {
+    this.logger = createLogger('MCPConfigGenerator');
     // Generate unique config file in temp directory
     const tempDir = tmpdir();
     const configFileName = `cui-mcp-config-${uuidv4()}.json`;
@@ -58,7 +60,7 @@ export class MCPConfigGenerator {
       // Check if MCP server JS file exists
       if (!existsSync(mcpServerPath)) {
         const error = new Error(`MCP server file not found: ${mcpServerPath}`);
-        logger.warn('MCP server file not found, skipping MCP config generation', {
+        this.logger.warn('MCP server file not found, skipping MCP config generation', {
           mcpServerPath,
           error: error.message
         });
@@ -68,16 +70,16 @@ export class MCPConfigGenerator {
       // Validate that the MCP server file is executable
       try {
         await this.fileSystemService.validateExecutable(mcpServerPath);
-        logger.debug('MCP server file validated as executable successfully');
+        this.logger.debug('MCP server file validated as executable successfully');
       } catch (error) {
-        logger.warn('MCP server file is not executable, skipping MCP config generation', {
+        this.logger.warn('MCP server file is not executable, skipping MCP config generation', {
           mcpServerPath,
           error: error instanceof Error ? error.message : String(error)
         });
         throw error;
       }
       
-      logger.debug('MCP server file and Node.js validated successfully', { mcpServerPath });
+      this.logger.debug('MCP server file and Node.js validated successfully', { mcpServerPath });
     }
     
     const config: MCPConfig = {
@@ -100,13 +102,13 @@ export class MCPConfigGenerator {
     // Write config file
     writeFileSync(this.configPath, JSON.stringify(config, null, 2));
     
-    logger.info('MCP config file generated', {
+    this.logger.info('MCP config file generated', {
       path: this.configPath,
       port,
       mcpServerPath
     });
 
-    logger.debug('MCP config file', { config });
+    this.logger.debug('MCP config file', { config });
 
     return this.configPath;
   }
@@ -124,9 +126,9 @@ export class MCPConfigGenerator {
   cleanup(): void {
     try {
       unlinkSync(this.configPath);
-      logger.debug('MCP config file cleaned up', { path: this.configPath });
+      this.logger.debug('MCP config file cleaned up', { path: this.configPath });
     } catch (error) {
-      logger.warn('Failed to clean up MCP config file', {
+      this.logger.warn('Failed to clean up MCP config file', {
         path: this.configPath,
         error: error instanceof Error ? error.message : String(error)
       });

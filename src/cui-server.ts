@@ -2,6 +2,7 @@ import express, { Express } from 'express';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import { displayServerStartup } from './utils/server-startup.js';
 
 // Get the directory of this module for serving static files
 const __filename = fileURLToPath(import.meta.url);
@@ -218,14 +219,14 @@ export class CUIServer {
         }
       }
       
-      // Display auth URL with token fragment
-      const authToken = this.configOverrides?.token ?? config.authToken;
-      const authUrl = `http://${this.host}:${this.port}#token=${authToken}`;
-      if (!this.configOverrides?.skipAuthToken) {
-        this.logger.info(`Access with auth token: ${authUrl}`);
-      } else {
-        this.logger.info('Authentication is disabled (--skip-auth-token)');
-      }
+      // Display server startup information
+      displayServerStartup({
+        host: this.host,
+        port: this.port,
+        authToken: this.configOverrides?.token ?? config.authToken,
+        skipAuthToken: this.configOverrides?.skipAuthToken,
+        logger: this.logger
+      });
     } catch (error) {
       this.logger.error('Failed to initialize server:', error, {
         errorType: error instanceof Error ? error.constructor.name : typeof error,
@@ -313,7 +314,6 @@ export class CUIServer {
         }
       });
       
-      this.logger.info(`cui server started on http://${this.host}:${this.port}`);
     } catch (error) {
       this.logger.error('Failed to start server:', error, {
         errorType: error instanceof Error ? error.constructor.name : typeof error,
@@ -603,6 +603,8 @@ export class CUIServer {
                           this.processManager.listenerCount('process-error')
     });
   }
+
+
 
   private setupPermissionTrackerIntegration(): void {
     this.logger.debug('Setting up PermissionTracker integration');
