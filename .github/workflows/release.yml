@@ -41,7 +41,6 @@ jobs:
           
           # Copy built files
           cp -r dist release/
-          cp -r config release/
           cp package.json release/
           cp package-lock.json release/ || echo "package-lock.json not found"
           cp docs/README.md release/README.md || echo "README.md not found"
