@@ -1,14 +1,10 @@
 import { describe, it, expect, beforeEach, mock } from 'bun:test';
 import request from 'supertest';
+import { setupLoggerMock, createMockLogger } from '../../utils/mock-logger';
 
-mock.module('@/services/logger', () => ({
-  createLogger: mock(() => ({
-    debug: mock(),
-    info: mock(),
-    error: mock(),
-    warn: mock()
-  }))
-}));
+// Use the complete logger mock
+setupLoggerMock();
+const mockLogger = createMockLogger();
 import express from 'express';
 import { createPermissionRoutes } from '@/routes/permission.routes';
 import { PermissionTracker } from '@/services/permission-tracker';

@@ -1,21 +1,13 @@
 import { describe, it, expect, beforeEach, afterEach, mock } from 'bun:test';
+import { setupLoggerMock, createMockLogger } from '../../utils/mock-logger';
 
-// Mock the logger
-const mockLogger = {
-  debug: mock(),
-  info: mock(),
-  warn: mock(),
-  error: mock()
-};
+// Use the complete logger mock
+setupLoggerMock();
+const mockLogger = createMockLogger();
 
 // Create controllable mocks at module level
 let mockExistsSync = mock();
 let mockReaddirSync = mock();
-
-// Set up mocks at module level before any imports
-mock.module('@/services/logger', () => ({
-  createLogger: () => mockLogger
-}));
 
 mock.module('fs', () => ({
   existsSync: mockExistsSync,

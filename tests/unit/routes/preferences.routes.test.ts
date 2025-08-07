@@ -1,14 +1,10 @@
 import { describe, it, expect, beforeEach, mock } from 'bun:test';
 import request from 'supertest';
+import { setupLoggerMock, createMockLogger } from '../../utils/mock-logger';
 
-mock.module('@/services/logger', () => ({
-  createLogger: mock(() => ({
-    debug: mock(),
-    info: mock(),
-    error: mock(),
-    warn: mock()
-  }))
-}));
+// Use the complete logger mock
+setupLoggerMock();
+const mockLogger = createMockLogger();
 import express from 'express';
 import { createPreferencesRoutes } from '@/routes/preferences.routes';
 import { PreferencesService } from '@/services/preferences-service';

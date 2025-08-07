@@ -1,17 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach, mock } from 'bun:test';
+import { setupLoggerMock, createMockLogger } from '../../utils/mock-logger';
 import { ConversationCache, ConversationChain } from '../../../src/services/conversation-cache';
 
-const mockLogger = {
-  debug: mock(),
-  info: mock(),
-  warn: mock(),
-  error: mock()
-};
-
-// Mock the logger module
-mock.module('../../../src/services/logger', () => ({
-  createLogger: () => mockLogger
-}));
+// Use the complete logger mock
+setupLoggerMock();
+const mockLogger = createMockLogger();
 
 // Mock RawJsonEntry type for testing
 interface RawJsonEntry {

@@ -1,15 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach, mock } from 'bun:test';
 import request from 'supertest';
+import { setupLoggerMock, createMockLogger } from '../../utils/mock-logger';
 
-// Mock the logger
-mock.module('@/services/logger', () => ({
-  createLogger: mock(() => ({
-    info: mock(),
-    warn: mock(),
-    error: mock(),
-    debug: mock(),
-  })),
-}));
+// Use the complete logger mock
+setupLoggerMock();
+const mockLogger = createMockLogger();
 import express from 'express';
 import { createGeminiRoutes } from '@/routes/gemini.routes';
 import { GeminiService } from '@/services/gemini-service';
