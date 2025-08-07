@@ -1,6 +1,5 @@
 import { PermissionRequest } from '@/types/index.js';
 import { createLogger, type Logger } from './logger.js';
-import { PreferencesService } from './preferences-service.js';
 import { ConfigService } from './config-service.js';
 
 export interface Notification {
@@ -18,13 +17,11 @@ export interface Notification {
  */
 export class NotificationService {
   private logger: Logger;
-  private preferencesService: PreferencesService;
   private configService: ConfigService;
   private machineId: string | null = null;
 
-  constructor(preferencesService: PreferencesService) {
+  constructor() {
     this.logger = createLogger('NotificationService');
-    this.preferencesService = preferencesService;
     this.configService = ConfigService.getInstance();
   }
 
@@ -48,16 +45,16 @@ export class NotificationService {
    * Check if notifications are enabled
    */
   private async isEnabled(): Promise<boolean> {
-    const preferences = await this.preferencesService.getPreferences();
-    return preferences.notifications?.enabled ?? false;
+    const config = this.configService.getConfig();
+    return config.interface.notifications?.enabled ?? false;
   }
 
   /**
    * Get the ntfy URL from preferences
    */
   private async getNtfyUrl(): Promise<string> {
-    const preferences = await this.preferencesService.getPreferences();
-    return preferences.notifications?.ntfyUrl || 'https://ntfy.sh';
+    const config = this.configService.getConfig();
+    return config.interface.notifications?.ntfyUrl || 'https://ntfy.sh';
   }
 
   /**

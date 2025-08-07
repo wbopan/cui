@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Settings, Bell, Shield, Mic, X } from 'lucide-react';
 import { api } from '../../services/api';
-import type { Preferences } from '@/types/preferences';
+import type { Preferences } from '@/web/chat/types';
 import type { GeminiHealthResponse } from '@/types';
 import { Dialog } from '../Dialog';
 import { Button } from '@/web/chat/components/ui/button';

@@ -14,7 +14,6 @@ import { MCPConfigGenerator } from './services/mcp-config-generator.js';
 import { FileSystemService } from './services/file-system-service.js';
 import { ConfigService } from './services/config-service.js';
 import { SessionInfoService } from './services/session-info-service.js';
-import { PreferencesService } from './services/preferences-service.js';
 import { ConversationStatusManager } from './services/conversation-status-manager.js';
 import { WorkingDirectoriesService } from './services/working-directories-service.js';
 import { ToolMetricsService } from './services/ToolMetricsService.js';
@@ -34,7 +33,7 @@ import { createFileSystemRoutes } from './routes/filesystem.routes.js';
 import { createLogRoutes } from './routes/log.routes.js';
 import { createStreamingRoutes } from './routes/streaming.routes.js';
 import { createWorkingDirectoriesRoutes } from './routes/working-directories.routes.js';
-import { createPreferencesRoutes } from './routes/preferences.routes.js';
+import { createConfigRoutes } from './routes/config.routes.js';
 import { createGeminiRoutes } from './routes/gemini.routes.js';
 import { errorHandler } from './middleware/error-handler.js';
 import { requestLogger } from './middleware/request-logger.js';
@@ -60,7 +59,6 @@ export class CUIServer {
   private fileSystemService: FileSystemService;
   private configService: ConfigService;
   private sessionInfoService: SessionInfoService;
-  private preferencesService: PreferencesService;
   private conversationStatusManager: ConversationStatusManager;
   private workingDirectoriesService: WorkingDirectoriesService;
   private toolMetricsService: ToolMetricsService;
@@ -101,13 +99,12 @@ export class CUIServer {
     this.statusTracker = this.conversationStatusManager; // Use the same instance for backward compatibility
     this.toolMetricsService = new ToolMetricsService();
     this.fileSystemService = new FileSystemService();
-    this.preferencesService = new PreferencesService();
     this.processManager = new ClaudeProcessManager(this.historyReader, this.statusTracker, undefined, undefined, this.toolMetricsService, this.sessionInfoService, this.fileSystemService);
     this.streamManager = new StreamManager();
     this.permissionTracker = new PermissionTracker();
     this.mcpConfigGenerator = new MCPConfigGenerator(this.fileSystemService);
     this.workingDirectoriesService = new WorkingDirectoriesService(this.historyReader, this.logger);
-    this.notificationService = new NotificationService(this.preferencesService);
+    this.notificationService = new NotificationService();
     
     // Wire up notification service
     this.processManager.setNotificationService(this.notificationService);
@@ -160,10 +157,6 @@ export class CUIServer {
       this.logger.debug('Initializing session info service');
       await this.sessionInfoService.initialize();
       this.logger.debug('Session info service initialized successfully');
-
-      this.logger.debug('Initializing preferences service');
-      await this.preferencesService.initialize();
-      this.logger.debug('Preferences service initialized successfully');
 
       this.logger.debug('Initializing Gemini service');
       await geminiService.initialize();
@@ -491,7 +484,7 @@ export class CUIServer {
     this.app.use('/api/logs', createLogRoutes());
     this.app.use('/api/stream', createStreamingRoutes(this.streamManager));
     this.app.use('/api/working-directories', createWorkingDirectoriesRoutes(this.workingDirectoriesService));
-    this.app.use('/api/preferences', createPreferencesRoutes(this.preferencesService));
+    this.app.use('/api/config', createConfigRoutes(this.configService));
     this.app.use('/api/gemini', createGeminiRoutes(geminiService));
     
     // React Router catch-all - must be after all API routes

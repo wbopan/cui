@@ -22,6 +22,15 @@ export interface GeminiConfig {
   model?: string;
 }
 
+export interface InterfaceConfig {
+  colorScheme: 'light' | 'dark' | 'system';
+  language: string;
+  notifications?: {
+    enabled: boolean;
+    ntfyUrl?: string;
+  };
+}
+
 export interface CUIConfig {
   /**
    * Unique machine identifier
@@ -50,6 +59,11 @@ export interface CUIConfig {
    * Optional router configuration for Claude Code Router
    */
   router?: RouterConfiguration;
+
+  /**
+   * Interface preferences and settings
+   */
+  interface: InterfaceConfig;
 }
 
 /**
@@ -59,5 +73,9 @@ export const DEFAULT_CONFIG: Omit<CUIConfig, 'machine_id' | 'authToken'> = {
   server: {
     host: 'localhost',
     port: 3001
+  },
+  interface: {
+    colorScheme: 'system',
+    language: 'en'
   }
 };

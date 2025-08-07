@@ -117,20 +117,41 @@ export class ConfigService {
   private async loadConfig(): Promise<void> {
     try {
       const configData = fs.readFileSync(this.configPath, 'utf-8');
-      const config = JSON.parse(configData) as CUIConfig;
+      const fileConfig = JSON.parse(configData) as Partial<CUIConfig> & { machine_id: string; authToken: string };
+
+      // Merge with defaults for missing sections
+      let updated = false;
+      const merged: CUIConfig = {
+        machine_id: fileConfig.machine_id,
+        authToken: fileConfig.authToken,
+        server: { ...DEFAULT_CONFIG.server, ...(fileConfig.server || {}) },
+        gemini: fileConfig.gemini,
+        interface: { ...DEFAULT_CONFIG.interface, ...(fileConfig.interface || {}) }
+      };
+
+      if (!fileConfig.server) updated = true;
+      if (!fileConfig.interface) updated = true;
+      // Check if any interface fields missing
+      if (JSON.stringify(merged.interface) !== JSON.stringify(fileConfig.interface)) {
+        updated = true;
+      }
 
       // Validate required fields
-      if (!config.machine_id) {
+      if (!merged.machine_id) {
         throw new Error('Invalid config: missing machine_id');
       }
-      if (!config.server || typeof config.server.port !== 'number') {
+      if (!merged.server || typeof merged.server.port !== 'number') {
         throw new Error('Invalid config: missing or invalid server configuration');
       }
-      if (!config.authToken) {
+      if (!merged.authToken) {
         throw new Error('Invalid config: missing authToken');
       }
 
-      this.config = config;
+      this.config = merged;
+      if (updated) {
+        fs.writeFileSync(this.configPath, JSON.stringify(this.config, null, 2), 'utf-8');
+        this.logger.info('Configuration updated with defaults');
+      }
       this.logger.debug('Configuration loaded successfully');
     } catch (error) {
       throw new Error(`Failed to load config: ${error instanceof Error ? error.message : String(error)}`);
