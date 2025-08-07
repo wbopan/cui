@@ -14,6 +14,7 @@ import { SessionInfoService } from './session-info-service.js';
 import { FileSystemService } from './file-system-service.js';
 import { NotificationService } from './notification-service.js';
 import path from 'path';
+import { ClaudeRouterService } from './claude-router-service.js';
 
 // Get the directory of this module
 const __filename = fileURLToPath(import.meta.url);
@@ -38,6 +39,7 @@ export class ClaudeProcessManager extends EventEmitter {
   private sessionInfoService?: SessionInfoService;
   private fileSystemService?: FileSystemService;
   private notificationService?: NotificationService;
+  private routerService?: ClaudeRouterService;
 
   constructor(historyReader: ClaudeHistoryReader, statusTracker: ConversationStatusManager, claudeExecutablePath?: string, envOverrides?: Record<string, string | undefined>, toolMetricsService?: ToolMetricsService, sessionInfoService?: SessionInfoService, fileSystemService?: FileSystemService) {
     super();
@@ -49,6 +51,10 @@ export class ClaudeProcessManager extends EventEmitter {
     this.toolMetricsService = toolMetricsService;
     this.sessionInfoService = sessionInfoService;
     this.fileSystemService = fileSystemService;
+  }
+
+  setRouterService(service: ClaudeRouterService): void {
+    this.routerService = service;
   }
 
   /**
@@ -699,7 +705,22 @@ export class ClaudeProcessManager extends EventEmitter {
     args: string[],
     streamingId: string
   ): ChildProcess {
-    const { executablePath, cwd, env } = spawnConfig;
+    const { executablePath, cwd } = spawnConfig;
+    let { env } = spawnConfig;
+
+    // Inject router proxy if enabled
+    if (this.routerService?.isEnabled()) {
+      env = {
+        ...env,
+        ANTHROPIC_BASE_URL: this.routerService.getProxyUrl(),
+        ANTHROPIC_API_KEY: 'router-managed'
+      };
+
+      this.logger.info('Using router proxy', {
+        streamingId,
+        proxyUrl: this.routerService.getProxyUrl()
+      });
+    }
     
     // Check if MCP config is in args and validate it
     const mcpConfigIndex = args.indexOf('--mcp-config');

@@ -1,6 +1,7 @@
 /**
  * Configuration types for CUI
  */
+import { RouterConfiguration } from './router-config.js';
 
 export interface ServerConfig {
   host: string;
@@ -44,6 +45,11 @@ export interface CUIConfig {
    * Gemini API configuration (optional)
    */
   gemini?: GeminiConfig;
+
+  /**
+   * Optional router configuration for Claude Code Router
+   */
+  router?: RouterConfiguration;
 }
 
 /**

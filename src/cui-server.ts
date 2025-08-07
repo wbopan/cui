@@ -20,6 +20,7 @@ import { WorkingDirectoriesService } from './services/working-directories-servic
 import { ToolMetricsService } from './services/ToolMetricsService.js';
 import { NotificationService } from './services/notification-service.js';
 import { geminiService } from './services/gemini-service.js';
+import { ClaudeRouterService } from './services/claude-router-service.js';
 import { 
   StreamEvent,
   CUIError,
@@ -64,6 +65,7 @@ export class CUIServer {
   private workingDirectoriesService: WorkingDirectoriesService;
   private toolMetricsService: ToolMetricsService;
   private notificationService: NotificationService;
+  private routerService?: ClaudeRouterService;
   private logger: Logger;
   private port: number;
   private host: string;
@@ -166,7 +168,22 @@ export class CUIServer {
       this.logger.debug('Initializing Gemini service');
       await geminiService.initialize();
       this.logger.debug('Gemini service initialized successfully');
-      
+
+      // Initialize router service if configured
+      if (config.router?.enabled) {
+        this.logger.debug('Router service is enabled, attempting to initialize...');
+        try {
+          this.routerService = new ClaudeRouterService(config.router);
+          await this.routerService.initialize();
+          this.processManager.setRouterService(this.routerService);
+          this.logger.info('Router service initialized');
+        } catch (error) {
+          this.logger.error('Router initialization failed, continuing without router', error);
+        }
+      } else {
+        this.logger.info('Router service is disabled');
+      }
+
       // Apply overrides if provided (for tests and CLI options)
       this.port = this.configOverrides?.port ?? config.server.port;
       this.host = this.configOverrides?.host ?? config.server.host;
@@ -330,6 +347,10 @@ export class CUIServer {
       activeSessions: this.processManager.getActiveSessions().length,
       connectedClients: this.streamManager.getTotalClientCount()
     });
+
+    if (this.routerService) {
+      await this.routerService.stop();
+    }
     
     // Stop accepting new connections
     if (this.server) {
