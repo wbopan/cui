@@ -67,7 +67,7 @@ const { ClaudeProcessManager } = await import('@/services/claude-process-manager
 
 ## Test Configuration
 
-- **Jest** with `ts-jest` preset for TypeScript support
+- **Vitest** for fast and modern testing with TypeScript support
 - **Path mapping** using `@/` aliases matching source structure
 
 ## Test Commands

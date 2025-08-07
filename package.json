@@ -54,7 +54,7 @@
     "postinstall": "node scripts/postinstall.js"
   },
   "dependencies": {
-    "@anthropic-ai/claude-code": "^1.0.19",
+    "@anthropic-ai/claude-code": "^1.0.70",
     "@anthropic-ai/sdk": "^0.54.0",
     "@google/genai": "^1.11.0",
     "@modelcontextprotocol/sdk": "^1.17.0",
@@ -109,6 +109,7 @@
     "@typescript-eslint/eslint-plugin": "^8.38.0",
     "@typescript-eslint/parser": "^8.38.0",
     "@vitejs/plugin-react": "^4.2.1",
+    "@vitest/coverage-v8": "^3.2.4",
     "@vitest/ui": "^3.2.4",
     "autoprefixer": "^10.4.21",
     "eslint": "^9.32.0",

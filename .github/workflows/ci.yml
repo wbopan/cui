@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ main, dev ]
+    branches: [ main ]
   pull_request:
-    branches: [ main, dev ]
+    branches: [ main ]
 
 jobs:
   test:
@@ -27,8 +27,6 @@ jobs:
       - name: Install dependencies
         run: |
           npm ci
-          # Ensure lightningcss platform-specific binaries are installed
-          npm install -D lightningcss-linux-x64-gnu
 
       - name: Run linting
         run: npm run lint

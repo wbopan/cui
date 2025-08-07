@@ -45,7 +45,7 @@
     "config": ["vite.config.ts"],
     "entry": ["src/web/index.html"]
   },
-  "jest": {
-    "config": ["jest.config.js"]
+  "vitest": {
+    "config": ["vitest.config.ts"]
   }
 }
