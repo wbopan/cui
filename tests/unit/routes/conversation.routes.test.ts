@@ -28,6 +28,7 @@ describe('Conversation Routes - Unified Start/Resume Endpoint', () => {
     sessionInfoService = {
       updateSessionInfo: vi.fn(),
       getSessionInfo: vi.fn(),
+      syncMissingSessions: vi.fn(),
     } as any;
 
     historyReader = {

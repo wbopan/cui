@@ -244,16 +244,6 @@ export interface SessionInfo {
   permission_mode: string;      // Permission mode used for the session, default: "default"
 }
 
-export interface DatabaseMetadata {
-  schema_version: number;       // Current schema version
-  created_at: string;          // When database was first created
-  last_updated: string;        // Last database update timestamp
-}
-
-export interface SessionInfoDatabase {
-  sessions: Record<string, SessionInfo>; // session-id -> SessionInfo mapping
-  metadata: DatabaseMetadata;
-}
 
 // API types for session renaming (deprecated - use SessionUpdateRequest instead)
 export interface SessionRenameRequest {

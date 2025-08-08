@@ -35,11 +35,11 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
     const loadPreferences = async () => {
       try {
         setIsLoading(true);
-        const prefs = await api.getPreferences();
-        setPreferences(prefs);
+        const config = await api.getConfig();
+        setPreferences(config.interface);
         
-        const mode = prefs.colorScheme === 'system' ? getSystemTheme() : prefs.colorScheme;
-        setTheme(prev => ({ ...prev, colorScheme: prefs.colorScheme, mode }));
+        const mode = config.interface.colorScheme === 'system' ? getSystemTheme() : config.interface.colorScheme;
+        setTheme(prev => ({ ...prev, colorScheme: config.interface.colorScheme, mode }));
       } catch (err) {
         setError(err instanceof Error ? err : new Error('Failed to load preferences'));
       } finally {
@@ -71,8 +71,8 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
 
   const updatePreferences = useCallback(async (updates: Partial<Preferences>) => {
     try {
-      const updatedPrefs = await api.updatePreferences(updates);
-      setPreferences(updatedPrefs);
+      const updatedConfig = await api.updateConfig({ interface: updates });
+      setPreferences(updatedConfig.interface);
       
       if (updates.colorScheme) {
         const mode = updates.colorScheme === 'system' ? getSystemTheme() : updates.colorScheme;

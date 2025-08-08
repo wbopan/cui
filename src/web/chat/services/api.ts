@@ -10,9 +10,10 @@ import type {
   PermissionDecisionResponse,
   FileSystemListQuery,
   FileSystemListResponse,
+  CommandsResponse,
 } from '../types';
-import type { CommandsResponse, GeminiHealthResponse } from '@/types';
 import { getAuthToken } from '../../hooks/useAuth';
+type GeminiHealthResponse = { status: 'healthy' | 'unhealthy'; message: string; apiKeyValid: boolean };
 
 class ApiService {
   private baseUrl = '';
@@ -29,14 +30,12 @@ class ApiService {
     
     // Get auth token for Bearer authorization
     const authToken = getAuthToken();
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    };
+    const headers = new Headers(options?.headers as HeadersInit);
+    headers.set('Content-Type', 'application/json');
     
     // Add Bearer token if available
     if (authToken) {
-      headers.Authorization = `Bearer ${authToken}`;
+      headers.set('Authorization', `Bearer ${authToken}`);
     }
     
     try {
@@ -148,19 +147,6 @@ class ApiService {
     });
   }
 
-  async getPreferences(): Promise<import('../types').Preferences> {
-    const config = await this.apiCall<any>('/api/config');
-    return config.interface;
-  }
-
-  async updatePreferences(updates: Partial<import('../types').Preferences>): Promise<import('../types').Preferences> {
-    const config = await this.apiCall<any>('/api/config', {
-      method: 'PUT',
-      body: JSON.stringify({ interface: updates }),
-    });
-    return config.interface;
-  }
-
   async listDirectory(params: FileSystemListQuery): Promise<FileSystemListResponse> {
     const searchParams = new URLSearchParams();
     searchParams.append('path', params.path);
@@ -199,7 +185,7 @@ class ApiService {
     return this.apiCall(`/api/filesystem/read?${searchParams}`);
   }
 
-  async archiveAllSessions(): Promise<{ success: boolean; archivedCount: number }> {
+  async archiveAllSessions(): Promise<{ success: boolean; archivedCount: number; message?: string; error?: string }> {
     return this.apiCall('/api/conversations/archive-all', {
       method: 'POST',
     });
@@ -219,11 +205,11 @@ class ApiService {
     return this.apiCall<GeminiHealthResponse>('/api/gemini/health');
   }
 
-  async getConfig(): Promise<import('@/types/config').CUIConfig> {
+  async getConfig(): Promise<any> {
     return this.apiCall('/api/config');
   }
 
-  async updateConfig(updates: Partial<import('@/types/config').CUIConfig>): Promise<import('@/types/config').CUIConfig> {
+  async updateConfig(updates: Partial<any>): Promise<any> {
     return this.apiCall('/api/config', {
       method: 'PUT',
       body: JSON.stringify(updates),
