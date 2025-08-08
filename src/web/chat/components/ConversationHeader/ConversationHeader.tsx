@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Archive, Check, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../services/api';
@@ -30,6 +30,14 @@ export function ConversationHeader({ title, sessionId, isArchived = false, isPin
   const [isRenaming, setIsRenaming] = useState(false);
   const [newTitle, setNewTitle] = useState(title);
   const [localTitle, setLocalTitle] = useState(title);
+
+  // Update localTitle when title prop changes
+  useEffect(() => {
+    setLocalTitle(title);
+    if (!isRenaming) {
+      setNewTitle(title);
+    }
+  }, [title, isRenaming]);
 
   const handleBack = () => {
     navigate('/');
