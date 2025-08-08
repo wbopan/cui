@@ -1,7 +1,7 @@
 declare module '@musistudio/llms' {
   interface ServerConfig {
     initialConfig?: {
-      providers?: any[];
+      providers?: unknown[];
       Router?: Record<string, string | number>;
       HOST?: string;
       PORT?: number;

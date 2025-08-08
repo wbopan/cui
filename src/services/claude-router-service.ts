@@ -1,15 +1,54 @@
 import { RouterConfiguration } from '@/types/router-config.js';
 import { createLogger, type Logger } from './logger.js';
 
+// Local minimal type shims to avoid any
+interface RouterServerConfig {
+  initialConfig?: {
+    providers?: unknown[];
+    Router?: Record<string, string | number>;
+    HOST?: string;
+    PORT?: number;
+  };
+}
+
+interface ToolDeclaration {
+  type?: string;
+}
+
+interface RequestBody {
+  model: string;
+  thinking?: boolean;
+  tools?: ToolDeclaration[];
+  // Allow other fields without using any
+  [key: string]: unknown;
+}
+
+interface HttpRequest {
+  url: string;
+  method: string;
+  body: RequestBody;
+}
+
+interface RouterServer {
+  start(): Promise<void>;
+  stop(): Promise<void>;
+  addHook(
+    name: 'preHandler',
+    hook: (req: HttpRequest, reply: unknown) => Promise<void> | void
+  ): void;
+}
+
+type RouterServerConstructor = new (config: RouterServerConfig) => RouterServer;
+
 /**
  * Wrapper around the Claude Code Router server
  */
 export class ClaudeRouterService {
-  private server?: any;
+  private server?: RouterServer;
   private readonly config: RouterConfiguration;
   private readonly logger: Logger;
   private readonly port = 14001; // hardcoded 14xxx port
-  private Server?: any;
+  private Server?: RouterServerConstructor;
 
   constructor(config: RouterConfiguration) {
     this.config = config;
@@ -30,8 +69,8 @@ export class ClaudeRouterService {
     // Try to load the @musistudio/llms package dynamically
     try {
       const module = await import('@musistudio/llms');
-      this.Server = module.default;
-    } catch (error) {
+      this.Server = (module as unknown as { default: RouterServerConstructor }).default;
+    } catch (_error) {
       this.logger.warn('@musistudio/llms package not installed. Router service disabled.');
       this.logger.debug('Install with: npm install @musistudio/llms');
       return;
@@ -51,14 +90,14 @@ export class ClaudeRouterService {
       
       // Add routing transformation hook BEFORE the server starts
       // This hook runs BEFORE the @musistudio/llms preHandler that splits by comma
-      this.server.addHook('preHandler', async (req: any, _reply: any) => {
+      this.server.addHook('preHandler', async (req: HttpRequest, _reply: unknown) => {
         // Only process /v1/messages requests (Claude API format)
         if (!req.url.startsWith('/v1/messages') || req.method !== 'POST') {
           return;
         }
         
         try {
-          const body = req.body as any;
+          const body = req.body;
           if (!body || !body.model) {
             return;
           }
@@ -85,7 +124,7 @@ export class ClaudeRouterService {
             }
             // Check for web search
             else if (Array.isArray(body.tools) && 
-                     body.tools.some((tool: any) => tool.type?.startsWith('web_search')) && 
+                     body.tools.some((tool) => tool.type?.startsWith('web_search')) && 
                      this.config.rules.webSearch) {
               targetModel = this.config.rules.webSearch;
               this.logger.debug(`Routing web search -> ${targetModel}`);
