@@ -218,9 +218,10 @@ export function ConversationView() {
   return (
     <div className="h-full flex flex-col bg-background relative" role="main" aria-label="Conversation view">
       <ConversationHeader 
-        title={conversationTitle}
+        title={conversationSummary?.sessionInfo.custom_name || conversationTitle}
         sessionId={sessionId}
         isArchived={conversationSummary?.sessionInfo.archived || false}
+        isPinned={conversationSummary?.sessionInfo.pinned || false}
         subtitle={conversationSummary ? {
           date: new Date(conversationSummary.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
           repo: conversationSummary.projectPath.split('/').pop() || 'project',
@@ -230,6 +231,20 @@ export function ConversationView() {
             deletions: conversationSummary.toolMetrics.linesRemoved
           } : undefined
         } : undefined}
+        onTitleUpdate={(newTitle) => {
+          setConversationTitle(newTitle);
+        }}
+        onPinToggle={(isPinned) => {
+          if (conversationSummary) {
+            setConversationSummary({
+              ...conversationSummary,
+              sessionInfo: {
+                ...conversationSummary.sessionInfo,
+                pinned: isPinned
+              }
+            });
+          }
+        }}
       />
       
       {error && (
