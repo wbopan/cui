@@ -3,14 +3,14 @@ import { ChevronDown, Mic, Send, Loader2, Sparkles, Laptop, Square, Check, X, Mi
 import { DropdownSelector, DropdownOption } from '../DropdownSelector';
 import { PermissionDialog } from '../PermissionDialog';
 import { WaveformVisualizer } from '../WaveformVisualizer';
-import { Button } from '@/web/chat/components/ui/button';
-import { Textarea } from '@/web/chat/components/ui/textarea';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/web/chat/components/ui/tooltip';
-import type { PermissionRequest, Command } from '@/types';
+import { Button } from '../ui/button';
+import { Textarea } from '../ui/textarea';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
+import type { PermissionRequest, Command } from '../../types';
 import { useLocalStorage } from '../../hooks/useLocalStorage';
 import { useAudioRecording } from '../../hooks/useAudioRecording';
 import { api } from '../../../chat/services/api';
-import { cn } from "@/web/chat/lib/utils";
+import { cn } from "../../lib/utils";
 
 export interface FileSystemEntry {
   name: string;
