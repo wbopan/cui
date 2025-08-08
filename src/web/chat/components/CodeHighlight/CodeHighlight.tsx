@@ -257,7 +257,7 @@ export const CodeHighlight: React.FC<CodeHighlightProps> = ({
             )}
             <pre
               className={cn(
-                "bg-white dark:bg-[#292a30] text-neutral-900 dark:text-white p-3 rounded-md overflow-hidden whitespace-pre-wrap break-words font-mono text-[13px] leading-[1.8] m-0 border border-neutral-200 dark:border-neutral-800",
+                "bg-card text-card-foreground p-3 rounded-md overflow-hidden whitespace-pre-wrap break-words font-mono text-[13px] leading-[1.8] m-0 border border-border",
                 highlightClassName,
                 className
               )}

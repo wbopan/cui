@@ -42,8 +42,18 @@ export function PreferencesModal({ onClose }: Props) {
       if (updates.colorScheme === 'system') {
         const systemTheme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
         document.documentElement.setAttribute('data-theme', systemTheme);
+        if (systemTheme === 'dark') {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
       } else {
         document.documentElement.setAttribute('data-theme', updates.colorScheme);
+        if (updates.colorScheme === 'dark') {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
       }
     }
   };

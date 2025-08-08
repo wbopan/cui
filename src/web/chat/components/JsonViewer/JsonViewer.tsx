@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ChevronDown, ChevronRight, Copy, Check } from 'lucide-react';
-import { cn } from "@/web/chat/lib/utils";
-import { Button } from '@/web/chat/components/ui/button';
+import { cn } from "../../lib/utils";
+import { Button } from '../ui/button';
 
 interface JsonViewerProps {
   data: any;
@@ -46,7 +46,7 @@ export function JsonViewer({ data, collapsed = false, depth = 0 }: JsonViewerPro
 
     if (Array.isArray(value)) {
       if (value.length === 0) {
-        return <span className="text-black dark:text-neutral-300">[]</span>;
+        return <span className="text-foreground">[]</span>;
       }
 
       return (
@@ -58,21 +58,21 @@ export function JsonViewer({ data, collapsed = false, depth = 0 }: JsonViewerPro
           >
             {isCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
           </button>
-          <span className="text-black dark:text-neutral-300">[</span>
+          <span className="text-foreground">[</span>
           {isCollapsed ? (
             <span className="text-neutral-500 dark:text-neutral-400 italic mx-1">...{value.length} items</span>
           ) : (
             <div className="ml-[18px]">
               {value.map((item, index) => (
                 <div key={index} className="my-0.5">
-                  <span className="text-neutral-500 dark:text-neutral-400 mr-1">{index}:</span>
+                  <span className="text-muted-foreground mr-1">{index}:</span>
                   {renderValue(item)}
-                  {index < value.length - 1 && <span className="text-black dark:text-neutral-300">,</span>}
+                  {index < value.length - 1 && <span className="text-foreground">,</span>}
                 </div>
               ))}
             </div>
           )}
-          <span className="text-black dark:text-neutral-300">]</span>
+          <span className="text-foreground">]</span>
         </span>
       );
     }
@@ -80,7 +80,7 @@ export function JsonViewer({ data, collapsed = false, depth = 0 }: JsonViewerPro
     if (typeof value === 'object') {
       const entries = Object.entries(value);
       if (entries.length === 0) {
-        return <span className="text-black dark:text-neutral-300">{'{}'}</span>;
+        return <span className="text-foreground">{'{}'}</span>;
       }
 
       return (
@@ -92,7 +92,7 @@ export function JsonViewer({ data, collapsed = false, depth = 0 }: JsonViewerPro
           >
             {isCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
           </button>
-          <span className="text-black dark:text-neutral-300">{'{'}</span>
+          <span className="text-foreground">{'{'}</span>
           {isCollapsed ? (
             <span className="text-neutral-500 dark:text-neutral-400 italic mx-1">...{entries.length} properties</span>
           ) : (
@@ -100,9 +100,9 @@ export function JsonViewer({ data, collapsed = false, depth = 0 }: JsonViewerPro
               {entries.map(([k, v], index) => (
                 <div key={k} className="my-0.5">
                   <span className="text-blue-700 dark:text-blue-300">"{k}"</span>
-                  <span className="text-black dark:text-neutral-300 mx-1">:</span>
+                   <span className="text-foreground mx-1">:</span>
                   {renderValue(v, k)}
-                  {index < entries.length - 1 && <span className="text-black dark:text-neutral-300">,</span>}
+                  {index < entries.length - 1 && <span className="text-foreground">,</span>}
                 </div>
               ))}
             </div>

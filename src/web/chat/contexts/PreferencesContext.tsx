@@ -53,6 +53,12 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
   // Apply theme to document
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme.mode);
+    // Keep Tailwind dark variant in sync
+    if (theme.mode === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
     localStorage.setItem(THEME_KEY, theme.colorScheme);
   }, [theme.mode, theme.colorScheme]);
 

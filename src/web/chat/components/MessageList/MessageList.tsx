@@ -55,7 +55,7 @@ export const MessageList: React.FC<MessageListProps> = ({
 
   if (displayMessages.length === 0 && !isLoading) {
     return (
-      <div className="flex-1 overflow-y-auto bg-white">
+      <div className="flex-1 overflow-y-auto bg-background">
         <div className="text-center p-8 text-muted-foreground">
           <p>No messages yet. Start by typing a message below.</p>
         </div>
@@ -64,7 +64,7 @@ export const MessageList: React.FC<MessageListProps> = ({
   }
 
   return (
-    <div className="flex-1 overflow-y-auto bg-white" ref={containerRef}>
+    <div className="flex-1 overflow-y-auto bg-background" ref={containerRef}>
       <div className="flex flex-col py-6 max-w-3xl mx-auto w-full box-border">
         {messageGroups.map((group, groupIndex) => (
           <div key={`group-${groupIndex}`} className="flex flex-col gap-2 px-4 box-border">
