@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, forwardRef } from 'react';
-import { Check, ArrowUp } from 'lucide-react';
+import { Check, ArrowUp, FolderOpen } from 'lucide-react';
 import {
   Popover,
   PopoverContent,
@@ -45,6 +45,7 @@ interface DropdownSelectorProps<T = string> {
   onFocusReturn?: () => void;
   visualFocusOnly?: boolean;
   focusedIndexControlled?: number;
+  onBrowseClick?: () => void;
 }
 
 export const DropdownSelector = forwardRef<HTMLDivElement, DropdownSelectorProps<any>>(
@@ -71,6 +72,7 @@ export const DropdownSelector = forwardRef<HTMLDivElement, DropdownSelectorProps
       onFocusReturn,
       visualFocusOnly = false,
       focusedIndexControlled,
+      onBrowseClick,
     }: DropdownSelectorProps<T>,
     ref: React.ForwardedRef<HTMLDivElement>
   ) {
@@ -407,6 +409,15 @@ export const DropdownSelector = forwardRef<HTMLDivElement, DropdownSelectorProps
                   No options found
                 </CommandEmpty>
                 <CommandGroup>
+                  {onBrowseClick && (
+                    <CommandItem 
+                      onSelect={() => onBrowseClick()}
+                      className="flex items-center gap-2 cursor-pointer px-3 py-2.5 rounded-[10px] hover:bg-black/5 dark:hover:bg-white/5 text-sm text-neutral-700 dark:text-neutral-300 mb-1 border-b border-black/5 dark:border-white/5"
+                    >
+                      <FolderOpen size={16} />
+                      Browse for directory...
+                    </CommandItem>
+                  )}
                   {visibleOptions.map((option, index) => (
                     <CommandItem
                       key={String(option.value)}
