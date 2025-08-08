@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Flippy Bird</title>
+  <style>
+    canvas {
+      background: #70c5ce;
+      display: block;
+      margin: 0 auto;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas" width="288" height="512"></canvas>
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let birdY = 150;
+    let birdV = 0;
+    const gravity = 0.25;
+    const jump = -4.6;
+    const pipeWidth = 52;
+    const pipeGap = 100;
+    const pipes = [];
+    let frame = 0;
+    let score = 0;
+
+    function addPipe() {
+      const top = Math.random() * (canvas.height - pipeGap - 100) + 50;
+      pipes.push({ x: canvas.width, top });
+    }
+
+    function update() {
+      frame++;
+      birdV += gravity;
+      birdY += birdV;
+
+      if (frame % 100 === 0) addPipe();
+      pipes.forEach(p => p.x -= 2);
+      if (pipes.length && pipes[0].x < -pipeWidth) pipes.shift();
+
+      for (const p of pipes) {
+        const inX = p.x < 50 && p.x + pipeWidth > 20;
+        const hitTop = birdY < p.top;
+        const hitBottom = birdY > p.top + pipeGap;
+        if (inX && (hitTop || hitBottom)) {
+          reset();
+        }
+      }
+
+      if (birdY < 0 || birdY > canvas.height) reset();
+    }
+
+    function reset() {
+      birdY = 150;
+      birdV = 0;
+      pipes.length = 0;
+      frame = 0;
+      score = 0;
+    }
+
+    function draw() {
+      ctx.fillStyle = '#70c5ce';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.fillStyle = '#ff0';
+      ctx.fillRect(20, birdY, 30, 30);
+
+      ctx.fillStyle = '#0f0';
+      pipes.forEach(p => {
+        ctx.fillRect(p.x, 0, pipeWidth, p.top);
+        ctx.fillRect(p.x, p.top + pipeGap, pipeWidth, canvas.height);
+      });
+
+      ctx.fillStyle = '#000';
+      ctx.font = '20px Arial';
+      ctx.fillText(score, 10, 25);
+    }
+
+    function loop() {
+      update();
+      draw();
+
+      pipes.forEach(p => {
+        if (p.x + pipeWidth === 20) score++;
+      });
+
+      requestAnimationFrame(loop);
+    }
+
+    canvas.addEventListener('click', () => {
+      birdV = jump;
+    });
+
+    loop();
+  </script>
+</body>
+</html>
