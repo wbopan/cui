@@ -192,11 +192,13 @@ export function ModelProviderTab({ config, onUpdate }: ModelProviderTabProps) {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="claude-pro">Claude Pro/Max</SelectItem>
-                {localProviders.map(provider => (
-                  <SelectItem key={provider.name} value={provider.name}>
-                    {provider.name}
-                  </SelectItem>
-                ))}
+                {localProviders
+                  .filter(provider => provider.name && provider.name.trim() !== '')
+                  .map(provider => (
+                    <SelectItem key={provider.name} value={provider.name}>
+                      {provider.name}
+                    </SelectItem>
+                  ))}
               </SelectContent>
             </Select>
 
