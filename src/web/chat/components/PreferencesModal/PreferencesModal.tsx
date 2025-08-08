@@ -4,6 +4,7 @@ import { api } from '../../services/api';
 import type { Preferences, GeminiHealthResponse } from '../../types';
 import type { CUIConfig } from '../../../../types/config';
 import { ModelProviderTab } from './ModelProviderTab';
+import { NotificationTab } from './NotificationTab';
 import { Dialog } from '../Dialog';
 import { Button } from '../ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
@@ -204,61 +205,11 @@ export function PreferencesModal({ onClose }: Props) {
               </TabsContent>
 
               <TabsContent value="notifications" className="flex-1 overflow-hidden mt-0">
-                <div className="px-6 pb-6 overflow-y-auto h-full">
-                <div className="py-4 border-b border-neutral-200 dark:border-neutral-800">
-                  <div className="flex items-center justify-between min-h-[60px] py-2">
-                    <div className="flex-1 flex flex-col gap-1 mr-4">
-                      <Label htmlFor="notifications-switch" className="text-sm text-neutral-900 dark:text-neutral-100 font-normal">
-                        Enable Push Notifications
-                      </Label>
-                    </div>
-                    <Switch
-                      id="notifications-switch"
-                      checked={prefs.notifications?.enabled || false}
-                      onCheckedChange={(checked) => update({
-                        notifications: {
-                          ...prefs.notifications,
-                          enabled: checked
-                        }
-                      })}
-                      aria-label="Toggle push notifications"
-                    />
-                  </div>
-                </div>
-
-                <div className="py-4 border-b border-neutral-200 dark:border-neutral-800">
-                  <p className="text-sm my-3">
-                    To receive push notifications, subscribe to the following <a href="https://ntfy.sh" target="_blank" rel="noopener noreferrer" className="font-semibold">ntfy</a> topic:
-                  </p>
-                  <div className="bg-neutral-100 dark:bg-neutral-800 p-4 rounded-md font-mono text-sm border border-neutral-200 dark:border-neutral-700">
-                    {machineId ? `cui-${machineId}` : 'Loading...'}
-                  </div>
-                </div>
-
-                <div className="py-4">
-                  <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 mb-3">Advanced</h3>
-                  <div className="flex items-center justify-between min-h-[60px] py-2">
-                    <Label htmlFor="ntfy-url" className="flex-1 flex flex-col gap-1 mr-4 text-sm text-neutral-900 dark:text-neutral-100 font-normal">
-                      Ntfy Server URL
-                    </Label>
-                    <Input
-                      id="ntfy-url"
-                      type="url"
-                      className="min-w-[200px] bg-neutral-100 dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600 focus:border-blue-500 dark:focus:border-blue-400"
-                      value={prefs.notifications?.ntfyUrl || ''}
-                      placeholder="https://ntfy.sh"
-                      onChange={(e) => update({
-                        notifications: {
-                          ...prefs.notifications,
-                          enabled: prefs.notifications?.enabled || false,
-                          ntfyUrl: e.target.value || undefined
-                        }
-                      })}
-                      aria-label="Ntfy server URL"
-                    />
-                  </div>
-                </div>
-                </div>
+                <NotificationTab 
+                  prefs={prefs}
+                  machineId={machineId}
+                  onUpdate={update}
+                />
               </TabsContent>
 
               <TabsContent value="dataControls" className="flex-1 overflow-hidden mt-0">
