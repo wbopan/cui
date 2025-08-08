@@ -72,7 +72,9 @@ export class ClaudeProcessManager extends EventEmitter {
     }
     
     // Try from the parent node_modules (when cui-server is installed as a dependency)
-    const parentModulesPath = path.resolve(packageRoot, '..', '..', '.bin', 'claude');
+    // packageRoot -> /node_modules/cui-server
+    // parent -> /node_modules, so /node_modules/.bin/claude
+    const parentModulesPath = path.resolve(packageRoot, '..', '.bin', 'claude');
     if (existsSync(parentModulesPath)) {
       return parentModulesPath;
     }
@@ -81,6 +83,16 @@ export class ClaudeProcessManager extends EventEmitter {
     const cwdPath = path.join(process.cwd(), 'node_modules', '.bin', 'claude');
     if (existsSync(cwdPath)) {
       return cwdPath;
+    }
+    
+    // Final fallback: try to locate on PATH
+    const pathEnv = process.env.PATH || '';
+    const pathDirs = pathEnv.split(path.delimiter);
+    for (const dir of pathDirs) {
+      const candidate = path.join(dir, 'claude');
+      if (existsSync(candidate)) {
+        return candidate;
+      }
     }
     
     throw new Error('Claude executable not found in node_modules. Ensure @anthropic-ai/claude-code is installed.');

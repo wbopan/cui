@@ -1,4 +1,4 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 import { CUIServer } from './cui-server.js';
 import { createLogger } from './services/logger.js';
 import { parseArgs } from './cli-parser.js';
