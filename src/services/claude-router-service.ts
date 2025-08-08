@@ -1,4 +1,3 @@
-import Server from '@musistudio/llms';
 import { RouterConfiguration } from '@/types/router-config.js';
 import { createLogger, type Logger } from './logger.js';
 
@@ -10,6 +9,7 @@ export class ClaudeRouterService {
   private readonly config: RouterConfiguration;
   private readonly logger: Logger;
   private readonly port = 14001; // hardcoded 14xxx port
+  private Server?: any;
 
   constructor(config: RouterConfiguration) {
     this.config = config;
@@ -27,10 +27,20 @@ export class ClaudeRouterService {
       return;
     }
 
+    // Try to load the @musistudio/llms package dynamically
+    try {
+      const module = await import('@musistudio/llms');
+      this.Server = module.default;
+    } catch (error) {
+      this.logger.warn('@musistudio/llms package not installed. Router service disabled.');
+      this.logger.debug('Install with: npm install @musistudio/llms');
+      return;
+    }
+
     this.logger.debug(`Router service initializing with ${this.config.providers.length} provider(s)`);
 
     try {
-      this.server = new Server({
+      this.server = new this.Server({
         initialConfig: {
           providers: this.config.providers,
           Router: this.config.rules,

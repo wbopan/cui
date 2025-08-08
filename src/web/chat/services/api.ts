@@ -219,6 +219,17 @@ class ApiService {
     return this.apiCall<GeminiHealthResponse>('/api/gemini/health');
   }
 
+  async getConfig(): Promise<import('@/types/config').CUIConfig> {
+    return this.apiCall('/api/config');
+  }
+
+  async updateConfig(updates: Partial<import('@/types/config').CUIConfig>): Promise<import('@/types/config').CUIConfig> {
+    return this.apiCall('/api/config', {
+      method: 'PUT',
+      body: JSON.stringify(updates),
+    });
+  }
+
   // For endpoints that need direct fetch with auth (like SSE streams)
   async fetchWithAuth(url: string, options?: RequestInit): Promise<Response> {
     const authToken = getAuthToken();

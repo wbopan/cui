@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Settings, Bell, Shield, Mic, X } from 'lucide-react';
+import { Settings, Bell, Shield, Mic, X, Cpu } from 'lucide-react';
 import { api } from '../../services/api';
 import type { Preferences } from '@/web/chat/types';
-import type { GeminiHealthResponse } from '@/types';
+import type { GeminiHealthResponse, CUIConfig } from '@/types';
+import { ModelProviderTab } from './ModelProviderTab';
 import { Dialog } from '../Dialog';
 import { Button } from '@/web/chat/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/web/chat/components/ui/select';
@@ -24,10 +25,12 @@ export function PreferencesModal({ onClose }: Props) {
   const [machineId, setMachineId] = useState<string>('');
   const [geminiHealth, setGeminiHealth] = useState<GeminiHealthResponse | null>(null);
   const [geminiHealthLoading, setGeminiHealthLoading] = useState(false);
+  const [fullConfig, setFullConfig] = useState<CUIConfig | null>(null);
 
   useEffect(() => {
     api.getPreferences().then(setPrefs).catch(() => { });
     api.getSystemStatus().then(status => setMachineId(status.machineId)).catch(() => { });
+    api.getConfig().then(setFullConfig).catch(() => { });
   }, []);
 
   const update = async (updates: Partial<Preferences>) => {
@@ -53,6 +56,15 @@ export function PreferencesModal({ onClose }: Props) {
       setGeminiHealth({ status: 'unhealthy', message: 'Failed to fetch status', apiKeyValid: false });
     } finally {
       setGeminiHealthLoading(false);
+    }
+  };
+
+  const handleConfigUpdate = async (updates: Partial<CUIConfig>) => {
+    try {
+      const updatedConfig = await api.updateConfig(updates);
+      setFullConfig(updatedConfig);
+    } catch (error) {
+      console.error('Failed to update config:', error);
     }
   };
 
@@ -131,6 +143,14 @@ export function PreferencesModal({ onClose }: Props) {
                 >
                   <Mic className="h-[18px] w-[18px] flex-shrink-0" />
                   <span className="text-left">Voice Input</span>
+                </TabsTrigger>
+                <TabsTrigger
+                  value="modelProvider"
+                  className="w-full flex items-center justify-start gap-3 px-4 py-2.5 rounded-none bg-transparent text-neutral-900 dark:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-900 data-[state=active]:font-medium relative data-[state=active]:before:absolute data-[state=active]:before:left-0 data-[state=active]:before:top-0 data-[state=active]:before:bottom-0 data-[state=active]:before:w-[3px] data-[state=active]:before:bg-blue-500"
+                  aria-label="Model provider settings"
+                >
+                  <Cpu className="h-[18px] w-[18px] flex-shrink-0" />
+                  <span className="text-left">Model Provider</span>
                 </TabsTrigger>
               </TabsList>
             </div>
@@ -317,6 +337,10 @@ export function PreferencesModal({ onClose }: Props) {
                   i. When using Gemini voice input, your audio data will be sent to Google for processing. Free Tier API Key allows Google to train on your data. <br />
                   ii. On iOS Safari, you need HTTPS to use voice input.
                 </div>
+              </TabsContent>
+
+              <TabsContent value="modelProvider" className="flex-1 overflow-hidden mt-0">
+                <ModelProviderTab config={fullConfig} onUpdate={handleConfigUpdate} />
               </TabsContent>
             </div>
           </div>
