@@ -216,6 +216,31 @@ class ApiService {
     });
   }
 
+  async getWebPushStatus(): Promise<{ enabled: boolean; subscriptionCount: number; hasPublicKey: boolean; publicKey?: string }> {
+    return this.apiCall('/api/notifications/status');
+  }
+
+  async registerWebPush(subscription: PushSubscription): Promise<{ success: boolean }> {
+    return this.apiCall('/api/notifications/register', {
+      method: 'POST',
+      body: JSON.stringify(subscription),
+    });
+  }
+
+  async unregisterWebPush(endpoint: string): Promise<{ success: boolean }> {
+    return this.apiCall('/api/notifications/unregister', {
+      method: 'POST',
+      body: JSON.stringify({ endpoint }),
+    });
+  }
+
+  async sendTestNotification(): Promise<{ success: boolean; sent: number; failed: number }> {
+    return this.apiCall('/api/notifications/test', {
+      method: 'POST',
+      body: JSON.stringify({}),
+    });
+  }
+
   // For endpoints that need direct fetch with auth (like SSE streams)
   async fetchWithAuth(url: string, options?: RequestInit): Promise<Response> {
     const authToken = getAuthToken();
