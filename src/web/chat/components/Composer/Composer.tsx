@@ -851,7 +851,7 @@ export const Composer = forwardRef<ComposerRef, ComposerProps>(function Composer
         handleSubmit(selectedPermissionMode);
       }}
     >
-      <div className="flex flex-col items-center justify-center w-full bg-background border border-border rounded-3xl shadow-sm cursor-text transition-all duration-300 dark:bg-neutral-800">
+      <div className="flex flex-col items-center justify-center w-full bg-transparent border border-border rounded-3xl shadow-sm cursor-text transition-all duration-300">
         <div className="relative flex items-end w-full min-h-[73px]">
           <div className="relative flex flex-1 items-start mx-5 min-h-[73px]">
             {audioState === 'recording' || audioState === 'processing' ? (
