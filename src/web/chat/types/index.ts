@@ -17,6 +17,7 @@ import type {
   FileSystemListQuery,
   FileSystemListResponse,
   CommandsResponse,
+  GeminiHealthResponse,
 } from '@/types';
 
 // Import ContentBlock from Anthropic SDK
@@ -40,6 +41,7 @@ export type {
   FileSystemListQuery,
   FileSystemListResponse,
   CommandsResponse,
+  GeminiHealthResponse,
 };
 
 // Chat-specific types

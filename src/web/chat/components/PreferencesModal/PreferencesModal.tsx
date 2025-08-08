@@ -1,16 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { Settings, Bell, Shield, Mic, X, Cpu } from 'lucide-react';
 import { api } from '../../services/api';
-import type { Preferences } from '@/web/chat/types';
-import type { GeminiHealthResponse, CUIConfig } from '@/types';
+import type { Preferences, GeminiHealthResponse } from '../../types';
+import type { CUIConfig } from '../../../../types/config';
 import { ModelProviderTab } from './ModelProviderTab';
 import { Dialog } from '../Dialog';
-import { Button } from '@/web/chat/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/web/chat/components/ui/select';
-import { Switch } from '@/web/chat/components/ui/switch';
-import { Input } from '@/web/chat/components/ui/input';
-import { Label } from '@/web/chat/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/web/chat/components/ui/tabs';
+import { Button } from '../ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Switch } from '../ui/switch';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 
 interface Props {
   onClose: () => void;
@@ -28,14 +28,14 @@ export function PreferencesModal({ onClose }: Props) {
   const [fullConfig, setFullConfig] = useState<CUIConfig | null>(null);
 
   useEffect(() => {
-    api.getPreferences().then(setPrefs).catch(() => { });
+    api.getConfig().then(cfg => setPrefs(cfg.interface)).catch(() => { });
     api.getSystemStatus().then(status => setMachineId(status.machineId)).catch(() => { });
     api.getConfig().then(setFullConfig).catch(() => { });
   }, []);
 
   const update = async (updates: Partial<Preferences>) => {
-    const updated = await api.updatePreferences(updates);
-    setPrefs(updated);
+    const updatedConfig = await api.updateConfig({ interface: updates });
+    setPrefs(updatedConfig.interface);
     if (updates.colorScheme) {
       // For system theme, we need to determine the actual theme
       if (updates.colorScheme === 'system') {
@@ -75,14 +75,10 @@ export function PreferencesModal({ onClose }: Props) {
 
     try {
       setArchiveStatus('Archiving...');
-      const response = await fetch('/api/conversations/archive-all', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      });
-      const data = await response.json();
+      const data = await api.archiveAllSessions();
 
       if (data.success) {
-        setArchiveStatus(data.message);
+        setArchiveStatus(data.message || 'Successfully archived sessions');
         setTimeout(() => setArchiveStatus(''), 3000);
       } else {
         setArchiveStatus(`Error: ${data.error || 'Failed to archive sessions'}`);

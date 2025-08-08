@@ -253,7 +253,17 @@ export function createConversationRoutes(
 
       // Combine history conversations with active ones not in history
       const allConversations = [...conversationsWithStatus, ...conversationsNotInHistory];
-      
+
+      // Ensure session info entries exist for all conversations
+      try {
+        await sessionInfoService.syncMissingSessions(allConversations.map(c => c.sessionId));
+      } catch (syncError) {
+        logger.debug('Failed to sync session info', {
+          requestId,
+          error: syncError instanceof Error ? syncError.message : String(syncError)
+        });
+      }
+
       logger.debug('Conversations listed successfully', {
         requestId,
         conversationCount: allConversations.length,
