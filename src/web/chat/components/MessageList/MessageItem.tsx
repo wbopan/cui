@@ -149,7 +149,7 @@ export function MessageItem({
         return (
             <div className="flex gap-2 items-start">
               <div className="w-4 h-5 flex-shrink-0 flex items-center justify-center text-foreground relative">
-                <div className="w-2.5 h-2.5 bg-foreground rounded-full" />
+                <div className="mt-1 w-2.5 h-2.5 bg-foreground rounded-full" />
               </div>
               <div className="flex-1 min-w-0 prose prose-sm max-w-none dark:prose-invert">
               <ReactMarkdown components={markdownComponents}>{message.content}</ReactMarkdown>
@@ -167,7 +167,7 @@ export function MessageItem({
             return (
               <div key={blockId} className="flex gap-2 items-start">
                 <div className="w-4 h-5 flex-shrink-0 flex items-center justify-center text-foreground relative">
-                  <div className="w-2.5 h-2.5 bg-foreground rounded-full" />
+                  <div className="mt-1 w-2.5 h-2.5 bg-foreground rounded-full" />
                 </div>
                 <div className="flex-1 min-w-0 prose prose-sm max-w-none dark:prose-invert">
                   <ReactMarkdown components={markdownComponents}>{block.text}</ReactMarkdown>
@@ -180,7 +180,7 @@ export function MessageItem({
             return (
               <div key={blockId} className="flex gap-2 items-start">
                 <div className="w-4 h-5 flex-shrink-0 flex items-center justify-center text-foreground relative">
-                  <div className="w-2.5 h-2.5 bg-foreground rounded-full" />
+                  <div className="mt-1 w-2.5 h-2.5 bg-foreground rounded-full" />
                 </div>
                 <div className="flex-1 min-w-0 prose prose-sm max-w-none italic text-muted-foreground dark:prose-invert">
                   <ReactMarkdown components={markdownComponents}>{block.thinking}</ReactMarkdown>

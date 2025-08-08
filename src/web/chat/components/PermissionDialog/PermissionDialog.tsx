@@ -19,7 +19,7 @@ export function PermissionDialog({ permissionRequest, isVisible }: PermissionDia
       role="dialog"
       aria-label="Permission request dialog"
     >
-      <div className="bg-card text-card-foreground border border-border rounded-xl shadow-[0_0_10px_rgba(0,0,0,0.15)] w-full max-h-[70vh] flex flex-col overflow-hidden animate-slide-up">
+      <div className="bg-black border border-border rounded-xl shadow-[0_0_10px_rgba(0,0,0,0.15)] w-full max-h-[70vh] flex flex-col overflow-hidden animate-slide-up">
         <div className="px-4 pt-3">
           <div 
             className="text-sm font-semibold mb-2.5 text-white"

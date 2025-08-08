@@ -1021,7 +1021,7 @@ export const Composer = forwardRef<ComposerRef, ComposerProps>(function Composer
                     <Button
                       type="button"
                       size="icon"
-                      className="w-8 h-8 hover:scale-[1.03]"
+                      className="w-8 h-8 hover:scale-[1.03] rounded-full"
                       onClick={() => onStop?.()}
                     >
                       <Square size={18} />
