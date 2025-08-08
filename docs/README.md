@@ -2,7 +2,7 @@
   <img src="assets/logo.png" alt="cui logo" width="150">
 </div>
 
-# Common Agent UI
+# cui: Common Agent UI
 
 [![npm version](https://badge.fury.io/js/cui-server.svg)](https://www.npmjs.com/package/cui-server)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D20.0.0-brightgreen.svg)](https://nodejs.org/)
