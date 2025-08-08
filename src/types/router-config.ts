@@ -9,5 +9,6 @@ export interface RouterProvider {
 export interface RouterConfiguration {
   enabled: boolean;
   providers: RouterProvider[];
-  rules: Record<string, string | number>;
+  // Router rules always resolve to model identifiers, which are strings
+  rules: Record<string, string>;
 }
