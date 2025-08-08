@@ -110,6 +110,7 @@
     "@types/react-dom": "^18.2.22",
     "@types/supertest": "^6.0.3",
     "@types/uuid": "^9.0.7",
+    "@types/web-push": "^3.6.4",
     "@typescript-eslint/eslint-plugin": "^8.38.0",
     "@typescript-eslint/parser": "^8.38.0",
     "@vitejs/plugin-react": "^4.2.1",
