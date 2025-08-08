@@ -1,14 +1,17 @@
-import React from 'react';
-import { ArrowLeft, Archive, Bell } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ArrowLeft, Archive, Check, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../services/api';
 import { Button } from '@/web/chat/components/ui/button';
+import { Input } from '@/web/chat/components/ui/input';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/web/chat/components/ui/tooltip';
+import { MoreOptionsMenu } from '../MoreOptionsMenu';
 
 interface ConversationHeaderProps {
   title: string;
   sessionId?: string;
   isArchived?: boolean;
+  isPinned?: boolean;
   subtitle?: {
     date?: string;
     repo?: string;
@@ -18,10 +21,23 @@ interface ConversationHeaderProps {
       deletions: number;
     };
   };
+  onTitleUpdate?: (newTitle: string) => void;
+  onPinToggle?: (isPinned: boolean) => void;
 }
 
-export function ConversationHeader({ title, sessionId, isArchived = false, subtitle }: ConversationHeaderProps) {
+export function ConversationHeader({ title, sessionId, isArchived = false, isPinned = false, subtitle, onTitleUpdate, onPinToggle }: ConversationHeaderProps) {
   const navigate = useNavigate();
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [newTitle, setNewTitle] = useState(title);
+  const [localTitle, setLocalTitle] = useState(title);
+
+  // Update localTitle when title prop changes
+  useEffect(() => {
+    setLocalTitle(title);
+    if (!isRenaming) {
+      setNewTitle(title);
+    }
+  }, [title, isRenaming]);
 
   const handleBack = () => {
     navigate('/');
@@ -36,6 +52,29 @@ export function ConversationHeader({ title, sessionId, isArchived = false, subti
     } catch (err) {
       console.error(`Failed to ${isArchived ? 'unarchive' : 'archive'} session:`, err);
     }
+  };
+
+  const handleRenameSubmit = async () => {
+    if (newTitle.trim() && newTitle !== localTitle && sessionId) {
+      try {
+        await api.updateSession(sessionId, { customName: newTitle.trim() });
+        setLocalTitle(newTitle.trim());
+        onTitleUpdate?.(newTitle.trim());
+      } catch (error) {
+        console.error('Failed to rename session:', error);
+      }
+    }
+    setIsRenaming(false);
+  };
+
+  const handleRenameCancel = () => {
+    setIsRenaming(false);
+    setNewTitle(localTitle);
+  };
+
+  const handlePinToggle = async (pinned: boolean) => {
+    if (!sessionId) return;
+    onPinToggle?.(pinned);
   };
 
   return (
@@ -63,9 +102,43 @@ export function ConversationHeader({ title, sessionId, isArchived = false, subti
           
           <div className="flex flex-col min-w-0 gap-0.5">
             <div className="flex items-center gap-3">
-              <span className="font-medium text-sm text-foreground overflow-hidden text-ellipsis whitespace-nowrap">
-                {title}
-              </span>
+              {isRenaming ? (
+                <div className="flex items-center gap-1.5 flex-1">
+                  <Input
+                    value={newTitle}
+                    onChange={(e) => setNewTitle(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        handleRenameSubmit();
+                      } else if (e.key === 'Escape') {
+                        handleRenameCancel();
+                      }
+                    }}
+                    className="h-8 px-3 text-sm flex-1 font-medium max-w-md focus:outline-none focus:ring-0 focus:border-border"
+                    autoFocus
+                  />
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={handleRenameSubmit}
+                    className="h-7 w-7 rounded-full hover:bg-muted/50"
+                  >
+                    <Check size={16} strokeWidth={2.5} className="text-foreground" />
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={handleRenameCancel}
+                    className="h-7 w-7 rounded-full hover:bg-muted/50"
+                  >
+                    <X size={16} strokeWidth={2.5} className="text-foreground" />
+                  </Button>
+                </div>
+              ) : (
+                <span className="font-medium text-sm text-foreground overflow-hidden text-ellipsis whitespace-nowrap">
+                  {localTitle}
+                </span>
+              )}
             </div>
             {subtitle && (
               <div className="flex items-center gap-4 text-xs text-muted-foreground">
@@ -109,21 +182,18 @@ export function ConversationHeader({ title, sessionId, isArchived = false, subti
             </TooltipContent>
           </Tooltip>
           
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                aria-label="Open notifications"
-                className="flex items-center justify-center px-3 py-2 rounded-md text-foreground hover:bg-secondary transition-colors"
-              >
-                <Bell size={20} />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Open notifications</p>
-            </TooltipContent>
-          </Tooltip>
+          {sessionId && (
+            <MoreOptionsMenu
+              sessionId={sessionId}
+              currentName={localTitle}
+              isPinned={isPinned}
+              onRename={() => {
+                setIsRenaming(true);
+                setNewTitle(localTitle);
+              }}
+              onPinToggle={handlePinToggle}
+            />
+          )}
         </div>
       </div>
     </TooltipProvider>

@@ -32,6 +32,7 @@ export function TaskList({
   const scrollRef = useRef<HTMLDivElement>(null);
   const loadingRef = useRef<HTMLDivElement>(null);
   const { recentDirectories, loadConversations } = useConversations();
+  const [renamingSessionId, setRenamingSessionId] = React.useState<string | null>(null);
 
   // Get filter parameters based on active tab
   const getFiltersForTab = (tab: 'tasks' | 'history' | 'archive') => {
@@ -48,6 +49,10 @@ export function TaskList({
   };
 
   const handleTaskClick = (sessionId: string) => {
+    // Don't navigate if this session is being renamed
+    if (renamingSessionId === sessionId) {
+      return;
+    }
     navigate(`/c/${sessionId}`);
   };
 
@@ -58,7 +63,7 @@ export function TaskList({
 
   const handleArchiveTask = async (sessionId: string) => {
     // Optimistically remove the item from the current view
-    const element = document.querySelector(`[data-session-id="${sessionId}"]`);
+    const element = document.querySelector(`[data-session-id="${sessionId}"]`) as HTMLElement;
     if (element) {
       element.style.display = 'none';
     }
@@ -73,14 +78,14 @@ export function TaskList({
       console.error('Failed to archive task:', error);
       // Restore visibility if the API call fails
       if (element) {
-        element.style.display = '';
+        (element as HTMLElement).style.display = '';
       }
     }
   };
 
   const handleUnarchiveTask = async (sessionId: string) => {
     // Optimistically remove the item from the current view
-    const element = document.querySelector(`[data-session-id="${sessionId}"]`);
+    const element = document.querySelector(`[data-session-id="${sessionId}"]`) as HTMLElement;
     if (element) {
       element.style.display = 'none';
     }
@@ -95,10 +100,39 @@ export function TaskList({
       console.error('Failed to unarchive task:', error);
       // Restore visibility if the API call fails
       if (element) {
-        element.style.display = '';
+        (element as HTMLElement).style.display = '';
       }
     }
   };
+
+  const handleNameUpdate = async () => {
+    // Clear renaming state and refresh the conversations list
+    setRenamingSessionId(null);
+    await loadConversations(undefined, getFiltersForTab(activeTab));
+  };
+
+  const handleStartRename = (sessionId: string) => {
+    setRenamingSessionId(sessionId);
+  };
+
+  const handleCancelRename = () => {
+    setRenamingSessionId(null);
+  };
+
+  const handlePinToggle = async () => {
+    // Refresh the conversations list to ensure consistency with new pin state
+    loadConversations(undefined, getFiltersForTab(activeTab));
+  };
+
+  // Sort conversations: pinned items first, then by updatedAt
+  const sortedConversations = [...conversations].sort((a, b) => {
+    // Pinned items come first
+    if (a.sessionInfo.pinned && !b.sessionInfo.pinned) return -1;
+    if (!a.sessionInfo.pinned && b.sessionInfo.pinned) return 1;
+    
+    // Then sort by updatedAt (most recent first)
+    return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+  });
 
   // Intersection Observer for infinite scrolling
   const handleIntersection = useCallback(
@@ -158,11 +192,11 @@ export function TaskList({
 
   return (
     <div ref={scrollRef} className="flex flex-col w-full flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-transparent hover:scrollbar-thumb-border scrollbar-track-transparent">
-      {conversations.map((conversation) => (
+      {sortedConversations.map((conversation) => (
         <div key={conversation.sessionId} data-session-id={conversation.sessionId}>
           <TaskItem
             id={conversation.sessionId}
-            title={conversation.summary}
+            title={conversation.sessionInfo.custom_name || conversation.summary}
             timestamp={conversation.updatedAt}
             projectPath={conversation.projectPath}
             recentDirectories={recentDirectories}
@@ -171,6 +205,7 @@ export function TaskList({
             toolMetrics={conversation.toolMetrics}
             liveStatus={conversation.liveStatus}
             isArchived={activeTab === 'archive'}
+            isPinned={conversation.sessionInfo.pinned}
             onClick={() => handleTaskClick(conversation.sessionId)}
             onCancel={
               conversation.status === 'ongoing' 
@@ -187,6 +222,11 @@ export function TaskList({
                 ? () => handleUnarchiveTask(conversation.sessionId)
                 : undefined
             }
+            isRenaming={renamingSessionId === conversation.sessionId}
+            onStartRename={() => handleStartRename(conversation.sessionId)}
+            onCancelRename={handleCancelRename}
+            onNameUpdate={handleNameUpdate}
+            onPinToggle={handlePinToggle}
           />
         </div>
       ))}
