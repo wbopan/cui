@@ -39,11 +39,13 @@
 .dialog.desktop {
   position: relative;
   border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-lg);
+  /* Minimal surface: no heavy shadow, just a subtle border */
+  box-shadow: none;
   border: 1px solid var(--color-border);
-  width: 90vw;
-  max-width: 600px;
-  max-height: 90vh;
+  /* Nearly fullscreen with reasonable margins */
+  width: calc(100vw - 64px);
+  max-width: calc(100vw - 64px);
+  max-height: calc(100vh - 64px);
   transform: scale(0.95) translateY(-20px);
   opacity: 0;
 }
@@ -124,8 +126,8 @@
 /* Content area */
 .content {
   padding: var(--spacing-lg);
-  overflow-y: auto;
-  max-height: 80vh;
+  /* Let inner layout manage scrolling to avoid double scrollbars */
+  overflow: hidden;
 }
 
 /* Mobile content adjustments */

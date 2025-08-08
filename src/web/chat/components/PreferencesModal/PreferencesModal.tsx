@@ -90,8 +90,8 @@ export function PreferencesModal({ onClose }: Props) {
 
   return (
     <Dialog open={true} onClose={onClose} title="">
-      <div className="flex flex-col h-[600px] -m-6 w-[calc(100%+48px)]">
-        <header className="flex justify-between items-center px-5 py-2 border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 flex-shrink-0">
+      <div className="flex flex-col h-[calc(100vh-64px)] w-[calc(100vw-64px)] -m-6">
+        <header className="flex justify-between items-center px-6 py-3 border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 flex-shrink-0">
           <h2 className="text-lg font-normal m-0 text-neutral-900 dark:text-neutral-100">Settings</h2>
           <Button
             onClick={onClose}
@@ -106,11 +106,12 @@ export function PreferencesModal({ onClose }: Props) {
 
         <Tabs defaultValue="general" className="flex flex-1 overflow-hidden">
           <div className="flex flex-1 overflow-hidden">
-            <div className="bg-neutral-50 dark:bg-neutral-900/50 border-r border-neutral-200 dark:border-neutral-800 min-w-[180px] max-w-[210px] flex flex-col h-full">
-              <TabsList className="flex flex-col h-auto p-0 bg-transparent">
+            {/* Minimal sidebar: remove bg/shadow/highlight bar, use subtle text and outline cues */}
+            <div className="border-r border-neutral-200 dark:border-neutral-800 min-w-[200px] max-w-[240px] flex flex-col h-full">
+              <TabsList className="flex flex-col h-auto p-2 gap-1 bg-transparent">
                 <TabsTrigger
                   value="general"
-                  className="w-full flex items-center justify-start gap-3 px-4 py-2.5 rounded-none bg-transparent text-neutral-900 dark:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-900 data-[state=active]:font-medium relative data-[state=active]:before:absolute data-[state=active]:before:left-0 data-[state=active]:before:top-0 data-[state=active]:before:bottom-0 data-[state=active]:before:w-[3px] data-[state=active]:before:bg-blue-500"
+                  className="w-full flex items-center justify-start gap-3 px-3 py-2 rounded-md bg-transparent text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100/60 dark:hover:bg-neutral-800/60 data-[state=active]:bg-neutral-100 dark:data-[state=active]:bg-neutral-800 data-[state=active]:text-neutral-900 dark:data-[state=active]:text-neutral-100 data-[state=active]:font-medium"
                   aria-label="General settings"
                 >
                   <Settings className="h-[18px] w-[18px] flex-shrink-0" />
@@ -118,7 +119,7 @@ export function PreferencesModal({ onClose }: Props) {
                 </TabsTrigger>
                 <TabsTrigger
                   value="notifications"
-                  className="w-full flex items-center justify-start gap-3 px-4 py-2.5 rounded-none bg-transparent text-neutral-900 dark:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-900 data-[state=active]:font-medium relative data-[state=active]:before:absolute data-[state=active]:before:left-0 data-[state=active]:before:top-0 data-[state=active]:before:bottom-0 data-[state=active]:before:w-[3px] data-[state=active]:before:bg-blue-500"
+                  className="w-full flex items-center justify-start gap-3 px-3 py-2 rounded-md bg-transparent text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100/60 dark:hover:bg-neutral-800/60 data-[state=active]:bg-neutral-100 dark:data-[state=active]:bg-neutral-800 data-[state=active]:text-neutral-900 dark:data-[state=active]:text-neutral-100 data-[state=active]:font-medium"
                   aria-label="Notification settings"
                 >
                   <Bell className="h-[18px] w-[18px] flex-shrink-0" />
@@ -126,7 +127,7 @@ export function PreferencesModal({ onClose }: Props) {
                 </TabsTrigger>
                 <TabsTrigger
                   value="dataControls"
-                  className="w-full flex items-center justify-start gap-3 px-4 py-2.5 rounded-none bg-transparent text-neutral-900 dark:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-900 data-[state=active]:font-medium relative data-[state=active]:before:absolute data-[state=active]:before:left-0 data-[state=active]:before:top-0 data-[state=active]:before:bottom-0 data-[state=active]:before:w-[3px] data-[state=active]:before:bg-blue-500"
+                  className="w-full flex items-center justify-start gap-3 px-3 py-2 rounded-md bg-transparent text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100/60 dark:hover:bg-neutral-800/60 data-[state=active]:bg-neutral-100 dark:data-[state=active]:bg-neutral-800 data-[state=active]:text-neutral-900 dark:data-[state=active]:text-neutral-100 data-[state=active]:font-medium"
                   aria-label="Data control settings"
                 >
                   <Shield className="h-[18px] w-[18px] flex-shrink-0" />
@@ -134,7 +135,7 @@ export function PreferencesModal({ onClose }: Props) {
                 </TabsTrigger>
                 <TabsTrigger
                   value="voiceInput"
-                  className="w-full flex items-center justify-start gap-3 px-4 py-2.5 rounded-none bg-transparent text-neutral-900 dark:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-900 data-[state=active]:font-medium relative data-[state=active]:before:absolute data-[state=active]:before:left-0 data-[state=active]:before:top-0 data-[state=active]:before:bottom-0 data-[state=active]:before:w-[3px] data-[state=active]:before:bg-blue-500"
+                  className="w-full flex items-center justify-start gap-3 px-3 py-2 rounded-md bg-transparent text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100/60 dark:hover:bg-neutral-800/60 data-[state=active]:bg-neutral-100 dark:data-[state=active]:bg-neutral-800 data-[state=active]:text-neutral-900 dark:data-[state=active]:text-neutral-100 data-[state=active]:font-medium"
                   aria-label="Voice input settings"
                 >
                   <Mic className="h-[18px] w-[18px] flex-shrink-0" />
@@ -142,7 +143,7 @@ export function PreferencesModal({ onClose }: Props) {
                 </TabsTrigger>
                 <TabsTrigger
                   value="modelProvider"
-                  className="w-full flex items-center justify-start gap-3 px-4 py-2.5 rounded-none bg-transparent text-neutral-900 dark:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-900 data-[state=active]:font-medium relative data-[state=active]:before:absolute data-[state=active]:before:left-0 data-[state=active]:before:top-0 data-[state=active]:before:bottom-0 data-[state=active]:before:w-[3px] data-[state=active]:before:bg-blue-500"
+                  className="w-full flex items-center justify-start gap-3 px-3 py-2 rounded-md bg-transparent text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100/60 dark:hover:bg-neutral-800/60 data-[state=active]:bg-neutral-100 dark:data-[state=active]:bg-neutral-800 data-[state=active]:text-neutral-900 dark:data-[state=active]:text-neutral-100 data-[state=active]:font-medium"
                   aria-label="Model provider settings"
                 >
                   <Cpu className="h-[18px] w-[18px] flex-shrink-0" />
