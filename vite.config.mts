@@ -13,35 +13,16 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'icon-192x192.png', 'icon-512x512.png'],
       manifest: false, // Use our existing manifest.json
-      workbox: {
+      strategies: 'injectManifest',
+      srcDir: '.',
+      filename: 'sw.ts',
+      injectManifest: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,json}'],
+      },
+      workbox: {
         cleanupOutdatedCaches: true,
         clientsClaim: true,
         skipWaiting: true,
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/api\./,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'api-cache',
-              expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24 // 24 hours
-              }
-            }
-          },
-          {
-            urlPattern: /^https:\/\/localhost:\d+\/api\//,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'local-api-cache',
-              expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 60 * 10 // 10 minutes for dev
-              }
-            }
-          }
-        ]
       }
     })
   ],
@@ -63,6 +44,6 @@ export default defineConfig({
   server: {
     port: 3000,
     host: '0.0.0.0',
-    allowedHosts: ['wenbo-macbook.dala-cobia.ts.net', 'cui.wenbo.io', 'localhost', '127.0.0.1', 'cui1.wenbo.io', 'cui2.wenbo.io', 'cui.tai.chat'],
+    allowedHosts: ['wenbo-macbook.dala-cobia.ts.net', 'cui.wenbo.io', 'localhost', '127.0.0.1', 'cui1.wenbo.io', 'cui2.wenbo.io', 'cui.tai.chat', 'punch-framework-arising-refine.trycloudflare.com'],
   }
 })

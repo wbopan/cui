@@ -19,6 +19,7 @@ import { ConversationStatusManager } from './services/conversation-status-manage
 import { WorkingDirectoriesService } from './services/working-directories-service.js';
 import { ToolMetricsService } from './services/ToolMetricsService.js';
 import { NotificationService } from './services/notification-service.js';
+import { WebPushService } from './services/web-push-service.js';
 import { geminiService } from './services/gemini-service.js';
 import { ClaudeRouterService } from './services/claude-router-service.js';
 import { 
@@ -36,6 +37,7 @@ import { createStreamingRoutes } from './routes/streaming.routes.js';
 import { createWorkingDirectoriesRoutes } from './routes/working-directories.routes.js';
 import { createConfigRoutes } from './routes/config.routes.js';
 import { createGeminiRoutes } from './routes/gemini.routes.js';
+import { createNotificationsRoutes } from './routes/notifications.routes.js';
 import { errorHandler } from './middleware/error-handler.js';
 import { requestLogger } from './middleware/request-logger.js';
 import { createCorsMiddleware } from './middleware/cors-setup.js';
@@ -64,6 +66,7 @@ export class CUIServer {
   private workingDirectoriesService: WorkingDirectoriesService;
   private toolMetricsService: ToolMetricsService;
   private notificationService: NotificationService;
+  private webPushService: WebPushService;
   private routerService?: ClaudeRouterService;
   private logger: Logger;
   private port: number;
@@ -106,6 +109,7 @@ export class CUIServer {
     this.mcpConfigGenerator = new MCPConfigGenerator(this.fileSystemService);
     this.workingDirectoriesService = new WorkingDirectoriesService(this.historyReader, this.logger);
     this.notificationService = new NotificationService();
+    this.webPushService = WebPushService.getInstance();
     
     // Wire up notification service
     this.processManager.setNotificationService(this.notificationService);
@@ -453,6 +457,8 @@ export class CUIServer {
     
     // Permission routes - before auth (needed for MCP server communication)
     this.app.use('/api/permissions', createPermissionRoutes(this.permissionTracker));
+    // Notifications routes - before auth (needed for service worker subscription on first load)
+    this.app.use('/api/notifications', createNotificationsRoutes(this.webPushService));
     
     // Apply auth middleware to all other API routes unless skipAuthToken is set
     if (!this.configOverrides?.skipAuthToken) {

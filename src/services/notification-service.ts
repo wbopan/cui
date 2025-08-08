@@ -1,6 +1,7 @@
 import { PermissionRequest } from '@/types/index.js';
 import { createLogger, type Logger } from './logger.js';
 import { ConfigService } from './config-service.js';
+import { WebPushService } from './web-push-service.js';
 
 export interface Notification {
   title: string;
@@ -19,10 +20,12 @@ export class NotificationService {
   private logger: Logger;
   private configService: ConfigService;
   private machineId: string | null = null;
+  private webPushService: WebPushService;
 
   constructor() {
     this.logger = createLogger('NotificationService');
     this.configService = ConfigService.getInstance();
+    this.webPushService = WebPushService.getInstance();
   }
 
   /**
@@ -87,7 +90,28 @@ export class NotificationService {
         permissionRequestId: request.id
       };
 
+      // Send via ntfy
       await this.sendNotification(ntfyUrl, topic, notification);
+
+      // Also broadcast via native web push (best-effort)
+      try {
+        await this.webPushService.initialize();
+        if (this.webPushService.getEnabled()) {
+          await this.webPushService.broadcast({
+            title: notification.title,
+            message: notification.message,
+            tag: notification.tags[0],
+            data: {
+              sessionId: notification.sessionId,
+              streamingId: notification.streamingId,
+              permissionRequestId: notification.permissionRequestId,
+              type: 'permission',
+            },
+          });
+        }
+      } catch (err) {
+        this.logger.debug('Web push broadcast failed (non-fatal)', { error: (err as Error)?.message });
+      }
       
       this.logger.info('Permission notification sent', {
         requestId: request.id,
@@ -128,7 +152,27 @@ export class NotificationService {
         streamingId
       };
 
+      // Send via ntfy
       await this.sendNotification(ntfyUrl, topic, notification);
+
+      // Also broadcast via native web push (best-effort)
+      try {
+        await this.webPushService.initialize();
+        if (this.webPushService.getEnabled()) {
+          await this.webPushService.broadcast({
+            title: notification.title,
+            message: notification.message,
+            tag: notification.tags[0],
+            data: {
+              sessionId: notification.sessionId,
+              streamingId: notification.streamingId,
+              type: 'conversation-end',
+            },
+          });
+        }
+      } catch (err) {
+        this.logger.debug('Web push broadcast failed (non-fatal)', { error: (err as Error)?.message });
+      }
       
       this.logger.info('Conversation end notification sent', {
         sessionId,

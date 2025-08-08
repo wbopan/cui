@@ -37,6 +37,7 @@ function InspectorApp() {
     geminiHealth: true,
     geminiTranscribe: true,
     geminiSummarize: true,
+    notifications: true,
   });
 
   // Form states
@@ -97,6 +98,11 @@ function InspectorApp() {
   const [geminiMimeType, setGeminiMimeType] = useState('audio/wav');
   const [geminiTextToSummarize, setGeminiTextToSummarize] = useState('');
 
+  // Notifications state
+  const [notifTitle, setNotifTitle] = useState('CUI Test');
+  const [notifMessage, setNotifMessage] = useState('This is a test notification');
+  const [notifStatus, setNotifStatus] = useState<any>(null);
+
   const streamResultRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -134,6 +140,103 @@ function InspectorApp() {
       showJson('commandsResult', data);
     } catch (e: any) {
       showJson('commandsResult', { error: e.message });
+    }
+  };
+
+  const urlBase64ToUint8Array = (base64String: string) => {
+    const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const rawData = atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+  };
+
+  const getNotificationStatus = async () => {
+    try {
+      const res = await api.fetchWithAuth('/api/notifications/status');
+      const data = await res.json();
+      setNotifStatus(data);
+      showJson('notificationsStatus', data);
+    } catch (e: any) {
+      showJson('notificationsStatus', { error: e.message });
+    }
+  };
+
+  const registerPush = async () => {
+    try {
+      // Request permission
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        showJson('notificationsRegister', { error: 'Notification permission denied' });
+        return;
+      }
+      // Ensure SW ready
+      const registration = await navigator.serviceWorker.ready;
+      // Fetch VAPID public key
+      const statusRes = await api.fetchWithAuth('/api/notifications/status');
+      const status = await statusRes.json();
+      if (!status.publicKey) {
+        showJson('notificationsRegister', { error: 'Server missing VAPID public key' });
+        return;
+      }
+      // Subscribe
+      const existing = await registration.pushManager.getSubscription();
+      let subscription = existing;
+      if (!subscription) {
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(status.publicKey),
+        });
+      }
+      // Register with backend
+      const res = await api.fetchWithAuth('/api/notifications/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(subscription),
+      });
+      const data = await res.json();
+      showJson('notificationsRegister', data);
+    } catch (e: any) {
+      showJson('notificationsRegister', { error: e.message });
+    }
+  };
+
+  const unregisterPush = async () => {
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      const subscription = await registration.pushManager.getSubscription();
+      if (!subscription) {
+        showJson('notificationsUnregister', { error: 'No active subscription' });
+        return;
+      }
+      const endpoint = subscription.endpoint;
+      await subscription.unsubscribe();
+      const res = await api.fetchWithAuth('/api/notifications/unregister', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ endpoint }),
+      });
+      const data = await res.json();
+      showJson('notificationsUnregister', data);
+    } catch (e: any) {
+      showJson('notificationsUnregister', { error: e.message });
+    }
+  };
+
+  const sendTestNotification = async () => {
+    try {
+      const res = await api.fetchWithAuth('/api/notifications/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: notifTitle, message: notifMessage }),
+      });
+      const data = await res.json();
+      showJson('notificationsTest', data);
+    } catch (e: any) {
+      showJson('notificationsTest', { error: e.message });
     }
   };
 
@@ -1285,6 +1388,43 @@ function InspectorApp() {
             <Button onClick={summarizeText} className="bg-neutral-800 hover:bg-neutral-700">Summarize Text</Button>
             <div className="max-h-96 overflow-auto border border-neutral-300 rounded bg-neutral-50 p-2.5 mt-2.5">
               {results.geminiSummarizeResult && <JsonViewer data={results.geminiSummarizeResult} resultId="geminiSummarizeResult" />}
+            </div>
+          </div>
+        </div>
+
+        {/* Notifications */}
+        <div className="bg-white border-t border-b border-neutral-300 p-4 mb-0">
+          <div 
+            className={cn(
+              "font-bold text-blue-600 text-sm mb-4 cursor-pointer select-none",
+              "before:content-['▼_'] before:inline-block before:transition-transform",
+              collapsed.notifications && "before:-rotate-90"
+            )}
+            onClick={() => toggleCollapse('notifications')}
+            aria-label="Toggle Notifications section"
+          >
+            /api/notifications (status/register/unregister/test)
+          </div>
+          <div className={cn("overflow-hidden", collapsed.notifications && "hidden")}>
+            <div className="flex flex-col gap-2 mb-2">
+              <Button onClick={getNotificationStatus} className="bg-neutral-800 hover:bg-neutral-700 w-full">Get Status</Button>
+              <Button onClick={registerPush} className="bg-neutral-800 hover:bg-neutral-700 w-full">Register Push</Button>
+              <Button onClick={unregisterPush} className="bg-neutral-800 hover:bg-neutral-700 w-full">Unregister Push</Button>
+            </div>
+            <div className="my-2.5 p-2.5 bg-neutral-50 rounded">
+              <Label className="font-bold text-neutral-600 text-xs uppercase mb-1" htmlFor="notifTitle">Test Title</Label>
+              <Input id="notifTitle" type="text" value={notifTitle} onChange={(e) => setNotifTitle(e.target.value)} className="font-mono" />
+            </div>
+            <div className="my-2.5 p-2.5 bg-neutral-50 rounded">
+              <Label className="font-bold text-neutral-600 text-xs uppercase mb-1" htmlFor="notifMessage">Test Message</Label>
+              <Input id="notifMessage" type="text" value={notifMessage} onChange={(e) => setNotifMessage(e.target.value)} className="font-mono" />
+            </div>
+            <Button onClick={sendTestNotification} className="bg-neutral-800 hover:bg-neutral-700 w-full">Send Test Notification</Button>
+            <div className="max-h-96 overflow-auto border border-neutral-300 rounded bg-neutral-50 p-2.5 mt-2.5">
+              {results.notificationsStatus && <JsonViewer data={results.notificationsStatus} resultId="notificationsStatus" />}
+              {results.notificationsRegister && <JsonViewer data={results.notificationsRegister} resultId="notificationsRegister" />}
+              {results.notificationsUnregister && <JsonViewer data={results.notificationsUnregister} resultId="notificationsUnregister" />}
+              {results.notificationsTest && <JsonViewer data={results.notificationsTest} resultId="notificationsTest" />}
             </div>
           </div>
         </div>
