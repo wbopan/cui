@@ -225,6 +225,7 @@ interface AutocompleteDropdownProps {
   isOpen: boolean;
   focusedIndex: number;
   type: 'file' | 'command';
+  onFocusReturn?: () => void;
 }
 
 function AutocompleteDropdown({
@@ -234,6 +235,7 @@ function AutocompleteDropdown({
   isOpen,
   focusedIndex,
   type,
+  onFocusReturn,
 }: AutocompleteDropdownProps) {
   if (!isOpen) return null;
 
@@ -268,7 +270,9 @@ function AutocompleteDropdown({
       showFilterInput={false}
       maxVisibleItems={-1}
       initialFocusedIndex={focusedIndex}
+      focusedIndexControlled={focusedIndex}
       visualFocusOnly={true}
+      onFocusReturn={onFocusReturn}
       renderOption={type === 'command' ? (option) => (
         <div className="flex flex-col items-start gap-0.5 w-full">
           <span className="text-sm">{option.label}</span>
@@ -343,7 +347,7 @@ export const Composer = forwardRef<ComposerRef, ComposerProps>(function Composer
     triggerIndex: -1,
     query: '',
     suggestions: [],
-    focusedIndex: 0,
+    focusedIndex: -1,
     type: 'file',
   });
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -534,7 +538,7 @@ export const Composer = forwardRef<ComposerRef, ComposerProps>(function Composer
       triggerIndex: -1,
       query: '',
       suggestions: [],
-      focusedIndex: 0,
+      focusedIndex: -1,
       type: 'file',
     });
   };
@@ -635,8 +639,8 @@ export const Composer = forwardRef<ComposerRef, ComposerProps>(function Composer
         query: commandAutocompleteInfo.query,
         suggestions,
         type: commandAutocompleteInfo.type,
-        // Keep focusedIndex if it's still valid, otherwise reset to 0
-        focusedIndex: prev.focusedIndex < suggestions.length ? prev.focusedIndex : 0,
+        // Keep focusedIndex if it's still valid, otherwise reset to -1 (no selection)
+        focusedIndex: prev.focusedIndex >= 0 && prev.focusedIndex < suggestions.length ? prev.focusedIndex : -1,
       }));
       return;
     }
@@ -653,8 +657,8 @@ export const Composer = forwardRef<ComposerRef, ComposerProps>(function Composer
           query: fileAutocompleteInfo.query,
           suggestions,
           type: fileAutocompleteInfo.type,
-          // Keep focusedIndex if it's still valid, otherwise reset to 0
-          focusedIndex: prev.focusedIndex < suggestions.length ? prev.focusedIndex : 0,
+          // Keep focusedIndex if it's still valid, otherwise reset to -1 (no selection)
+          focusedIndex: prev.focusedIndex >= 0 && prev.focusedIndex < suggestions.length ? prev.focusedIndex : -1,
         }));
         return;
       }
@@ -690,7 +694,7 @@ export const Composer = forwardRef<ComposerRef, ComposerProps>(function Composer
           if (autocomplete.suggestions.length > 0) {
             setAutocomplete(prev => ({
               ...prev,
-              focusedIndex: (prev.focusedIndex + 1) % prev.suggestions.length
+              focusedIndex: prev.focusedIndex < 0 ? 0 : (prev.focusedIndex + 1) % prev.suggestions.length
             }));
           }
           break;
@@ -699,7 +703,11 @@ export const Composer = forwardRef<ComposerRef, ComposerProps>(function Composer
           if (autocomplete.suggestions.length > 0) {
             setAutocomplete(prev => ({
               ...prev,
-              focusedIndex: prev.focusedIndex === 0 ? prev.suggestions.length - 1 : prev.focusedIndex - 1
+              focusedIndex: prev.focusedIndex < 0
+                ? prev.suggestions.length - 1
+                : prev.focusedIndex === 0
+                  ? prev.suggestions.length - 1
+                  : prev.focusedIndex - 1
             }));
           }
           break;
@@ -708,8 +716,9 @@ export const Composer = forwardRef<ComposerRef, ComposerProps>(function Composer
           if (!e.metaKey && !e.ctrlKey) {
             e.preventDefault();
             if (autocomplete.suggestions.length > 0) {
-              // Select the currently focused suggestion
-              const suggestion = autocomplete.suggestions[autocomplete.focusedIndex];
+              // Select the currently focused suggestion, or first if none
+              const targetIndex = autocomplete.focusedIndex >= 0 ? autocomplete.focusedIndex : 0;
+              const suggestion = autocomplete.suggestions[targetIndex];
               const suggestionName = autocomplete.type === 'command' 
                 ? (suggestion as Command).name 
                 : (suggestion as FileSystemEntry).name;
@@ -724,6 +733,8 @@ export const Composer = forwardRef<ComposerRef, ComposerProps>(function Composer
         case 'Escape':
           e.preventDefault();
           resetAutocomplete();
+          // Ensure focus returns to textarea
+          setTimeout(() => textareaRef.current?.focus(), 0);
           break;
       }
     } else if (e.key === 'Enter') {
@@ -1097,6 +1108,7 @@ export const Composer = forwardRef<ComposerRef, ComposerProps>(function Composer
           isOpen={autocomplete.isActive && autocomplete.suggestions.length > 0}
           focusedIndex={autocomplete.focusedIndex}
           type={autocomplete.type}
+          onFocusReturn={() => textareaRef.current?.focus()}
         />
       )}
       
