@@ -13,9 +13,10 @@ import type { RouterProvider, RouterConfiguration } from '@/types/router-config'
 interface ModelProviderTabProps {
   config: CUIConfig | null;
   onUpdate: (updates: Partial<CUIConfig>) => Promise<void>;
+  isActive?: boolean;
 }
 
-export function ModelProviderTab({ config, onUpdate }: ModelProviderTabProps) {
+export function ModelProviderTab({ config, onUpdate, isActive }: ModelProviderTabProps) {
   const [isJsonMode, setIsJsonMode] = useState(false);
   const [jsonText, setJsonText] = useState('');
   const [localProviders, setLocalProviders] = useState<RouterProvider[]>([]);
@@ -38,6 +39,27 @@ export function ModelProviderTab({ config, onUpdate }: ModelProviderTabProps) {
       setActiveModel('');
     }
   }, [config]);
+
+  // Auto-save when tab becomes inactive
+  useEffect(() => {
+    const save = async () => {
+      if (isActive === false && localProviders.length > 0) {
+        try {
+          await onUpdate({
+            router: {
+              ...config?.router,
+              providers: localProviders,
+              enabled: config?.router?.enabled || false,
+              rules: config?.router?.rules || {}
+            } as RouterConfiguration
+          });
+        } catch (error) {
+          console.error('Failed to auto-save providers:', error);
+        }
+      }
+    };
+    save();
+  }, [isActive, localProviders, config, onUpdate]);
 
   const handleActiveProviderChange = async (provider: string) => {
     setActiveProvider(provider);
@@ -171,7 +193,7 @@ export function ModelProviderTab({ config, onUpdate }: ModelProviderTabProps) {
 
   return (
     <TooltipProvider>
-      <div className="px-6 pb-6 overflow-y-auto flex-1 mt-0">
+      <div className="px-6 pb-6 overflow-y-auto h-full">
         <div className="py-4 border-b border-neutral-200 dark:border-neutral-800">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Active Provider</h3>

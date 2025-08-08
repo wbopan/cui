@@ -26,6 +26,7 @@ export function PreferencesModal({ onClose }: Props) {
   const [geminiHealth, setGeminiHealth] = useState<GeminiHealthResponse | null>(null);
   const [geminiHealthLoading, setGeminiHealthLoading] = useState(false);
   const [fullConfig, setFullConfig] = useState<CUIConfig | null>(null);
+  const [activeTab, setActiveTab] = useState<string>('general');
 
   useEffect(() => {
     api.getConfig().then(cfg => setPrefs(cfg.interface)).catch(() => { });
@@ -68,6 +69,14 @@ export function PreferencesModal({ onClose }: Props) {
     }
   };
 
+  const handleClose = () => {
+    // Save provider config if we're on that tab
+    if (activeTab === 'modelProvider') {
+      // The ModelProviderTab will auto-save when it becomes inactive
+    }
+    onClose();
+  };
+
   const handleArchiveAll = async () => {
     if (!confirm('Are you sure you want to archive all sessions? This action cannot be undone.')) {
       return;
@@ -89,12 +98,12 @@ export function PreferencesModal({ onClose }: Props) {
   };
 
   return (
-    <Dialog open={true} onClose={onClose} title="">
+    <Dialog open={true} onClose={handleClose} title="">
       <div className="flex flex-col h-[calc(100vh-64px)] w-[calc(100vw-64px)] -m-6">
         <header className="flex justify-between items-center px-6 py-3 border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 flex-shrink-0">
           <h2 className="text-lg font-normal m-0 text-neutral-900 dark:text-neutral-100">Settings</h2>
           <Button
-            onClick={onClose}
+            onClick={handleClose}
             variant="ghost"
             size="icon"
             className="h-8 w-8 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center justify-center"
@@ -104,11 +113,15 @@ export function PreferencesModal({ onClose }: Props) {
           </Button>
         </header>
 
-        <Tabs defaultValue="general" className="flex flex-1 overflow-hidden">
+        <Tabs 
+          defaultValue="general" 
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="flex flex-1 overflow-hidden">
           <div className="flex flex-1 overflow-hidden">
             {/* Minimal sidebar: remove bg/shadow/highlight bar, use subtle text and outline cues */}
             <div className="border-r border-neutral-200 dark:border-neutral-800 min-w-[200px] max-w-[240px] flex flex-col h-full">
-              <TabsList className="flex flex-col h-auto p-2 gap-1 bg-transparent">
+              <TabsList className="flex flex-col h-auto p-2 pl-6 gap-1 bg-transparent">
                 <TabsTrigger
                   value="general"
                   className="w-full flex items-center justify-start gap-3 px-3 py-2 rounded-md bg-transparent text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100/60 dark:hover:bg-neutral-800/60 data-[state=active]:bg-neutral-100 dark:data-[state=active]:bg-neutral-800 data-[state=active]:text-neutral-900 dark:data-[state=active]:text-neutral-100 data-[state=active]:font-medium"
@@ -153,7 +166,8 @@ export function PreferencesModal({ onClose }: Props) {
             </div>
 
             <div className="flex-1 flex flex-col overflow-hidden bg-white dark:bg-neutral-900">
-              <TabsContent value="general" className="px-6 pb-6 overflow-y-auto flex-1 mt-0">
+              <TabsContent value="general" className="flex-1 overflow-hidden mt-0">
+                <div className="px-6 pb-6 overflow-y-auto h-full">
                 <div className="flex items-center justify-between min-h-[60px] py-2">
                   <Label htmlFor="theme-select" className="text-sm text-neutral-900 dark:text-neutral-100 font-normal">
                     Theme
@@ -176,9 +190,11 @@ export function PreferencesModal({ onClose }: Props) {
                     </SelectContent>
                   </Select>
                 </div>
+                </div>
               </TabsContent>
 
-              <TabsContent value="notifications" className="px-6 pb-6 overflow-y-auto flex-1 mt-0">
+              <TabsContent value="notifications" className="flex-1 overflow-hidden mt-0">
+                <div className="px-6 pb-6 overflow-y-auto h-full">
                 <div className="py-4 border-b border-neutral-200 dark:border-neutral-800">
                   <div className="flex items-center justify-between min-h-[60px] py-2">
                     <div className="flex-1 flex flex-col gap-1 mr-4">
@@ -232,9 +248,11 @@ export function PreferencesModal({ onClose }: Props) {
                     />
                   </div>
                 </div>
+                </div>
               </TabsContent>
 
-              <TabsContent value="dataControls" className="px-6 pb-6 overflow-y-auto flex-1 mt-0">
+              <TabsContent value="dataControls" className="flex-1 overflow-hidden mt-0">
+                <div className="px-6 pb-6 overflow-y-auto h-full">
                 <div className="py-4">
                   <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 mb-3">Session Management</h3>
                   <Button
@@ -254,9 +272,11 @@ export function PreferencesModal({ onClose }: Props) {
                     </div>
                   )}
                 </div>
+                </div>
               </TabsContent>
 
-              <TabsContent value="voiceInput" className="px-6 pb-6 overflow-y-auto flex-1 mt-0">
+              <TabsContent value="voiceInput" className="flex-1 overflow-hidden mt-0">
+                <div className="px-6 pb-6 overflow-y-auto h-full">
                 <div className="py-4">
                   <div className="flex items-center justify-between min-h-[60px] py-2">
                     <Label className="text-sm text-neutral-900 dark:text-neutral-100 font-normal">
@@ -334,10 +354,15 @@ export function PreferencesModal({ onClose }: Props) {
                   i. When using Gemini voice input, your audio data will be sent to Google for processing. Free Tier API Key allows Google to train on your data. <br />
                   ii. On iOS Safari, you need HTTPS to use voice input.
                 </div>
+                </div>
               </TabsContent>
 
               <TabsContent value="modelProvider" className="flex-1 overflow-hidden mt-0">
-                <ModelProviderTab config={fullConfig} onUpdate={handleConfigUpdate} />
+                <ModelProviderTab 
+                  config={fullConfig} 
+                  onUpdate={handleConfigUpdate}
+                  isActive={activeTab === 'modelProvider'}
+                />
               </TabsContent>
             </div>
           </div>
