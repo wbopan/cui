@@ -217,4 +217,77 @@ describe('Configuration System Basic Integration', () => {
       expect(config.machine_id).toMatch(new RegExp(`^${cleanHostname}`));
     });
   });
+
+  describe('Preservation and Deep-Merge Behavior', () => {
+    it('should preserve optional fields like router on initialization and not remove them when rewriting', async () => {
+      const cuiDir = path.join(testConfigDir, '.cui');
+      fs.mkdirSync(cuiDir, { recursive: true });
+
+      const existingConfig = {
+        machine_id: 'test-machine-router-12345678',
+        authToken: crypto.randomBytes(16).toString('hex'),
+        server: { host: '127.0.0.1', port: 4100 },
+        router: {
+          enabled: true,
+          providers: [
+            { name: 'providerA', api_base_url: 'https://api.example.com', api_key: 'key', models: ['modelA'] }
+          ],
+          rules: { default: 'modelA' }
+        },
+        interface: { colorScheme: 'dark', language: 'ja' }
+      };
+
+      fs.writeFileSync(path.join(cuiDir, 'config.json'), JSON.stringify(existingConfig, null, 2));
+
+      const configService = ConfigService.getInstance();
+      await configService.initialize();
+
+      const loaded = configService.getConfig();
+      expect(loaded.machine_id).toBe('test-machine-router-12345678');
+      expect(loaded.server.port).toBe(4100);
+      expect(loaded.interface.language).toBe('ja');
+      // Router should be preserved
+      expect(loaded.router).toBeDefined();
+      expect(loaded.router?.enabled).toBe(true);
+      expect(loaded.router?.providers?.[0]?.name).toBe('providerA');
+      expect(loaded.router?.rules?.default).toBe('modelA');
+
+      // Ensure file on disk still contains router field after potential rewrite
+      const disk = JSON.parse(fs.readFileSync(path.join(cuiDir, 'config.json'), 'utf-8'));
+      expect(disk.router).toBeDefined();
+      expect(disk.router.enabled).toBe(true);
+      expect(disk.interface.language).toBe('ja');
+    });
+
+    it('should deep-merge partial interface updates and not reset unrelated options', async () => {
+      const cuiDir = path.join(testConfigDir, '.cui');
+      fs.mkdirSync(cuiDir, { recursive: true });
+
+      const initialConfig: CUIConfig = {
+        machine_id: 'test-machine-merge-12345678',
+        authToken: crypto.randomBytes(16).toString('hex'),
+        server: { host: 'localhost', port: 3001 },
+        interface: { colorScheme: 'system', language: 'zh' }
+      } as CUIConfig;
+
+      fs.writeFileSync(path.join(cuiDir, 'config.json'), JSON.stringify(initialConfig, null, 2));
+
+      const configService = ConfigService.getInstance();
+      await configService.initialize();
+
+      // Apply partial update to notifications only
+      await configService.updateConfig({ interface: { notifications: { enabled: true } } });
+
+      const after = configService.getConfig();
+      // Language should remain as previously set
+      expect(after.interface.language).toBe('zh');
+      // Notifications should be merged in
+      expect(after.interface.notifications?.enabled).toBe(true);
+
+      // Verify file on disk also retains language and includes notifications
+      const disk = JSON.parse(fs.readFileSync(path.join(cuiDir, 'config.json'), 'utf-8'));
+      expect(disk.interface.language).toBe('zh');
+      expect(disk.interface.notifications.enabled).toBe(true);
+    });
+  });
 });

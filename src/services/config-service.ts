@@ -119,22 +119,24 @@ export class ConfigService {
       const configData = fs.readFileSync(this.configPath, 'utf-8');
       const fileConfig = JSON.parse(configData) as Partial<CUIConfig> & { machine_id: string; authToken: string };
 
-      // Merge with defaults for missing sections
+      // Merge with defaults for missing sections while preserving all existing fields (e.g., router)
       let updated = false;
       const merged: CUIConfig = {
+        // Start with defaults
+        ...DEFAULT_CONFIG,
+        // Bring over everything from file (including optional fields like router, gemini)
+        ...fileConfig,
+        // Ensure required identifiers are set from file
         machine_id: fileConfig.machine_id,
         authToken: fileConfig.authToken,
+        // Deep-merge known nested sections to ensure defaults are filled without dropping user values
         server: { ...DEFAULT_CONFIG.server, ...(fileConfig.server || {}) },
-        gemini: fileConfig.gemini,
         interface: { ...DEFAULT_CONFIG.interface, ...(fileConfig.interface || {}) }
       };
 
-      if (!fileConfig.server) updated = true;
-      if (!fileConfig.interface) updated = true;
-      // Check if any interface fields missing
-      if (JSON.stringify(merged.interface) !== JSON.stringify(fileConfig.interface)) {
-        updated = true;
-      }
+      // Determine if we added any defaults and need to persist back to disk
+      if (!fileConfig.server || JSON.stringify(merged.server) !== JSON.stringify(fileConfig.server)) updated = true;
+      if (!fileConfig.interface || JSON.stringify(merged.interface) !== JSON.stringify(fileConfig.interface)) updated = true;
 
       // Validate required fields
       if (!merged.machine_id) {
@@ -168,9 +170,43 @@ export class ConfigService {
     }
 
     this.logger.info('Updating configuration', { updates });
-    
+
+    // Create a new config via deep-merge semantics so unrelated options are preserved
+    const current = this.config;
+
+    const mergedServer = updates.server ? { ...current.server, ...updates.server } : current.server;
+
+    const mergedInterface = updates.interface
+      ? {
+          ...current.interface,
+          ...updates.interface,
+          // Deep-merge nested notifications object if provided
+          notifications:
+            updates.interface.notifications !== undefined
+              ? { ...(current.interface.notifications || {}), ...updates.interface.notifications }
+              : current.interface.notifications
+        }
+      : current.interface;
+
+    const mergedRouter = updates.router
+      ? { ...(current.router || {}), ...updates.router }
+      : current.router;
+
+    const mergedGemini = updates.gemini
+      ? { ...(current.gemini || {}), ...updates.gemini }
+      : current.gemini;
+
+    // Preserve machine_id and authToken regardless of updates
+    const newConfig: CUIConfig = {
+      ...current,
+      server: mergedServer,
+      interface: mergedInterface,
+      gemini: mergedGemini,
+      router: mergedRouter
+    };
+
     // Update in-memory config
-    this.config = { ...this.config, ...updates };
+    this.config = newConfig;
     
     // Write to file
     try {
