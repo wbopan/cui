@@ -14,7 +14,10 @@ export interface ServerStartupOptions {
 export function displayServerStartup(options: ServerStartupOptions): void {
   const { host, port, authToken, skipAuthToken, logger } = options;
   const serverUrl = `http://${host}:${port}`;
-  const authUrl = `http://127.0.0.1:${port}#token=${authToken}`;
+  let authUrl = `http://localhost:${port}#token=${authToken}`;
+  if (host !== '0.0.0.0') {
+    authUrl = `http://${host}:${port}#token=${authToken}`;
+  }
 
   if (!skipAuthToken && authToken) {
     logger.info(`🚀 Server listening on ${serverUrl}`);
