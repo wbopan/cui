@@ -130,7 +130,7 @@ export class ConfigService {
       let fileConfig: Partial<CUIConfig> & { machine_id?: string; authToken?: string };
       try {
         fileConfig = JSON.parse(configData) as Partial<CUIConfig> & { machine_id?: string; authToken?: string };
-      } catch (parseError) {
+      } catch (_parseError) {
         // Corrupted JSON should fail startup
         throw new Error('Invalid JSON in configuration file');
       }
@@ -398,7 +398,7 @@ export class ConfigService {
       let parsed: Partial<CUIConfig> & { machine_id?: string; authToken?: string };
       try {
         parsed = JSON.parse(newRaw);
-      } catch (e) {
+      } catch (_e) {
         this.logger.error('Ignoring external config change due to invalid JSON');
         return;
       }

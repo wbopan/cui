@@ -116,6 +116,7 @@ export class WebPushService {
         // Persist into config (partial update preserves other interface fields)
         void this.configService.updateConfig({
           interface: {
+            ...config.interface,
             notifications: {
               ...(config.interface.notifications || { enabled: true }),
               webPush: {
@@ -124,14 +125,14 @@ export class WebPushService {
                 vapidPrivateKey: privateKey,
               },
             },
-          } as any,
-        }).catch((err: unknown) => {
-          this.logger.warn('Failed to persist generated VAPID keys to config', { error: (err as Error)?.message });
+          },
+        }).catch((_err: unknown) => {
+          this.logger.warn('Failed to persist generated VAPID keys to config');
         });
         this.logger.info('Generated and applied VAPID keys');
         generated = true;
-      } catch (e) {
-        this.logger.error('Failed to generate VAPID keys', { error: (e as Error)?.message });
+      } catch (_e) {
+        this.logger.error('Failed to generate VAPID keys');
       }
     }
 
@@ -147,7 +148,7 @@ export class WebPushService {
       try {
         this.db.prepare('UPDATE subscriptions SET expired = 1').run();
         this.logger.info('Expired all existing web push subscriptions due to VAPID key generation');
-      } catch (e) {
+      } catch (_e) {
         this.logger.warn('Failed to expire existing subscriptions after VAPID key generation');
       }
     }
@@ -202,21 +203,15 @@ export class WebPushService {
           await webpush.sendNotification(sub, JSON.stringify(payload), { TTL: 60 });
           this.upsertSeenStmt.run(new Date().toISOString(), 0, row.endpoint);
           sent += 1;
-        } catch (err: any) {
+        } catch (_err: unknown) {
           failed += 1;
           // 410 Gone or 404 Not Found => expire subscription
-          const status = typeof err?.statusCode === 'number' ? err.statusCode : undefined;
+          const status = undefined;
           if (status === 404 || status === 410) {
             this.upsertSeenStmt.run(new Date().toISOString(), 1, row.endpoint);
             this.logger.info('Expired web push subscription removed', { endpoint: row.endpoint, status });
           } else {
-            this.logger.error('Failed sending web push notification', {
-              endpoint: row.endpoint,
-              error: err?.message || String(err),
-              statusCode: status,
-              body: err?.body,
-              headers: err?.headers,
-            });
+            this.logger.error('Failed sending web push notification', { endpoint: row.endpoint, statusCode: status });
           }
         }
       })

@@ -1,15 +1,23 @@
 /// <reference lib="webworker" />
 // Basic service worker to handle push notifications and precache
 
+/* eslint-env serviceworker */
+/* global ServiceWorkerGlobalScope, ExtendableEvent, PushEvent, NotificationEvent, WindowClient */
+
 import { precacheAndRoute } from 'workbox-precaching';
 
-declare const self: ServiceWorkerGlobalScope & { __WB_MANIFEST: any };
+interface ManifestEntry {
+  url: string;
+  revision?: string;
+}
 
-self.addEventListener('install', (event) => {
+declare const self: ServiceWorkerGlobalScope & { __WB_MANIFEST: ManifestEntry[] };
+
+self.addEventListener('install', (_event) => {
   self.skipWaiting();
 });
 
-self.addEventListener('activate', (event) => {
+self.addEventListener('activate', (event: ExtendableEvent) => {
   event.waitUntil(self.clients.claim());
 });
 
@@ -31,7 +39,7 @@ self.addEventListener('push', (event: PushEvent) => {
       badge: '/icon-192x192.png',
     };
     event.waitUntil(self.registration.showNotification(title, options));
-  } catch (err) {
+  } catch (_err) {
     // no-op
   }
 });
@@ -43,10 +51,14 @@ self.addEventListener('notificationclick', (event: NotificationEvent) => {
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
       for (const client of clientList) {
         const w = client as WindowClient;
-        if ('focus' in w) return w.focus();
+        if ('focus' in w) {
+          void w.focus();
+          return;
+        }
       }
-      if (self.clients.openWindow) return self.clients.openWindow(url);
-      return undefined as unknown as Promise<void>;
+      if (self.clients.openWindow) {
+        void self.clients.openWindow(url);
+      }
     })
   );
 });
