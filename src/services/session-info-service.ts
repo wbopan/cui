@@ -6,6 +6,18 @@ import type { SessionInfo } from '@/types/index.js';
 import { createLogger } from './logger.js';
 import { type Logger } from './logger.js';
 
+type SessionRow = {
+  custom_name: string;
+  created_at: string;
+  updated_at: string;
+  version: number;
+  pinned: number | boolean;
+  archived: number | boolean;
+  continuation_session_id: string;
+  initial_commit_head: string;
+  permission_mode: string;
+};
+
 /**
  * SessionInfoService manages session information using SQLite backend
  * Stores session metadata including custom names in ~/.cui/session-info.db
@@ -167,17 +179,7 @@ export class SessionInfoService {
     }
   }
 
-  private mapRow(row: {
-    custom_name: string;
-    created_at: string;
-    updated_at: string;
-    version: number;
-    pinned: number | boolean;
-    archived: number | boolean;
-    continuation_session_id: string;
-    initial_commit_head: string;
-    permission_mode: string;
-  }): SessionInfo {
+  private mapRow(row: SessionRow): SessionInfo {
     return {
       custom_name: row.custom_name,
       created_at: row.created_at,
@@ -193,7 +195,7 @@ export class SessionInfoService {
 
   async getSessionInfo(sessionId: string): Promise<SessionInfo> {
     try {
-      const row = this.getSessionStmt.get(sessionId);
+      const row = this.getSessionStmt.get(sessionId) as SessionRow | undefined;
       if (row) {
         return this.mapRow(row);
       }
@@ -243,7 +245,7 @@ export class SessionInfoService {
 
   async updateSessionInfo(sessionId: string, updates: Partial<SessionInfo>): Promise<SessionInfo> {
     try {
-      const existingRow = this.getSessionStmt.get(sessionId);
+      const existingRow = this.getSessionStmt.get(sessionId) as SessionRow | undefined;
       const now = new Date().toISOString();
       if (existingRow) {
         const updatedSession: SessionInfo = {
@@ -322,18 +324,7 @@ export class SessionInfoService {
   async getAllSessionInfo(): Promise<Record<string, SessionInfo>> {
     this.logger.debug('Getting all session info');
     try {
-      const rows = this.getAllStmt.all() as Array<{
-        session_id: string;
-        custom_name: string;
-        created_at: string;
-        updated_at: string;
-        version: number;
-        pinned: number | boolean;
-        archived: number | boolean;
-        continuation_session_id: string;
-        initial_commit_head: string;
-        permission_mode: string;
-      }>;
+      const rows = this.getAllStmt.all() as Array<SessionRow & { session_id: string }>;
       const result: Record<string, SessionInfo> = {};
       for (const row of rows) {
         result[row.session_id] = this.mapRow(row);

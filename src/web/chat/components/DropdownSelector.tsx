@@ -44,6 +44,7 @@ interface DropdownSelectorProps<T = string> {
   initialFocusedIndex?: number;
   onFocusReturn?: () => void;
   visualFocusOnly?: boolean;
+  focusedIndexControlled?: number;
 }
 
 export const DropdownSelector = forwardRef<HTMLDivElement, DropdownSelectorProps<any>>(
@@ -69,6 +70,7 @@ export const DropdownSelector = forwardRef<HTMLDivElement, DropdownSelectorProps
       initialFocusedIndex,
       onFocusReturn,
       visualFocusOnly = false,
+      focusedIndexControlled,
     }: DropdownSelectorProps<T>,
     ref: React.ForwardedRef<HTMLDivElement>
   ) {
@@ -233,6 +235,13 @@ export const DropdownSelector = forwardRef<HTMLDivElement, DropdownSelectorProps
       }
     }, [focusedIndex, showFilterInput, visualFocusOnly]);
 
+    // Sync focused index from external control when provided
+    useEffect(() => {
+      if (focusedIndexControlled !== undefined) {
+        setFocusedIndex(focusedIndexControlled);
+      }
+    }, [focusedIndexControlled]);
+
     // Reset focused index when dropdown closes or filter changes
     useEffect(() => {
       if (!isOpen) {
@@ -332,6 +341,17 @@ export const DropdownSelector = forwardRef<HTMLDivElement, DropdownSelectorProps
             avoidCollisions={true}
             onKeyDown={handleKeyDown}
             ref={dropdownRef}
+            onOpenAutoFocus={(e) => {
+              if (visualFocusOnly) {
+                e.preventDefault();
+              }
+            }}
+            onCloseAutoFocus={(e) => {
+              if (visualFocusOnly) {
+                e.preventDefault();
+                onFocusReturn?.();
+              }
+            }}
             style={{
               maxHeight: `${maxHeight}px`,
             }}
