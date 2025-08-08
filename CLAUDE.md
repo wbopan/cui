@@ -1,6 +1,6 @@
 # Testing Architecture
 
-This directory contains comprehensive test coverage for CUI backend services.
+This directory contains comprehensive test coverage for CUI services.
 
 ## Testing Philosophy
 

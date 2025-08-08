@@ -2,7 +2,7 @@
   <img src="assets/logo.png" alt="cui logo" width="150">
 </div>
 
-# cui: Claude Code Web UI
+# cui: Common Agent UI
 
 [![npm version](https://badge.fury.io/js/cui-server.svg)](https://www.npmjs.com/package/cui-server)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D20.0.0-brightgreen.svg)](https://nodejs.org/)
@@ -11,7 +11,7 @@
 [![codecov](https://codecov.io/gh/BMPixel/cui/branch/main/graph/badge.svg)](https://codecov.io/gh/BMPixel/cui)
 [![CI](https://github.com/BMPixel/cui/actions/workflows/ci.yml/badge.svg)](https://github.com/BMPixel/cui/actions/workflows/ci.yml)
 
-A modern web UI for [Claude Code](https://claude.ai/code) agents. Start the server and access Claude Code anywhere in your browser.
+A modern web UI for your agents. Start the server and access your agents anywhere in your browser. Common Agent UI is powered by [Claude Code SDK](https://claude.ai/code) and supports all kind of LLMs with the most powerful agentic tools.
 
 <div align="center">
   <img src="assets/demo.gif" alt="Demo" width="100%">
@@ -19,18 +19,18 @@ A modern web UI for [Claude Code](https://claude.ai/code) agents. Start the serv
 
 ## Highlights
 
-- **Modern Design**: Polished, responsive UI that works anywhere
-- **Parallel Background Agents**: Stream multiple sessions simultaneously
-- **Manage Tasks**: Access all your conversations and fork/resume/archive them
-- **Claude Code Parity**: Familiar autocompletion and interaction with CLI
-- **Push Notifications**: Get notified when your agents are finished
-- **Dictation**: Precise dictation powered by Gemini 2.5 Flash
+- **🎨 Modern Design**: Polished, responsive UI that works anywhere
+- **⚡ Parallel Background Agents**: Stream multiple sessions simultaneously
+- **📋 Manage Tasks**: Access all your conversations and fork/resume/archive them
+- **🤖 Multi-Model Support**: Enjoy power of agentic workflows with any model
+- **🔧 Claude Code Parity**: Familiar autocompletion and interaction with CLI
+- **🔔 Push Notifications**: Get notified when your agents are finished
+- **🎤 Dictation**: Precise dictation powered by Gemini 2.5 Flash
 
 ## Getting Started
 
-1. Ensure you're logged into Claude Code or have a valid Anthropic API key.
 
-2. With Node.js >= 20.19.0, start the server:
+1. With Node.js >= 20.19.0, start the server:
 
     ```bash
     npx cui-server
@@ -40,7 +40,10 @@ A modern web UI for [Claude Code](https://claude.ai/code) agents. Start the serv
     npm install -g cui-server
     ```
 
-3. Open http://localhost:3001/#your-token in your browser (the token will be displayed in the cui-server command output).
+2. Open http://localhost:3001/#your-token in your browser (the token will be displayed in the cui-server command output).
+3. Choose a model provider:
+    - cui works out of the box with if you have logged in to Claude Code or have a valid Anthropic API key in your environment.
+    - Or you can go to `settings -> provider` and choose a model provider. cui use [claude-code-router](https://github.com/musistudio/claude-code-router) configurations, supporting different model providers from openrouter to ollama.
 4. (Optional) Configure the settings for notifications and dictation.
 
 ## Usage
@@ -65,7 +68,7 @@ cui uses [Gemini 2.5 Flash](https://deepmind.google/models/gemini/flash/) to pro
 
 ### Notifications
 
-You can receive push notifications when your task is finished or when Claude is waiting for your permission to use tools. Notifications are sent using [ntfy](https://ntfy.sh/). To receive them, install ntfy on any of your devices and subscribe to the topic (see settings).
+You can receive push notifications when your task is finished or when Claude is waiting for your permission to use tools. Notifications are sent using either [ntfy](https://ntfy.sh/) or native [web-push](https://www.npmjs.com/package/web-push). To receive them, follow the instructions in the settings.
 
 ### Keyboard Shortcuts
 

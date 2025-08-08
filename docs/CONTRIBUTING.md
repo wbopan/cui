@@ -1,4 +1,4 @@
-# Contributing to CUI (Claude Code Web UI)
+# Contributing to CUI (Common Agent UI)
 
 Thank you for your interest in contributing to CUI! This guide will help you get started with contributing to our project.
 
