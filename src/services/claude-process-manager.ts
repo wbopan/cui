@@ -53,7 +53,7 @@ export class ClaudeProcessManager extends EventEmitter {
     this.fileSystemService = fileSystemService;
   }
 
-  setRouterService(service: ClaudeRouterService): void {
+  setRouterService(service?: ClaudeRouterService): void {
     this.routerService = service;
   }
 

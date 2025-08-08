@@ -164,19 +164,7 @@ export class CUIServer {
       this.logger.debug('Gemini service initialized successfully');
 
       // Initialize router service if configured
-      if (config.router?.enabled) {
-        this.logger.debug('Router service is enabled, attempting to initialize...');
-        try {
-          this.routerService = new ClaudeRouterService(config.router);
-          await this.routerService.initialize();
-          this.processManager.setRouterService(this.routerService);
-          this.logger.info('Router service initialized');
-        } catch (error) {
-          this.logger.error('Router initialization failed, continuing without router', error);
-        }
-      } else {
-        this.logger.info('Router service is disabled');
-      }
+      await this.initializeOrReloadRouter(config);
 
       // Apply overrides if provided (for tests and CLI options)
       this.port = this.configOverrides?.port ?? config.server.port;
@@ -226,6 +214,15 @@ export class CUIServer {
         authToken: this.configOverrides?.token ?? config.authToken,
         skipAuthToken: this.configOverrides?.skipAuthToken,
         logger: this.logger
+      });
+
+      // Subscribe to configuration changes to hot-reload router when needed
+      this.configService.onChange(async (newConfig) => {
+        try {
+          await this.initializeOrReloadRouter(newConfig);
+        } catch (error) {
+          this.logger.error('Failed to reload router after config change', error);
+        }
       });
     } catch (error) {
       this.logger.error('Failed to initialize server:', error, {
@@ -633,5 +630,38 @@ export class CUIServer {
     });
     
     this.logger.debug('PermissionTracker integration setup complete');
+  }
+
+  private async initializeOrReloadRouter(config: import('./types/config.js').CUIConfig): Promise<void> {
+    // If router is disabled, ensure it is stopped
+    if (!config.router?.enabled) {
+      if (this.routerService) {
+        this.logger.info('Router disabled in configuration, stopping router service');
+        await this.routerService.stop();
+        this.routerService = undefined;
+        this.processManager.setRouterService(undefined);
+      } else {
+        this.logger.info('Router service is disabled');
+      }
+      return;
+    }
+
+    // If router is enabled
+    try {
+      // If there is an existing router, stop it first
+      if (this.routerService) {
+        this.logger.info('Reloading router service due to configuration change...');
+        await this.routerService.stop();
+        this.routerService = undefined;
+      } else {
+        this.logger.debug('Router service is enabled, attempting to initialize...');
+      }
+      this.routerService = new ClaudeRouterService(config.router);
+      await this.routerService.initialize();
+      this.processManager.setRouterService(this.routerService);
+      this.logger.info('Router service initialized');
+    } catch (error) {
+      this.logger.error('Router initialization failed, continuing without router', error);
+    }
   }
 }

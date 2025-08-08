@@ -161,7 +161,7 @@ describe('Configuration System Basic Integration', () => {
   });
 
   describe('Error Handling', () => {
-    it('should handle malformed config file gracefully', async () => {
+    it('should fail startup on malformed config file', async () => {
       // Create malformed config file
       const cuiDir = path.join(testConfigDir, '.cui');
       fs.mkdirSync(cuiDir, { recursive: true });
@@ -176,19 +176,22 @@ describe('Configuration System Basic Integration', () => {
       await expect(configService.initialize()).rejects.toThrow();
     });
 
-    it('should handle missing config file fields', async () => {
-      // Create incomplete config file
+    it('should allow missing fields and fill defaults', async () => {
+      // Create config missing optional/mergeable fields
       const cuiDir = path.join(testConfigDir, '.cui');
       fs.mkdirSync(cuiDir, { recursive: true });
-      
+
       fs.writeFileSync(
-        path.join(cuiDir, 'config.json'), 
-        JSON.stringify({ machine_id: 'test' }) // Missing server
+        path.join(cuiDir, 'config.json'),
+        JSON.stringify({ machine_id: 'test-machine-11112222', authToken: 'tok', server: { port: 5555, host: '0.0.0.0' } })
       );
-      
+
       const configService = ConfigService.getInstance();
-      
-      await expect(configService.initialize()).rejects.toThrow();
+      await expect(configService.initialize()).resolves.not.toThrow();
+      const loaded = configService.getConfig();
+      expect(loaded.interface).toBeDefined();
+      expect(loaded.server.port).toBe(5555);
+      expect(loaded.machine_id).toBe('test-machine-11112222');
     });
   });
 

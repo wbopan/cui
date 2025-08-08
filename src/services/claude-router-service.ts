@@ -1,5 +1,6 @@
 import { RouterConfiguration } from '@/types/router-config.js';
 import { createLogger, type Logger } from './logger.js';
+import net from 'net';
 
 // Local minimal type shims to avoid any
 interface RouterServerConfig {
@@ -31,11 +32,14 @@ interface HttpRequest {
 
 interface RouterServer {
   start(): Promise<void>;
-  stop(): Promise<void>;
   addHook(
     name: 'preHandler',
     hook: (req: HttpRequest, reply: unknown) => Promise<void> | void
   ): void;
+  // The underlying Fastify app exposed by @musistudio/llms Server
+  app?: {
+    close: () => Promise<void>;
+  };
 }
 
 type RouterServerConstructor = new (config: RouterServerConfig) => RouterServer;
@@ -47,7 +51,7 @@ export class ClaudeRouterService {
   private server?: RouterServer;
   private readonly config: RouterConfiguration;
   private readonly logger: Logger;
-  private readonly port = 14001; // hardcoded 14xxx port
+  private port: number | null = null;
   private Server?: RouterServerConstructor;
 
   constructor(config: RouterConfiguration) {
@@ -79,6 +83,10 @@ export class ClaudeRouterService {
     this.logger.debug(`Router service initializing with ${this.config.providers.length} provider(s)`);
 
     try {
+      // Pick an available localhost port dynamically
+      this.port = await this.findOpenPort();
+      this.logger.debug('Selected router port', { port: this.port });
+
       this.server = new this.Server({
         initialConfig: {
           providers: this.config.providers,
@@ -160,7 +168,8 @@ export class ClaudeRouterService {
   }
 
   getProxyUrl(): string {
-    return `http://127.0.0.1:${this.port}`;
+    const effectivePort = this.port ?? 14001;
+    return `http://127.0.0.1:${effectivePort}`;
   }
 
   getProxyKey(): string {
@@ -168,11 +177,38 @@ export class ClaudeRouterService {
   }
 
   async stop(): Promise<void> {
-    if (this.server && typeof this.server.stop === 'function') {
-      this.logger.debug('Stopping Claude Code Router...');
-      await this.server.stop();
+    if (!this.server) return;
+    this.logger.debug('Stopping Claude Code Router...');
+    try {
+      if (typeof this.server.app?.close === 'function') {
+        await this.server.app.close();
+      } else {
+        this.logger.warn('Router server does not expose app.close(); skipping');
+      }
+    } catch (error) {
+      this.logger.error('Error while stopping Claude Code Router', error);
+    } finally {
       this.server = undefined;
+      this.port = null;
       this.logger.debug('Claude Code Router stopped successfully');
     }
+  }
+
+  private findOpenPort(): Promise<number> {
+    return new Promise((resolve, reject) => {
+      const srv = net.createServer();
+      srv.on('error', (err) => {
+        reject(err);
+      });
+      srv.listen({ host: '127.0.0.1', port: 0 }, () => {
+        const address = srv.address();
+        if (address && typeof address === 'object') {
+          const selectedPort = address.port;
+          srv.close(() => resolve(selectedPort));
+        } else {
+          srv.close(() => reject(new Error('Unable to determine open port')));
+        }
+      });
+    });
   }
 }

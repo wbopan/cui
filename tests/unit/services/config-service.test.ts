@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import { ConfigService } from '@/services/config-service';
+import { vi } from 'vitest';
 
 vi.mock('@/services/logger.js');
 
@@ -45,5 +46,19 @@ describe('ConfigService interface', () => {
     const config = service.getConfig();
     expect(config.interface.language).toBe('fr');
     expect(config.interface.colorScheme).toBe('system');
+  });
+
+  it('emits change event on internal update', async () => {
+    const service = ConfigService.getInstance();
+    await service.initialize();
+    const onChange = vi.fn();
+    (service as any).emitter.removeAllListeners?.('config-changed');
+    service.onChange(onChange);
+    await service.updateConfig({ interface: { language: 'es' } });
+    expect(onChange).toHaveBeenCalled();
+    const [newConfig, prev, source] = onChange.mock.calls[0];
+    expect(newConfig.interface.language).toBe('es');
+    expect(prev.interface).toBeDefined();
+    expect(source).toBe('internal');
   });
 });
