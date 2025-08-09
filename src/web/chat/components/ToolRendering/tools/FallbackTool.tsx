@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
-import { CornerDownRight } from 'lucide-react';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/web/chat/components/ui/collapsible';
+import React from 'react';
+import { ToolCollapse } from '../ToolCollapse';
 
 interface FallbackToolProps {
   toolName: string;
@@ -9,8 +8,6 @@ interface FallbackToolProps {
 }
 
 export function FallbackTool({ toolName, input, result }: FallbackToolProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
-
   const formatContent = (content: string): string => {
     try {
       // Try to parse and format as JSON if possible
@@ -23,41 +20,30 @@ export function FallbackTool({ toolName, input, result }: FallbackToolProps) {
   };
 
   return (
-    <div className="flex flex-col gap-1 -mt-0.5">
-      <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
-        <CollapsibleTrigger asChild>
-          <div 
-            className="text-sm text-muted-foreground cursor-pointer select-none hover:text-foreground flex items-center gap-1"
-            aria-label={`Toggle ${toolName} details`}
-          >
-            <CornerDownRight 
-              size={12} 
-              className={`transition-transform ${isExpanded ? 'rotate-90' : ''}`} 
-            />
-            {toolName} completed
+    <ToolCollapse 
+      summaryText={`${toolName} completed`}
+      defaultExpanded={false}
+      ariaLabel={`Toggle ${toolName} details`}
+    >
+      <div className="space-y-1">
+        {result && (
+          <div className="bg-neutral-950 rounded-xl overflow-hidden">
+            <pre className="m-0 p-3 text-neutral-100 font-mono text-xs leading-relaxed whitespace-pre-wrap break-words">
+              {formatContent(result || 'No result')}
+            </pre>
           </div>
-        </CollapsibleTrigger>
+        )}
         
-        <CollapsibleContent className="space-y-1">
-          {result && (
-            <div className="bg-neutral-950 rounded-xl overflow-hidden">
-              <pre className="m-0 p-3 text-neutral-100 font-mono text-xs leading-relaxed whitespace-pre-wrap break-words">
-                {formatContent(result || 'No result')}
-              </pre>
-            </div>
-          )}
-          
-          {/* Always show input in expanded state for debugging */}
-          {input && (
-            <div className="bg-secondary rounded-xl p-3 overflow-x-auto font-mono text-xs leading-relaxed">
-              <strong className="text-foreground">Input:</strong>
-              <pre className="m-0 mt-1 whitespace-pre-wrap break-words">
-                {JSON.stringify(input, null, 2)}
-              </pre>
-            </div>
-          )}
-        </CollapsibleContent>
-      </Collapsible>
-    </div>
+        {/* Always show input in expanded state for debugging */}
+        {input && (
+          <div className="bg-secondary rounded-xl p-3 overflow-x-auto font-mono text-xs leading-relaxed">
+            <strong className="text-foreground">Input:</strong>
+            <pre className="m-0 mt-1 whitespace-pre-wrap break-words">
+              {JSON.stringify(input, null, 2)}
+            </pre>
+          </div>
+        )}
+      </div>
+    </ToolCollapse>
   );
 }
