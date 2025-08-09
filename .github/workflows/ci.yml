@@ -55,7 +55,7 @@ jobs:
 
           # Start server with minimal logs
           export LOG_LEVEL=error
-          npx cui-server --port 3001 --host 127.0.0.1 --skip-auth-token > server.log 2>&1 &
+          npx cui-server --port 3001 --host 127.0.0.1 > server.log 2>&1 &
           echo $! > server.pid
 
           # Wait for server to be ready
