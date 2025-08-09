@@ -13,8 +13,14 @@ jobs:
       node-version: '20.x'
       upload-artifact: true
 
-  release:
+  e2e:
     needs: quality
+    uses: ./.github/workflows/e2e.yml
+    with:
+      node-version: '20.x'
+
+  release:
+    needs: [quality, e2e]
     runs-on: ubuntu-latest
     permissions:
       contents: write

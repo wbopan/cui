@@ -1,0 +1,93 @@
+name: E2E Checks
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        description: Node.js version to use (e.g. 20.x)
+        required: true
+        type: string
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ inputs.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build package
+        run: npm run build
+
+      - name: Pack tarball
+        id: pack
+        run: |
+          set -euo pipefail
+          TARBALL=$(npm pack --silent)
+          echo "tarball=$TARBALL" >> $GITHUB_OUTPUT
+
+      - name: Install tarball in clean dir and run server
+        run: |
+          set -euo pipefail
+          echo "Using tarball: ${{ steps.pack.outputs.tarball }}"
+          WORKDIR=$(mktemp -d)
+          cp "${{ steps.pack.outputs.tarball }}" "$WORKDIR/"
+          pushd "$WORKDIR" >/dev/null
+          npm init -y >/dev/null 2>&1
+          npm i --silent "${{ steps.pack.outputs.tarball }}"
+
+          # Start server with minimal logs
+          export LOG_LEVEL=error
+          npx cui-server --port 3001 --host 127.0.0.1 > server.log 2>&1 &
+          echo $! > server.pid
+
+          # Wait for server to be ready
+          for i in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:3001/ >/dev/null; then
+              echo "Server is ready"
+              break
+            fi
+            sleep 1
+          done
+
+          # Ensure server is listening
+          if ! curl -fsS http://127.0.0.1:3001/ >/dev/null; then
+            echo "Server did not become ready in time" >&2
+            echo "--- server.log ---"; cat server.log || true
+            exit 1
+          fi
+
+          # 1) Check that / returns an HTML page
+          curl -fsS http://127.0.0.1:3001/ -o index.html
+          grep -qi '<!DOCTYPE html' index.html
+
+          # 2) Check an API endpoint is unauthorized without token
+          # Note: /health is public by design; verify auth on /api/conversations instead
+          HTTP_STATUS=$(curl -sS -o /dev/null -w "%{http_code}\n" http://127.0.0.1:3001/api/conversations)
+          echo "Unauthorized check status: $HTTP_STATUS"
+          test "$HTTP_STATUS" = "401"
+
+          # 3) Scan logs to ensure no 'error' or 'warning' present
+          if grep -Eiq '\\b(error|warning)\\b' server.log; then
+            echo "Found error/warning in server.log" >&2
+            echo "--- server.log ---"; cat server.log
+            exit 1
+          fi
+
+          # 4) Also verify /health returns 200 (public health endpoint)
+          HEALTH_STATUS=$(curl -sS -o /dev/null -w "%{http_code}\n" http://127.0.0.1:3001/health)
+          echo "Health status: $HEALTH_STATUS"
+          test "$HEALTH_STATUS" = "200"
+
+          # Cleanup
+          kill "$(cat server.pid)" || true
+          popd >/dev/null
+
