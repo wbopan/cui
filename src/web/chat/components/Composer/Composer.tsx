@@ -668,6 +668,67 @@ export const Composer = forwardRef<ComposerRef, ComposerProps>(function Composer
     resetAutocomplete();
   };
 
+  const handlePaste = async (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const clipboardData = e.clipboardData;
+    if (!clipboardData) return;
+
+    // Check if clipboard contains image data
+    const imageItems = Array.from(clipboardData.items).filter(item => item.type.startsWith('image/'));
+    
+    if (imageItems.length === 0) {
+      // No images, let default paste behavior handle text
+      return;
+    }
+
+    // Prevent default paste behavior for images
+    e.preventDefault();
+
+    try {
+      // Process the first image found
+      const imageItem = imageItems[0];
+      const imageFile = imageItem.getAsFile();
+      
+      if (!imageFile) {
+        console.warn('Could not get image file from clipboard');
+        return;
+      }
+
+      // Upload the image to temp storage
+      const uploadResult = await api.uploadTempImage(imageFile);
+      
+      if (uploadResult.success && uploadResult.filePath) {
+        // Insert the file path at the current cursor position
+        const textarea = textareaRef.current;
+        if (textarea) {
+          const cursorPos = textarea.selectionStart;
+          const textBefore = value.substring(0, cursorPos);
+          const textAfter = value.substring(cursorPos);
+          
+          // Add space before if needed
+          const needsSpaceBefore = textBefore.length > 0 && !textBefore.endsWith(' ') && !textBefore.endsWith('\n');
+          const imageReference = `@${uploadResult.filePath}`;
+          const finalText = (needsSpaceBefore ? ' ' : '') + imageReference;
+          
+          const newText = textBefore + finalText + textAfter;
+          setValue(newText);
+          
+          // Set cursor position after inserted text
+          setTimeout(() => {
+            if (textareaRef.current) {
+              const newCursorPos = cursorPos + finalText.length;
+              textareaRef.current.setSelectionRange(newCursorPos, newCursorPos);
+              textareaRef.current.focus();
+              adjustTextareaHeight();
+            }
+          }, 0);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to upload pasted image:', error);
+      // Could show a toast notification here
+    }
+  };
+
   const handleSubmit = (permissionMode: string) => {
     const trimmedValue = value.trim();
     if (!trimmedValue || isLoading) return;
@@ -870,6 +931,7 @@ export const Composer = forwardRef<ComposerRef, ComposerProps>(function Composer
                 value={value}
                 onChange={handleTextChange}
                 onKeyDown={handleKeyDown}
+                onPaste={handlePaste}
                 rows={1}
                 disabled={(isLoading || disabled) && !(permissionRequest && showPermissionUI)}
               />

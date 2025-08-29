@@ -201,6 +201,49 @@ class ApiService {
     });
   }
 
+  async uploadTempImage(imageFile: File): Promise<{ success: boolean; filePath: string; filename: string }> {
+    const formData = new FormData();
+    formData.append('image', imageFile);
+
+    const fullUrl = `${this.baseUrl}/api/filesystem/upload-temp-image`;
+    
+    // Log request
+    console.log(`[API] POST ${fullUrl}`, { fileName: imageFile.name, fileSize: imageFile.size });
+    
+    // Get auth token for Bearer authorization
+    const authToken = getAuthToken();
+    const headers = new Headers();
+    
+    // Add Bearer token if available
+    if (authToken) {
+      headers.set('Authorization', `Bearer ${authToken}`);
+    }
+    
+    try {
+      const response = await fetch(fullUrl, {
+        method: 'POST',
+        headers,
+        body: formData,
+      });
+
+      const data = await response.json();
+      
+      // Log response
+      console.log(`[API Response] ${fullUrl}:`, data);
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Unauthorized');
+        }
+        throw new Error((data as ApiError).error || `HTTP ${response.status}`);
+      }
+
+      return data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async getGeminiHealth(): Promise<GeminiHealthResponse> {
     return this.apiCall<GeminiHealthResponse>('/api/gemini/health');
   }
