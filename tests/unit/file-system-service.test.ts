@@ -76,6 +76,16 @@ describe('FileSystemService', () => {
         new CCUIError('PATH_NOT_FOUND', 'Path not found: /home/user/documents', 404)
       );
     });
+
+    it('should block paths that only share a prefix with allowed directories', async () => {
+      const baseDir = path.join(os.tmpdir(), 'ccui-allowed-base');
+      const siblingDir = `${baseDir}-sibling`; // Same prefix, different directory
+      const restrictedService = new FileSystemService(undefined, [baseDir]);
+
+      await expect(restrictedService.listDirectory(siblingDir)).rejects.toThrow(
+        new CCUIError('PATH_NOT_ALLOWED', 'Path is outside allowed directories', 403)
+      );
+    });
   });
 
   describe('Recursive directory listing', () => {

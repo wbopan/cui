@@ -23,7 +23,9 @@ export class FileSystemService {
       this.maxFileSize = maxFileSize;
     }
     if (allowedBasePaths) {
-      this.allowedBasePaths = allowedBasePaths.map(p => path.normalize(p));
+      this.allowedBasePaths = allowedBasePaths
+        .filter(Boolean)
+        .map(basePath => path.normalize(path.resolve(basePath)));
     }
   }
 
@@ -180,9 +182,9 @@ export class FileSystemService {
     // Check against allowed base paths if configured
     if (this.allowedBasePaths.length > 0) {
       const isAllowed = this.allowedBasePaths.some(basePath => 
-        normalizedPath.startsWith(basePath)
+        this.isWithinAllowedBase(normalizedPath, basePath)
       );
-      
+
       if (!isAllowed) {
         this.logger.warn('Path outside allowed directories', { 
           requestedPath, 
@@ -380,5 +382,17 @@ export class FileSystemService {
       this.logger.debug('Failed to get git HEAD', { dirPath, error });
       return null;
     }
+  }
+
+  private isWithinAllowedBase(targetPath: string, basePath: string): boolean {
+    const relative = path.relative(basePath, targetPath);
+    if (relative === '') {
+      return true; // Exact match
+    }
+
+    const startsOutside = relative.startsWith('..');
+    const isAbsolute = path.isAbsolute(relative);
+
+    return !startsOutside && !isAbsolute;
   }
 }
