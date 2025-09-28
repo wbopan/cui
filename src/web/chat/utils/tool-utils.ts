@@ -50,32 +50,44 @@ export function formatToolInput(input: any, maxLength: number = 50): string {
   if (!input || typeof input !== 'object') {
     return String(input || '');
   }
-  
+
   const entries = Object.entries(input);
   if (entries.length === 0) return '';
-  
+
+  // Special handling for plan content - show a truncated preview
+  if (entries.length === 1 && entries[0][0] === 'plan') {
+    const planContent = entries[0][1];
+    if (typeof planContent === 'string') {
+      // Extract first line of the plan for preview
+      const firstLine = planContent.split('\n')[0].trim();
+      return firstLine.length > maxLength
+        ? `"${firstLine.slice(0, maxLength)}..."`
+        : `"${firstLine}"`;
+    }
+  }
+
   if (entries.length === 1) {
     const [key, value] = entries[0];
-    const formattedValue = typeof value === 'string' && value.length > maxLength 
-      ? `"${value.slice(0, maxLength)}..."` 
-      : typeof value === 'string' 
-        ? `"${value}"` 
+    const formattedValue = typeof value === 'string' && value.length > maxLength
+      ? `"${value.slice(0, maxLength)}..."`
+      : typeof value === 'string'
+        ? `"${value}"`
         : String(value);
     return `${key}: ${formattedValue}`;
   }
-  
+
   // Multiple parameters - show key value pairs separated by commas
   const formatted = entries
     .map(([key, value]) => {
-      const formattedValue = typeof value === 'string' && value.length > maxLength 
-        ? `"${value.slice(0, maxLength)}..."` 
-        : typeof value === 'string' 
-          ? `"${value}"` 
+      const formattedValue = typeof value === 'string' && value.length > maxLength
+        ? `"${value.slice(0, maxLength)}..."`
+        : typeof value === 'string'
+          ? `"${value}"`
           : String(value);
       return `${key}: ${formattedValue}`;
     })
     .join(', ');
-    
+
   return formatted.length > maxLength ? `${formatted.slice(0, maxLength)}...` : formatted;
 }
 

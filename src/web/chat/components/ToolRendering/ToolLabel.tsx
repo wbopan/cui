@@ -114,6 +114,7 @@ export function ToolLabel({ toolName, toolInput, workingDirectory, onClick }: To
         );
       
       case 'exit_plan_mode':
+      case 'ExitPlanMode':
         return <span className="font-semibold">Plan</span>;
       
       default:

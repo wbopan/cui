@@ -170,6 +170,7 @@ export function ToolContent({
       );
     
     case 'exit_plan_mode':
+    case 'ExitPlanMode':
       return (
         <PlanTool
           input={toolInput}
