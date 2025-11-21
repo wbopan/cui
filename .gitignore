@@ -8,6 +8,9 @@ build/
 *.tsbuildinfo
 # Exclude React build output from backend
 public/dist/
+
+# Local env overrides
+.env.test-local
 public/node_modules/
 
 # Environment variables
