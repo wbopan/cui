@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Maximize2, Minimize2, CornerDownRight } from 'lucide-react';
 import type { ChatMessage } from '../../../types';
 import { MessageItem } from '../../MessageList/MessageItem';
@@ -12,11 +12,11 @@ interface TaskToolProps {
   toolResults?: Record<string, any>;
 }
 
-export function TaskTool({ 
-  input, 
-  result, 
-  toolUseId, 
-  childrenMessages = {}, 
+export function TaskTool({
+  input,
+  result,
+  toolUseId,
+  childrenMessages = {},
   toolResults = {}
 }: TaskToolProps) {
   const hasChildren = toolUseId && childrenMessages[toolUseId] && childrenMessages[toolUseId].length > 0;
@@ -34,6 +34,27 @@ export function TaskTool({
     }
   }, [children.length, isFullHeight]);
 
+  // Handle wheel events to allow page scroll when at scroll boundaries
+  const handleWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
+    const element = e.currentTarget;
+    const { scrollTop, scrollHeight, clientHeight } = element;
+    const isAtTop = scrollTop === 0;
+    const isAtBottom = Math.abs(scrollHeight - clientHeight - scrollTop) < 1;
+    const isScrollingUp = e.deltaY < 0;
+    const isScrollingDown = e.deltaY > 0;
+
+    // If at the boundary and scrolling in that direction, let the page scroll
+    if ((isAtTop && isScrollingUp) || (isAtBottom && isScrollingDown)) {
+      // Don't prevent default - let the event bubble up to page scroll
+      return;
+    }
+
+    // Only stop propagation if we can actually scroll in the desired direction
+    if (scrollHeight > clientHeight) {
+      e.stopPropagation();
+    }
+  }, []);
+
   return (
     <>
       {hasChildren && (
@@ -48,10 +69,11 @@ export function TaskTool({
             >
               {isFullHeight ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
             </Button>
-            <div 
+            <div
               ref={contentRef}
-              className={`${isFullHeight 
-                ? 'max-h-96 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-border' 
+              onWheel={isFullHeight ? handleWheel : undefined}
+              className={`${isFullHeight
+                ? 'max-h-96 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-border'
                 : 'max-h-24 overflow-hidden [mask-image:linear-gradient(180deg,transparent_0,black_40%,black_45%,transparent_90%)]'
               } p-4 pt-8 pb-2 relative`}
             >
