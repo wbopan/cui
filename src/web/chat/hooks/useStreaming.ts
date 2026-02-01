@@ -47,8 +47,13 @@ export function useStreaming(
   }, []);
 
   const connect = useCallback(async () => {
-    // Guard against multiple connections
-    if (!streamingId || readerRef.current || abortControllerRef.current) {
+    // Guard against connection without streamingId
+    if (!streamingId) {
+      return;
+    }
+
+    // If already connecting/connected, skip
+    if (abortControllerRef.current) {
       return;
     }
 
@@ -139,10 +144,26 @@ export function useStreaming(
   }, [streamingId, disconnect]);
 
   useEffect(() => {
+    // Clean up previous connection before establishing new one
+    if (readerRef.current) {
+      readerRef.current.cancel().catch(() => {});
+      readerRef.current = null;
+    }
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setIsConnected(false);
+
     if (streamingId) {
-      connect();
-    } else {
-      disconnect();
+      // Small delay to ensure cleanup is complete
+      const timeoutId = setTimeout(() => {
+        connect();
+      }, 50);
+      return () => {
+        clearTimeout(timeoutId);
+        disconnect();
+      };
     }
 
     return () => {

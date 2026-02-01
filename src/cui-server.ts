@@ -192,11 +192,12 @@ export class CUIServer {
         this.processManager.setMCPConfigPath(mcpConfigPath);
         this.logger.debug('MCP config generated and set', { path: mcpConfigPath });
       } catch (error) {
-        const isTestEnv = process.env.NODE_ENV === 'test';
-        
-        if (isTestEnv) {
-          this.logger.warn('MCP config generation failed in test environment, proceeding without MCP', {
-            error: error instanceof Error ? error.message : String(error)
+        const isNonProduction = process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'development';
+
+        if (isNonProduction) {
+          this.logger.warn('MCP config generation failed, proceeding without MCP', {
+            error: error instanceof Error ? error.message : String(error),
+            env: process.env.NODE_ENV
           });
           // Don't set MCP config path - conversations will run without MCP
         } else {
@@ -253,20 +254,22 @@ export class CUIServer {
 
       // Start Express server
       const isDev = process.env.NODE_ENV === 'development';
-      this.logger.debug('Creating HTTP server listener', { 
-        useViteExpress: isDev,
-        environment: process.env.NODE_ENV 
+      const apiOnly = process.env.API_ONLY === 'true'; // Skip Vite for API-only mode
+      this.logger.debug('Creating HTTP server listener', {
+        useViteExpress: isDev && !apiOnly,
+        apiOnly,
+        environment: process.env.NODE_ENV
       });
-      
-      // Import ViteExpress dynamically if in development mode
-      if (isDev && !ViteExpress) {
+
+      // Import ViteExpress dynamically if in development mode (and not API-only)
+      if (isDev && !apiOnly && !ViteExpress) {
         const viteExpressModule = await import('vite-express');
         ViteExpress = viteExpressModule.default;
       }
-      
+
       await new Promise<void>((resolve, reject) => {
-        // Use ViteExpress only in development
-        if (isDev && ViteExpress) {
+        // Use ViteExpress only in development (and not API-only)
+        if (isDev && !apiOnly && ViteExpress) {
           try {
             this.server = this.app.listen(this.port, this.host, () => {
               this.logger.debug('Server successfully bound to port (dev mode)', {

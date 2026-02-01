@@ -58,19 +58,20 @@ export class ClaudeProcessManager extends EventEmitter {
   }
 
   /**
-   * Find the Claude executable from node_modules
-   * Since @anthropic-ai/claude-code is a dependency, claude should be in node_modules/.bin
+   * Find the Claude executable
+   * Priority: node_modules (bundled) > PATH > global install
    */
   private findClaudeExecutable(): string {
+    // First: find claude from node_modules (bundled version for consistency)
     // When running as an npm package, find claude relative to this module
     // __dirname will be something like /path/to/node_modules/cui-server/dist/services
     const packageRoot = path.resolve(__dirname, '..', '..');
     const claudePath = path.join(packageRoot, 'node_modules', '.bin', 'claude');
-    
+
     if (existsSync(claudePath)) {
       return claudePath;
     }
-    
+
     // Try from the parent node_modules (when cui-server is installed as a dependency)
     // packageRoot -> /node_modules/cui-server
     // parent -> /node_modules, so /node_modules/.bin/claude
@@ -78,24 +79,14 @@ export class ClaudeProcessManager extends EventEmitter {
     if (existsSync(parentModulesPath)) {
       return parentModulesPath;
     }
-    
+
     // Fallback: try from current working directory (for local development)
     const cwdPath = path.join(process.cwd(), 'node_modules', '.bin', 'claude');
     if (existsSync(cwdPath)) {
       return cwdPath;
     }
-    
-    // Final fallback: try to locate on PATH
-    const pathEnv = process.env.PATH || '';
-    const pathDirs = pathEnv.split(path.delimiter);
-    for (const dir of pathDirs) {
-      const candidate = path.join(dir, 'claude');
-      if (existsSync(candidate)) {
-        return candidate;
-      }
-    }
-    
-    throw new Error('Claude executable not found in node_modules. Ensure @anthropic-ai/claude-code is installed.');
+
+    throw new Error('Claude executable not found. Ensure @anthropic-ai/claude-code is installed globally or in node_modules.');
   }
 
   /**

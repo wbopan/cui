@@ -44,6 +44,12 @@ export default defineConfig({
   server: {
     port: 3000,
     host: '0.0.0.0',
-    allowedHosts: ['wenbo-macbook.dala-cobia.ts.net', 'cui.wenbo.io', 'localhost', '127.0.0.1', 'cui1.wenbo.io', 'cui2.wenbo.io', 'cui.tai.chat', 'measurements-struggle-slight-campbell.trycloudflare.com'],
+    allowedHosts: ['wenbo-macbook.dala-cobia.ts.net', 'cui.wenbo.io', 'localhost', '127.0.0.1', 'cui1.wenbo.io', 'cui2.wenbo.io', 'cui.tai.chat', 'measurements-struggle-slight-campbell.trycloudflare.com', 'alpha.u2032338.nyat.app'],
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+    },
   }
 })
