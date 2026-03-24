@@ -169,8 +169,25 @@ export function ConversationView() {
         permissionMode
       });
 
-      // Navigate immediately to the new session
-      navigate(`/c/${response.sessionId}`);
+      // Add optimistic user message immediately
+      const messageId = `optimistic-${Date.now()}`;
+      const optimisticUserMessage: ChatMessage = {
+        id: messageId,
+        messageId: messageId,
+        type: 'user',
+        content: message,
+        timestamp: new Date().toISOString(),
+        workingDirectory: workingDirectory || currentWorkingDirectory,
+      };
+      addMessage(optimisticUserMessage);
+
+      // Set streamingId immediately to start receiving messages
+      setStreamingId(response.streamingId);
+
+      // Navigate to the new session (may be same sessionId in Claude 2.x)
+      if (response.sessionId !== sessionId) {
+        navigate(`/c/${response.sessionId}`);
+      }
     } catch (err: any) {
       setError(err.message || 'Failed to send message');
     }

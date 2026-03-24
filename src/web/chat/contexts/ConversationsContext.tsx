@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { api } from '../services/api';
 import { useStreamStatus } from './StreamStatusContext';
 import type { ConversationSummary, WorkingDirectory, ConversationSummaryWithLiveStatus } from '../types';
+import { isPathUnderHome } from '../utils/path-utils';
 
 interface RecentDirectory {
   lastDate: string;
@@ -59,20 +60,24 @@ export function ConversationsProvider({ children }: { children: ReactNode }) {
 
   const updateRecentDirectories = (convs: ConversationSummary[], apiDirectories?: Record<string, RecentDirectory> | null) => {
     const newDirectories: Record<string, RecentDirectory> = {};
-    
-    // First, add API directories if available
+
+    // First, add API directories if available (filter to home paths only)
     if (apiDirectories) {
-      Object.assign(newDirectories, apiDirectories);
+      Object.entries(apiDirectories).forEach(([path, dir]) => {
+        if (isPathUnderHome(path)) {
+          newDirectories[path] = dir;
+        }
+      });
     }
-    
-    // Then, process conversations and merge with API data
+
+    // Then, process conversations and merge with API data (filter to home paths only)
     convs.forEach(conv => {
-      if (conv.projectPath) {
+      if (conv.projectPath && isPathUnderHome(conv.projectPath)) {
         const pathParts = conv.projectPath.split('/');
         const shortname = pathParts[pathParts.length - 1] || conv.projectPath;
-        
+
         // If API didn't provide this directory, or if conversation is more recent
-        if (!newDirectories[conv.projectPath] || 
+        if (!newDirectories[conv.projectPath] ||
             new Date(conv.updatedAt) > new Date(newDirectories[conv.projectPath].lastDate)) {
           newDirectories[conv.projectPath] = {
             lastDate: conv.updatedAt,
@@ -81,7 +86,7 @@ export function ConversationsProvider({ children }: { children: ReactNode }) {
         }
       }
     });
-    
+
     setRecentDirectories(newDirectories);
   };
 

@@ -115,8 +115,10 @@ export function createConversationRoutes(
       
       const { streamingId, systemInit } = await processManager.startConversation(conversationConfig);
       
-      // Update original session with continuation session ID if resuming
-      if (req.body.resumedSessionId) {
+      // Update original session with continuation session ID if resuming AND session ID changed
+      // Note: Claude CLI 2.x reuses the same session ID by default when resuming
+      // Claude CLI 1.x may create a new session ID when resuming
+      if (req.body.resumedSessionId && systemInit.session_id !== req.body.resumedSessionId) {
         try {
           await sessionInfoService.updateSessionInfo(req.body.resumedSessionId, {
             continuation_session_id: systemInit.session_id
@@ -131,8 +133,11 @@ export function createConversationRoutes(
             error: error instanceof Error ? error.message : String(error)
           });
         }
-        
-        // Register the resumed session with conversation status manager including previous messages
+      }
+
+      // Register the resumed session with conversation status manager including previous messages
+      // This must happen regardless of whether session ID changed (Claude 2.x reuses same ID)
+      if (req.body.resumedSessionId) {
         try {
           conversationStatusManager.registerActiveSession(
             streamingId,
@@ -146,9 +151,10 @@ export function createConversationRoutes(
           );
           logger.debug('Registered resumed session with inherited messages', {
             requestId,
-            newSessionId: systemInit.session_id,
+            sessionId: systemInit.session_id,
             streamingId,
-            inheritedMessageCount: previousMessages.length
+            inheritedMessageCount: previousMessages.length,
+            sessionIdChanged: systemInit.session_id !== req.body.resumedSessionId
           });
         } catch (error) {
           logger.warn('Failed to register resumed session with status manager', {

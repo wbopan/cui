@@ -13,6 +13,7 @@ import type {
   CommandsResponse,
 } from '../types';
 import { getAuthToken } from '../../hooks/useAuth';
+import { hostPathToVmPath, vmPathToHostPath } from '../utils/path-utils';
 type GeminiHealthResponse = { status: 'healthy' | 'unhealthy'; message: string; apiKeyValid: boolean };
 
 class ApiService {
@@ -74,25 +75,55 @@ class ApiService {
     const searchParams = new URLSearchParams();
     if (params?.limit) searchParams.append('limit', params.limit.toString());
     if (params?.offset) searchParams.append('offset', params.offset.toString());
-    if (params?.projectPath) searchParams.append('projectPath', params.projectPath);
+    // Convert host path to VM path for filtering
+    if (params?.projectPath) searchParams.append('projectPath', hostPathToVmPath(params.projectPath));
     if (params?.hasContinuation !== undefined) searchParams.append('hasContinuation', params.hasContinuation.toString());
     if (params?.archived !== undefined) searchParams.append('archived', params.archived.toString());
     if (params?.pinned !== undefined) searchParams.append('pinned', params.pinned.toString());
     searchParams.append('sortBy', 'updated');
     searchParams.append('order', 'desc');
 
-    return this.apiCall(`/api/conversations?${searchParams}`);
+    const response = await this.apiCall<{ conversations: ConversationSummary[]; total: number }>(`/api/conversations?${searchParams}`);
+
+    // Convert VM paths back to host paths for display
+    return {
+      ...response,
+      conversations: response.conversations.map((conv) => ({
+        ...conv,
+        projectPath: vmPathToHostPath(conv.projectPath),
+      })),
+    };
   }
 
   async getConversationDetails(sessionId: string): Promise<ConversationDetailsResponse> {
-    return this.apiCall(`/api/conversations/${sessionId}`);
+    const response = await this.apiCall<ConversationDetailsResponse>(`/api/conversations/${sessionId}`);
+
+    // Convert VM path back to host path for display
+    return {
+      ...response,
+      projectPath: vmPathToHostPath(response.projectPath),
+    };
   }
 
   async startConversation(request: StartConversationRequest): Promise<StartConversationResponse> {
-    return this.apiCall('/api/conversations/start', {
+    // Convert host path to VM path before sending to API
+    const vmRequest = {
+      ...request,
+      workingDirectory: request.workingDirectory
+        ? hostPathToVmPath(request.workingDirectory)
+        : request.workingDirectory,
+    };
+
+    const response = await this.apiCall<StartConversationResponse>('/api/conversations/start', {
       method: 'POST',
-      body: JSON.stringify(request),
+      body: JSON.stringify(vmRequest),
     });
+
+    // Convert VM path back to host path for display
+    return {
+      ...response,
+      cwd: response.cwd ? vmPathToHostPath(response.cwd) : response.cwd,
+    };
   }
 
 
@@ -107,7 +138,16 @@ class ApiService {
   }
 
   async getWorkingDirectories(): Promise<WorkingDirectoriesResponse> {
-    return this.apiCall('/api/working-directories');
+    const response = await this.apiCall<WorkingDirectoriesResponse>('/api/working-directories');
+
+    // Convert VM paths back to host paths for display
+    return {
+      ...response,
+      directories: response.directories.map((dir) => ({
+        ...dir,
+        path: vmPathToHostPath(dir.path),
+      })),
+    };
   }
 
   async getPermissions(params?: { 
@@ -149,19 +189,30 @@ class ApiService {
 
   async listDirectory(params: FileSystemListQuery): Promise<FileSystemListResponse> {
     const searchParams = new URLSearchParams();
-    searchParams.append('path', params.path);
+    // Convert host path to VM path
+    searchParams.append('path', hostPathToVmPath(params.path));
     if (params.recursive !== undefined) searchParams.append('recursive', params.recursive.toString());
     if (params.respectGitignore !== undefined) searchParams.append('respectGitignore', params.respectGitignore.toString());
-    
-    return this.apiCall(`/api/filesystem/list?${searchParams}`);
+
+    const response = await this.apiCall<FileSystemListResponse>(`/api/filesystem/list?${searchParams}`);
+
+    // Convert VM paths back to host paths for display
+    return {
+      ...response,
+      entries: response.entries.map((entry) => ({
+        ...entry,
+        path: vmPathToHostPath(entry.path),
+      })),
+    };
   }
 
   async getCommands(workingDirectory?: string): Promise<CommandsResponse> {
     const searchParams = new URLSearchParams();
     if (workingDirectory) {
-      searchParams.append('workingDirectory', workingDirectory);
+      // Convert host path to VM path
+      searchParams.append('workingDirectory', hostPathToVmPath(workingDirectory));
     }
-    
+
     return this.apiCall(`/api/system/commands?${searchParams}`);
   }
 
@@ -181,7 +232,8 @@ class ApiService {
 
   async readFile(path: string): Promise<{ content: string }> {
     const searchParams = new URLSearchParams();
-    searchParams.append('path', path);
+    // Convert host path to VM path
+    searchParams.append('path', hostPathToVmPath(path));
     return this.apiCall(`/api/filesystem/read?${searchParams}`);
   }
 
