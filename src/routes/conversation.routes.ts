@@ -1,5 +1,7 @@
 import { Router, Request } from 'express';
-import { 
+import * as path from 'path';
+import archiver from 'archiver';
+import {
   StartConversationRequest,
   StartConversationResponse,
   ConversationListQuery,
@@ -11,13 +13,15 @@ import {
   SessionUpdateResponse,
   ConversationMessage,
   ConversationSummary,
-  SessionInfo
+  SessionInfo,
+  BulkDownloadFilesRequest
 } from '@/types/index.js';
 import { RequestWithRequestId } from '@/types/express.js';
 import { ClaudeProcessManager } from '@/services/claude-process-manager.js';
 import { ClaudeHistoryReader } from '@/services/claude-history-reader.js';
 import { SessionInfoService } from '@/services/session-info-service.js';
 import { ConversationStatusManager } from '@/services/conversation-status-manager.js';
+import { FileSystemService } from '@/services/file-system-service.js';
 import { createLogger } from '@/services/logger.js';
 import { ToolMetricsService } from '@/services/ToolMetricsService.js';
 
@@ -27,7 +31,8 @@ export function createConversationRoutes(
   statusTracker: ConversationStatusManager,
   sessionInfoService: SessionInfoService,
   conversationStatusManager: ConversationStatusManager,
-  toolMetricsService: ToolMetricsService
+  toolMetricsService: ToolMetricsService,
+  fileSystemService: FileSystemService
 ): Router {
   const router = Router();
   const logger = createLogger('ConversationRoutes');
@@ -549,20 +554,20 @@ export function createConversationRoutes(
   // Archive all sessions
   router.post('/archive-all', async (req: RequestWithRequestId, res, next) => {
     const requestId = req.requestId;
-    
+
     logger.debug('Archive all sessions request', {
       requestId
     });
-    
+
     try {
       // Archive all sessions
       const archivedCount = await sessionInfoService.archiveAllSessions();
-      
+
       logger.info('All sessions archived successfully', {
         requestId,
         archivedCount
       });
-      
+
       res.json({
         success: true,
         archivedCount,
@@ -571,6 +576,151 @@ export function createConversationRoutes(
     } catch (error) {
       logger.debug('Archive all sessions failed', {
         requestId,
+        error: error instanceof Error ? error.message : String(error)
+      });
+      next(error);
+    }
+  });
+
+  // Bulk download files from conversation as ZIP
+  router.post('/:sessionId/download-files', async (req: Request<{ sessionId: string }, never, BulkDownloadFilesRequest> & RequestWithRequestId, res, next) => {
+    const requestId = req.requestId;
+    const { sessionId } = req.params;
+    const { files } = req.body;
+
+    logger.debug('Bulk download files request', {
+      requestId,
+      sessionId,
+      fileCount: files?.length
+    });
+
+    try {
+      // Validate required parameters
+      if (!sessionId || sessionId.trim() === '') {
+        throw new CUIError('MISSING_SESSION_ID', 'sessionId is required', 400);
+      }
+      if (!files || !Array.isArray(files) || files.length === 0) {
+        throw new CUIError('MISSING_FILES', 'files array is required and must not be empty', 400);
+      }
+
+      // Get conversation metadata to find the cwd
+      const metadata = await historyReader.getConversationMetadata(sessionId);
+      if (!metadata) {
+        throw new CUIError('CONVERSATION_NOT_FOUND', 'Conversation not found', 404);
+      }
+
+      // Get the cwd from the first message of the conversation
+      const messages = await historyReader.fetchConversation(sessionId);
+      if (messages.length === 0) {
+        throw new CUIError('NO_MESSAGES', 'No messages found in conversation', 404);
+      }
+
+      const conversationCwd = messages[0].cwd || metadata.projectPath;
+      if (!conversationCwd) {
+        throw new CUIError('NO_CWD', 'Could not determine conversation working directory', 400);
+      }
+
+      // Normalize cwd for comparison
+      const normalizedCwd = path.normalize(conversationCwd);
+
+      // Validate all file paths are within conversation's cwd
+      const invalidFiles: string[] = [];
+      for (const filePath of files) {
+        const normalizedPath = path.normalize(filePath);
+        if (!normalizedPath.startsWith(normalizedCwd)) {
+          invalidFiles.push(filePath);
+        }
+      }
+
+      if (invalidFiles.length > 0) {
+        logger.warn('Bulk download attempt with files outside conversation cwd', {
+          requestId,
+          sessionId,
+          invalidFiles,
+          conversationCwd: normalizedCwd
+        });
+        throw new CUIError(
+          'FILES_OUTSIDE_CWD',
+          `Some files are outside the conversation working directory: ${invalidFiles.join(', ')}`,
+          403
+        );
+      }
+
+      // Create ZIP archive
+      const archive = archiver('zip', {
+        zlib: { level: 9 } // Maximum compression
+      });
+
+      // Set response headers for ZIP download
+      const zipFilename = `${sessionId}-files.zip`;
+      res.setHeader('Content-Type', 'application/zip');
+      res.setHeader('Content-Disposition', `attachment; filename="${zipFilename}"`);
+
+      // Pipe archive to response
+      archive.pipe(res);
+
+      // Track successful and failed files
+      const successfulFiles: string[] = [];
+      const failedFiles: Array<{ path: string; error: string }> = [];
+
+      // Add each file to the archive
+      for (const filePath of files) {
+        try {
+          const fileData = await fileSystemService.downloadFile(filePath);
+
+          // Use relative path within ZIP
+          const relativePath = path.relative(normalizedCwd, filePath);
+
+          archive.append(fileData.buffer, { name: relativePath });
+          successfulFiles.push(filePath);
+        } catch (error) {
+          const errorMsg = error instanceof Error ? error.message : String(error);
+          logger.warn('Failed to add file to ZIP', {
+            requestId,
+            sessionId,
+            filePath,
+            error: errorMsg
+          });
+          failedFiles.push({ path: filePath, error: errorMsg });
+        }
+      }
+
+      // If no files were successfully added, return error
+      if (successfulFiles.length === 0) {
+        throw new CUIError(
+          'NO_FILES_ADDED',
+          'Failed to add any files to the archive',
+          500
+        );
+      }
+
+      // Add a metadata file if there were any failures
+      if (failedFiles.length > 0) {
+        const metadataContent = JSON.stringify({
+          sessionId,
+          generatedAt: new Date().toISOString(),
+          successfulFiles,
+          failedFiles
+        }, null, 2);
+        archive.append(metadataContent, { name: '_download-metadata.json' });
+      }
+
+      // Finalize the archive
+      await archive.finalize();
+
+      logger.info('Bulk download completed', {
+        requestId,
+        sessionId,
+        totalFiles: files.length,
+        successfulFiles: successfulFiles.length,
+        failedFiles: failedFiles.length,
+        zipFilename
+      });
+
+    } catch (error) {
+      logger.debug('Bulk download files failed', {
+        requestId,
+        sessionId,
         error: error instanceof Error ? error.message : String(error)
       });
       next(error);

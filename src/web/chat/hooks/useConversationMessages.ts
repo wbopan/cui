@@ -82,20 +82,20 @@ export function useConversationMessages(options: UseConversationMessagesOptions 
         if (event.message && Array.isArray(event.message.content)) {
           const toolResultUpdates: Record<string, ToolResult> = {};
           let hasToolResults = false;
-          
+
           event.message.content.forEach((block) => {
             if (block.type === 'tool_result' && 'tool_use_id' in block) {
               hasToolResults = true;
               const toolUseId = block.tool_use_id;
               let result: string | ContentBlockParam[] = '';
-              
+
               // Extract result content
               if (typeof block.content === 'string') {
                 result = block.content;
               } else if (Array.isArray(block.content)) {
                 result = block.content;
               }
-              
+
               toolResultUpdates[toolUseId] = {
                 status: 'completed',
                 result,
@@ -103,29 +103,30 @@ export function useConversationMessages(options: UseConversationMessagesOptions 
               };
             }
           });
-          
+
           if (hasToolResults) {
             setToolResults(prev => ({ ...prev, ...toolResultUpdates }));
             // Tool result messages should not be added as child messages - return early
             break;
           }
         }
-        
+
         // If no tool results, check if this is a child message
         const userParentToolUseId = event.parent_tool_use_id;
-        
+
+        // Create user message
+        const userMessage: ChatMessage = {
+          id: '',
+          messageId: `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          type: 'user',
+          content: event.message.content,
+          timestamp: new Date().toISOString(),
+          workingDirectory: currentWorkingDirectory,
+          parentToolUseId: userParentToolUseId,
+        };
+
         if (userParentToolUseId) {
-          // This is a child message - create a user message and add to childrenMessages
-          const userMessage: ChatMessage = {
-            id: '',
-            messageId: `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-            type: 'user',
-            content: event.message.content,
-            timestamp: new Date().toISOString(),
-            workingDirectory: currentWorkingDirectory,
-            parentToolUseId: userParentToolUseId,
-          };
-          
+          // This is a child message - add to childrenMessages
           setChildrenMessages(prev => {
             const newChildren = { ...prev };
             if (!newChildren[userParentToolUseId]) {
@@ -134,6 +135,32 @@ export function useConversationMessages(options: UseConversationMessagesOptions 
             newChildren[userParentToolUseId] = [...newChildren[userParentToolUseId], userMessage];
             return newChildren;
           });
+        } else {
+          // This is a regular user message - check for duplicates before adding
+          // (optimistic updates may have already added this message)
+          setMessages(prev => {
+            // Check if we already have a very recent user message with the same content
+            // This handles the case where optimistic update already added the message
+            const lastMessage = prev[prev.length - 1];
+            const messageContent = typeof event.message.content === 'string'
+              ? event.message.content
+              : JSON.stringify(event.message.content);
+
+            const isLikelyDuplicate = lastMessage &&
+              lastMessage.type === 'user' &&
+              typeof lastMessage.content === 'string' &&
+              lastMessage.content === messageContent &&
+              (Date.now() - new Date(lastMessage.timestamp).getTime()) < 5000; // Within 5 seconds
+
+            if (isLikelyDuplicate) {
+              // Skip this message, it's likely a duplicate of our optimistic update
+              return prev;
+            }
+
+            // Not a duplicate, add it
+            return [...prev, userMessage];
+          });
+          options.onUserMessage?.(userMessage);
         }
         break;
 
@@ -254,23 +281,27 @@ export function useConversationMessages(options: UseConversationMessagesOptions 
       } else if (message.type === 'user' && Array.isArray(message.content)) {
         // Update with tool results from user messages
         message.content.forEach(block => {
-          if (block.type === 'tool_result' && 'tool_use_id' in block) {
-            const toolUseId = block.tool_use_id;
-            
+          // Type guard to check if this is a tool result block (using any since tool_result is not in SDK types)
+          const toolResultBlock = block as any;
+          if (typeof toolResultBlock === 'object' && toolResultBlock !== null &&
+              'type' in toolResultBlock && toolResultBlock.type === 'tool_result' &&
+              'tool_use_id' in toolResultBlock) {
+            const toolUseId = toolResultBlock.tool_use_id;
+
             // Only update if we've seen this tool use before
             if (newToolResults[toolUseId]) {
               let result: string | ContentBlockParam[] = '';
-              
-              if (typeof block.content === 'string') {
-                result = block.content;
-              } else if (Array.isArray(block.content)) {
-                result = block.content;
+
+              if (typeof toolResultBlock.content === 'string') {
+                result = toolResultBlock.content;
+              } else if (Array.isArray(toolResultBlock.content)) {
+                result = toolResultBlock.content;
               }
-              
+
               newToolResults[toolUseId] = {
                 status: 'completed',
                 result,
-                is_error: block.is_error
+                is_error: toolResultBlock.is_error
               };
             }
           }

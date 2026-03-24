@@ -17,7 +17,7 @@ export class FileSystemService {
   private logger: Logger;
   private maxFileSize: number = 10 * 1024 * 1024; // 10MB default
   private allowedBasePaths: string[] = []; // Empty means all paths allowed
-  
+
   constructor(maxFileSize?: number, allowedBasePaths?: string[]) {
     this.logger = createLogger('FileSystemService');
     if (maxFileSize !== undefined) {
@@ -26,6 +26,14 @@ export class FileSystemService {
     if (allowedBasePaths) {
       this.allowedBasePaths = allowedBasePaths.map(p => path.normalize(p));
     }
+  }
+
+  /**
+   * Update the maximum file size limit
+   */
+  setMaxFileSize(maxFileSize: number): void {
+    this.maxFileSize = maxFileSize;
+    this.logger.debug('Max file size updated', { maxFileSize });
   }
 
   /**
@@ -101,39 +109,39 @@ export class FileSystemService {
    */
   async readFile(requestedPath: string): Promise<{ path: string; content: string; size: number; lastModified: string; encoding: string }> {
     this.logger.debug('Read file requested', { requestedPath });
-    
+
     try {
       // Validate and normalize path
       const safePath = await this.validatePath(requestedPath);
-      
+
       // Check if path exists and is a file
       const stats = await fs.stat(safePath);
       if (!stats.isFile()) {
         throw new CUIError('NOT_A_FILE', `Path is not a file: ${requestedPath}`, 400);
       }
-      
+
       // Check file size
       if (stats.size > this.maxFileSize) {
         throw new CUIError(
-          'FILE_TOO_LARGE', 
-          `File size (${stats.size} bytes) exceeds maximum allowed size (${this.maxFileSize} bytes)`, 
+          'FILE_TOO_LARGE',
+          `File size (${stats.size} bytes) exceeds maximum allowed size (${this.maxFileSize} bytes)`,
           400
         );
       }
-      
+
       // Read file content
       const content = await fs.readFile(safePath, 'utf-8');
-      
+
       // Check if content is valid UTF-8 text
       if (!this.isValidUtf8(content)) {
         throw new CUIError('BINARY_FILE', 'File appears to be binary or not valid UTF-8', 400);
       }
-      
-      this.logger.debug('File read successfully', { 
-        path: safePath, 
-        size: stats.size 
+
+      this.logger.debug('File read successfully', {
+        path: safePath,
+        size: stats.size
       });
-      
+
       return {
         path: safePath,
         content,
@@ -145,17 +153,298 @@ export class FileSystemService {
       if (error instanceof CUIError) {
         throw error;
       }
-      
+
       const errorCode = (error as NodeJS.ErrnoException).code;
       if (errorCode === 'ENOENT') {
         throw new CUIError('FILE_NOT_FOUND', `File not found: ${requestedPath}`, 404);
       } else if (errorCode === 'EACCES') {
         throw new CUIError('ACCESS_DENIED', `Access denied to file: ${requestedPath}`, 403);
       }
-      
+
       this.logger.error('Error reading file', error, { requestedPath });
       throw new CUIError('READ_FILE_FAILED', `Failed to read file: ${error}`, 500);
     }
+  }
+
+  /**
+   * Download file with security checks (supports both text and binary files)
+   * Returns file buffer, mime type, and metadata for download
+   */
+  async downloadFile(requestedPath: string): Promise<{
+    buffer: Buffer;
+    mimeType: string;
+    filename: string;
+    size: number;
+    lastModified: string;
+  }> {
+    this.logger.debug('Download file requested', { requestedPath });
+
+    try {
+      // Validate and normalize path
+      const safePath = await this.validatePath(requestedPath);
+
+      // Check if path exists and is a file
+      const stats = await fs.stat(safePath);
+      if (!stats.isFile()) {
+        throw new CUIError('NOT_A_FILE', `Path is not a file: ${requestedPath}`, 400);
+      }
+
+      // Check file size
+      if (stats.size > this.maxFileSize) {
+        throw new CUIError(
+          'FILE_TOO_LARGE',
+          `File size (${stats.size} bytes) exceeds maximum allowed size (${this.maxFileSize} bytes)`,
+          400
+        );
+      }
+
+      // Read file as buffer (supports both text and binary)
+      const buffer = await fs.readFile(safePath);
+
+      // Determine MIME type based on file extension
+      const mimeType = this.getMimeType(safePath);
+
+      // Get filename from path
+      const filename = path.basename(safePath);
+
+      this.logger.debug('File download prepared', {
+        path: safePath,
+        size: stats.size,
+        mimeType,
+        filename
+      });
+
+      return {
+        buffer,
+        mimeType,
+        filename,
+        size: stats.size,
+        lastModified: stats.mtime.toISOString()
+      };
+    } catch (error) {
+      if (error instanceof CUIError) {
+        throw error;
+      }
+
+      const errorCode = (error as NodeJS.ErrnoException).code;
+      if (errorCode === 'ENOENT') {
+        throw new CUIError('FILE_NOT_FOUND', `File not found: ${requestedPath}`, 404);
+      } else if (errorCode === 'EACCES') {
+        throw new CUIError('ACCESS_DENIED', `Access denied to file: ${requestedPath}`, 403);
+      }
+
+      this.logger.error('Error downloading file', error, { requestedPath });
+      throw new CUIError('DOWNLOAD_FILE_FAILED', `Failed to download file: ${error}`, 500);
+    }
+  }
+
+  /**
+   * Ensure uploads directory exists within the given session CWD
+   * Creates the directory if it doesn't exist
+   */
+  async ensureUploadsDirectory(sessionCwd: string): Promise<string> {
+    this.logger.debug('Ensuring uploads directory exists', { sessionCwd });
+
+    try {
+      // Validate the session CWD path
+      const safeCwd = await this.validatePath(sessionCwd);
+
+      // Create uploads path within the session CWD
+      const uploadsPath = path.join(safeCwd, 'uploads');
+
+      // Check if uploads directory already exists
+      try {
+        const stats = await fs.stat(uploadsPath);
+        if (stats.isDirectory()) {
+          this.logger.debug('Uploads directory already exists', { uploadsPath });
+          return uploadsPath;
+        } else {
+          throw new CUIError('NOT_A_DIRECTORY', 'uploads path exists but is not a directory', 400);
+        }
+      } catch (error) {
+        const errorCode = (error as NodeJS.ErrnoException).code;
+        if (errorCode !== 'ENOENT') {
+          throw error;
+        }
+        // Directory doesn't exist, create it
+      }
+
+      // Create the uploads directory
+      await fs.mkdir(uploadsPath, { recursive: true });
+
+      this.logger.debug('Uploads directory created successfully', { uploadsPath });
+      return uploadsPath;
+    } catch (error) {
+      if (error instanceof CUIError) {
+        throw error;
+      }
+
+      this.logger.error('Error ensuring uploads directory', error, { sessionCwd });
+      throw new CUIError('CREATE_UPLOADS_DIR_FAILED', `Failed to create uploads directory: ${error}`, 500);
+    }
+  }
+
+  /**
+   * Upload a file to the specified destination path with security checks
+   * Handles duplicate filenames by appending timestamps
+   */
+  async uploadFile(
+    destinationPath: string,
+    buffer: Buffer,
+    filename: string
+  ): Promise<{ path: string; size: number }> {
+    this.logger.debug('Upload file requested', { destinationPath, filename, size: buffer.length });
+
+    try {
+      // Validate filename doesn't contain path separators or invalid characters
+      const baseFilename = path.basename(filename);
+      if (baseFilename !== filename) {
+        throw new CUIError('INVALID_FILENAME', 'Filename must not contain path separators', 400);
+      }
+
+      // Check for null bytes in filename
+      if (filename.includes('\u0000')) {
+        throw new CUIError('INVALID_FILENAME', 'Filename contains null bytes', 400);
+      }
+
+      // Check for invalid characters in filename
+      if (/[<>:|?*]/.test(filename)) {
+        throw new CUIError('INVALID_FILENAME', 'Filename contains invalid characters', 400);
+      }
+
+      // Reject hidden files (starting with .)
+      if (filename.startsWith('.')) {
+        throw new CUIError('INVALID_FILENAME', 'Hidden files are not allowed', 400);
+      }
+
+      // Check file size
+      if (buffer.length > this.maxFileSize) {
+        throw new CUIError(
+          'FILE_TOO_LARGE',
+          `File size (${buffer.length} bytes) exceeds maximum allowed size (${this.maxFileSize} bytes)`,
+          413
+        );
+      }
+
+      // Validate destination path
+      const safeDestPath = await this.validatePath(destinationPath);
+
+      // Ensure destination is a directory
+      const stats = await fs.stat(safeDestPath);
+      if (!stats.isDirectory()) {
+        throw new CUIError('NOT_A_DIRECTORY', `Destination path is not a directory: ${destinationPath}`, 400);
+      }
+
+      // Construct final file path
+      let finalPath = path.join(safeDestPath, filename);
+
+      // Handle duplicate filenames by appending timestamp
+      if (existsSync(finalPath)) {
+        const ext = path.extname(filename);
+        const nameWithoutExt = path.basename(filename, ext);
+        const timestamp = Date.now();
+        const newFilename = `${nameWithoutExt}.${timestamp}${ext}`;
+        finalPath = path.join(safeDestPath, newFilename);
+
+        this.logger.debug('Duplicate filename detected, using timestamp suffix', {
+          originalFilename: filename,
+          newFilename
+        });
+      }
+
+      // Write file to disk
+      await fs.writeFile(finalPath, buffer);
+
+      this.logger.debug('File uploaded successfully', {
+        path: finalPath,
+        size: buffer.length
+      });
+
+      return {
+        path: finalPath,
+        size: buffer.length
+      };
+    } catch (error) {
+      if (error instanceof CUIError) {
+        throw error;
+      }
+
+      const errorCode = (error as NodeJS.ErrnoException).code;
+      if (errorCode === 'ENOENT') {
+        throw new CUIError('PATH_NOT_FOUND', `Destination path not found: ${destinationPath}`, 404);
+      } else if (errorCode === 'EACCES') {
+        throw new CUIError('ACCESS_DENIED', `Access denied to destination: ${destinationPath}`, 403);
+      }
+
+      this.logger.error('Error uploading file', error, { destinationPath, filename });
+      throw new CUIError('UPLOAD_FILE_FAILED', `Failed to upload file: ${error}`, 500);
+    }
+  }
+
+  /**
+   * Get MIME type based on file extension
+   */
+  private getMimeType(filePath: string): string {
+    const ext = path.extname(filePath).toLowerCase();
+    const mimeTypes: Record<string, string> = {
+      // Text
+      '.txt': 'text/plain',
+      '.md': 'text/markdown',
+      '.html': 'text/html',
+      '.css': 'text/css',
+      '.js': 'text/javascript',
+      '.ts': 'text/typescript',
+      '.json': 'application/json',
+      '.xml': 'application/xml',
+      '.yaml': 'text/yaml',
+      '.yml': 'text/yaml',
+
+      // Images
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.png': 'image/png',
+      '.gif': 'image/gif',
+      '.svg': 'image/svg+xml',
+      '.webp': 'image/webp',
+      '.ico': 'image/x-icon',
+
+      // Documents
+      '.pdf': 'application/pdf',
+      '.doc': 'application/msword',
+      '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      '.xls': 'application/vnd.ms-excel',
+      '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      '.ppt': 'application/vnd.ms-powerpoint',
+      '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+
+      // Archives
+      '.zip': 'application/zip',
+      '.tar': 'application/x-tar',
+      '.gz': 'application/gzip',
+      '.rar': 'application/x-rar-compressed',
+      '.7z': 'application/x-7z-compressed',
+
+      // Audio/Video
+      '.mp3': 'audio/mpeg',
+      '.wav': 'audio/wav',
+      '.mp4': 'video/mp4',
+      '.avi': 'video/x-msvideo',
+      '.mov': 'video/quicktime',
+
+      // Programming
+      '.py': 'text/x-python',
+      '.java': 'text/x-java',
+      '.c': 'text/x-c',
+      '.cpp': 'text/x-c++',
+      '.rs': 'text/x-rust',
+      '.go': 'text/x-go',
+      '.rb': 'text/x-ruby',
+      '.php': 'text/x-php',
+      '.sh': 'application/x-sh',
+      '.sql': 'application/sql'
+    };
+
+    return mimeTypes[ext] || 'application/octet-stream';
   }
 
   /**

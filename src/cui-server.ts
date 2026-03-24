@@ -173,7 +173,15 @@ export class CUIServer {
       // Apply overrides if provided (for tests and CLI options)
       this.port = this.configOverrides?.port ?? config.server.port;
       this.host = this.configOverrides?.host ?? config.server.host;
-      
+
+      // Update file system service with config
+      if (config.server.maxDownloadSize !== undefined) {
+        this.fileSystemService.setMaxFileSize(config.server.maxDownloadSize);
+        this.logger.debug('FileSystemService max file size configured', {
+          maxDownloadSize: config.server.maxDownloadSize
+        });
+      }
+
       this.logger.info('Configuration loaded', {
         machineId: config.machine_id,
         port: this.port,
@@ -481,9 +489,10 @@ export class CUIServer {
       this.statusTracker,
       this.sessionInfoService,
       this.conversationStatusManager,
-      this.toolMetricsService
+      this.toolMetricsService,
+      this.fileSystemService
     ));
-    this.app.use('/api/filesystem', createFileSystemRoutes(this.fileSystemService));
+    this.app.use('/api/filesystem', createFileSystemRoutes(this.fileSystemService, this.historyReader));
     this.app.use('/api/logs', createLogRoutes());
     this.app.use('/api/stream', createStreamingRoutes(this.streamManager));
     this.app.use('/api/working-directories', createWorkingDirectoriesRoutes(this.workingDirectoriesService));

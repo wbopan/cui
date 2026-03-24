@@ -11,6 +11,7 @@ import type {
   FileSystemListQuery,
   FileSystemListResponse,
   CommandsResponse,
+  FileUploadResponse,
 } from '../types';
 import { getAuthToken } from '../../hooks/useAuth';
 type GeminiHealthResponse = { status: 'healthy' | 'unhealthy'; message: string; apiKeyValid: boolean };
@@ -247,15 +248,253 @@ class ApiService {
     const headers: Record<string, string> = {
       ...options?.headers as Record<string, string>,
     };
-    
+
     if (authToken) {
       headers.Authorization = `Bearer ${authToken}`;
     }
-    
+
     return fetch(url, {
       ...options,
       headers,
     });
+  }
+
+  /**
+   * Download a single file from a conversation
+   * Triggers browser download with proper filename
+   */
+  async downloadFile(filePath: string, sessionId: string): Promise<void> {
+    const authToken = getAuthToken();
+    const searchParams = new URLSearchParams({
+      path: filePath,
+      sessionId: sessionId
+    });
+
+    const url = `${this.baseUrl}/api/filesystem/download?${searchParams}`;
+
+    console.log(`[API] Downloading file: ${filePath} for session ${sessionId}`);
+
+    const headers: Record<string, string> = {};
+    if (authToken) {
+      headers.Authorization = `Bearer ${authToken}`;
+    }
+
+    try {
+      const response = await fetch(url, { headers });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Download failed: ${errorText}`);
+      }
+
+      // Get filename from Content-Disposition header
+      const contentDisposition = response.headers.get('Content-Disposition');
+      let filename = filePath.split('/').pop() || filePath.split('\\').pop() || 'download';
+
+      if (contentDisposition) {
+        const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(contentDisposition);
+        if (matches && matches[1]) {
+          filename = matches[1].replace(/['"]/g, '');
+          filename = decodeURIComponent(filename);
+        }
+      }
+
+      // Create blob and trigger download
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+
+      console.log(`[API] File downloaded successfully: ${filename}`);
+    } catch (error) {
+      console.error(`[API] Download failed:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Download multiple files from a conversation as a ZIP archive
+   * Triggers browser download with proper filename
+   */
+  async downloadFilesAsZip(sessionId: string, filePaths: string[]): Promise<void> {
+    const authToken = getAuthToken();
+    const url = `${this.baseUrl}/api/conversations/${sessionId}/download-files`;
+
+    console.log(`[API] Downloading ${filePaths.length} files as ZIP for session ${sessionId}`);
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json'
+    };
+
+    if (authToken) {
+      headers.Authorization = `Bearer ${authToken}`;
+    }
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ files: filePaths })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Bulk download failed: ${errorText}`);
+      }
+
+      // Get filename from Content-Disposition header
+      const contentDisposition = response.headers.get('Content-Disposition');
+      let filename = `${sessionId}-files.zip`;
+
+      if (contentDisposition) {
+        const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(contentDisposition);
+        if (matches && matches[1]) {
+          filename = matches[1].replace(/['"]/g, '');
+          filename = decodeURIComponent(filename);
+        }
+      }
+
+      // Create blob and trigger download
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+
+      console.log(`[API] ZIP archive downloaded successfully: ${filename}`);
+    } catch (error) {
+      console.error(`[API] Bulk download failed:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Upload a single file to a conversation's uploads directory
+   * @param file - The file to upload
+   * @param sessionId - The conversation session ID
+   * @param destinationPath - Optional custom destination path (relative to conversation CWD)
+   */
+  async uploadFile(
+    file: File,
+    sessionId: string,
+    destinationPath?: string
+  ): Promise<FileUploadResponse> {
+    const authToken = getAuthToken();
+    const searchParams = new URLSearchParams({ sessionId });
+
+    if (destinationPath) {
+      searchParams.append('destinationPath', destinationPath);
+    }
+
+    const url = `${this.baseUrl}/api/filesystem/upload?${searchParams}`;
+
+    console.log(`[API] Uploading file: ${file.name} for session ${sessionId}`);
+
+    const formData = new FormData();
+    formData.append('files', file);
+
+    const headers: Record<string, string> = {};
+    if (authToken) {
+      headers.Authorization = `Bearer ${authToken}`;
+    }
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error((data as ApiError).error || `Upload failed with status ${response.status}`);
+      }
+
+      console.log(`[API] File uploaded successfully:`, data);
+      return data;
+    } catch (error) {
+      console.error(`[API] Upload failed:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Upload multiple files to a conversation's uploads directory
+   * @param files - Array of files to upload
+   * @param sessionId - The conversation session ID
+   * @param destinationPath - Optional custom destination path (relative to conversation CWD)
+   */
+  async uploadFiles(
+    files: File[],
+    sessionId: string,
+    destinationPath?: string
+  ): Promise<FileUploadResponse> {
+    const authToken = getAuthToken();
+    const searchParams = new URLSearchParams({ sessionId });
+
+    if (destinationPath) {
+      searchParams.append('destinationPath', destinationPath);
+    }
+
+    const url = `${this.baseUrl}/api/filesystem/upload?${searchParams}`;
+
+    console.log(`[API] Uploading ${files.length} files for session ${sessionId}`);
+
+    const formData = new FormData();
+    for (const file of files) {
+      formData.append('files', file);
+    }
+
+    const headers: Record<string, string> = {};
+    if (authToken) {
+      headers.Authorization = `Bearer ${authToken}`;
+    }
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error((data as ApiError).error || `Upload failed with status ${response.status}`);
+      }
+
+      console.log(`[API] Files uploaded successfully:`, data);
+      return data;
+    } catch (error) {
+      console.error(`[API] Upload failed:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * List uploaded files in a conversation's uploads directory
+   * @param sessionId - The conversation session ID
+   */
+  async listUploadedFiles(sessionId: string): Promise<{
+    files: Array<{
+      name: string;
+      path: string;
+      size?: number;
+      lastModified: string;
+    }>;
+  }> {
+    const searchParams = new URLSearchParams({ sessionId });
+    return this.apiCall(`/api/filesystem/uploads?${searchParams}`);
   }
 }
 

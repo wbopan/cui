@@ -231,6 +231,37 @@ export interface FileSystemReadResponse {
   encoding: string;
 }
 
+export interface FileSystemDownloadQuery {
+  path: string;
+  sessionId: string; // Required to validate path is within conversation's cwd
+}
+
+export interface BulkDownloadFilesRequest {
+  files: string[]; // Array of file paths to include in ZIP
+}
+
+export interface FileSystemUploadQuery {
+  sessionId: string; // Required to validate path is within conversation's cwd
+  destinationPath?: string; // Optional destination path (defaults to <cwd>/uploads)
+}
+
+export interface FileUploadResult {
+  originalName: string;
+  uploadedPath: string;
+  size: number;
+}
+
+export interface FileUploadError {
+  filename: string;
+  error: string;
+}
+
+export interface FileUploadResponse {
+  success: boolean;
+  files: FileUploadResult[];
+  errors?: FileUploadError[];
+}
+
 // Session Info Database types for lowdb
 export interface SessionInfo {
   custom_name: string;          // Custom name for the session, default: ""

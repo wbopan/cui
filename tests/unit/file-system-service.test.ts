@@ -204,4 +204,190 @@ describe('FileSystemService', () => {
       expect(gitHead).toBe(null);
     });
   });
+
+  describe('File upload operations', () => {
+    let testDir: string;
+
+    beforeEach(async () => {
+      testDir = await fs.mkdtemp(path.join(os.tmpdir(), 'cui-upload-test-'));
+    });
+
+    afterEach(async () => {
+      await fs.rm(testDir, { recursive: true, force: true });
+    });
+
+    describe('ensureUploadsDirectory', () => {
+      it('should create uploads directory if it does not exist', async () => {
+        const uploadsPath = await service.ensureUploadsDirectory(testDir);
+
+        expect(uploadsPath).toBe(path.join(testDir, 'uploads'));
+
+        // Verify directory was created
+        const stats = await fs.stat(uploadsPath);
+        expect(stats.isDirectory()).toBe(true);
+      });
+
+      it('should return existing uploads directory if it already exists', async () => {
+        // Create uploads directory first
+        const expectedPath = path.join(testDir, 'uploads');
+        await fs.mkdir(expectedPath);
+
+        const uploadsPath = await service.ensureUploadsDirectory(testDir);
+
+        expect(uploadsPath).toBe(expectedPath);
+      });
+
+      it('should throw error if uploads path exists but is not a directory', async () => {
+        // Create a file named 'uploads' instead of a directory
+        const filePath = path.join(testDir, 'uploads');
+        await fs.writeFile(filePath, 'not a directory');
+
+        await expect(service.ensureUploadsDirectory(testDir)).rejects.toThrow(
+          new CUIError('NOT_A_DIRECTORY', 'uploads path exists but is not a directory', 400)
+        );
+      });
+
+      it('should reject paths with hidden directories', async () => {
+        await expect(service.ensureUploadsDirectory('/home/.hidden')).rejects.toThrow(
+          new CUIError('INVALID_PATH', 'Path contains hidden files/directories', 400)
+        );
+      });
+    });
+
+    describe('uploadFile', () => {
+      let uploadsDir: string;
+
+      beforeEach(async () => {
+        uploadsDir = path.join(testDir, 'uploads');
+        await fs.mkdir(uploadsDir);
+      });
+
+      it('should upload a file successfully', async () => {
+        const buffer = Buffer.from('test file content');
+        const filename = 'test.txt';
+
+        const result = await service.uploadFile(uploadsDir, buffer, filename);
+
+        expect(result.path).toBe(path.join(uploadsDir, filename));
+        expect(result.size).toBe(buffer.length);
+
+        // Verify file was written
+        const content = await fs.readFile(result.path, 'utf-8');
+        expect(content).toBe('test file content');
+      });
+
+      it('should handle duplicate filenames by appending timestamp', async () => {
+        const buffer = Buffer.from('test content');
+        const filename = 'duplicate.txt';
+
+        // Create first file
+        await fs.writeFile(path.join(uploadsDir, filename), 'existing content');
+
+        // Upload file with same name
+        const result = await service.uploadFile(uploadsDir, buffer, filename);
+
+        // Should have timestamp in filename
+        expect(result.path).toMatch(/duplicate\.\d+\.txt$/);
+        expect(result.path).not.toBe(path.join(uploadsDir, filename));
+
+        // Verify new file was written
+        const content = await fs.readFile(result.path, 'utf-8');
+        expect(content).toBe('test content');
+      });
+
+      it('should reject files exceeding size limit', async () => {
+        const smallSizeService = new FileSystemService(100); // 100 bytes max
+        const largeBuffer = Buffer.alloc(200, 'x'); // 200 bytes
+
+        await expect(
+          smallSizeService.uploadFile(uploadsDir, largeBuffer, 'large.txt')
+        ).rejects.toThrow(
+          new CUIError('FILE_TOO_LARGE', expect.stringContaining('exceeds maximum allowed size'), 413)
+        );
+      });
+
+      it('should reject filenames with path separators', async () => {
+        const buffer = Buffer.from('test');
+
+        await expect(
+          service.uploadFile(uploadsDir, buffer, '../etc/passwd')
+        ).rejects.toThrow(
+          new CUIError('INVALID_FILENAME', 'Filename must not contain path separators', 400)
+        );
+      });
+
+      it('should reject filenames with null bytes', async () => {
+        const buffer = Buffer.from('test');
+
+        await expect(
+          service.uploadFile(uploadsDir, buffer, 'test\u0000.txt')
+        ).rejects.toThrow(
+          new CUIError('INVALID_FILENAME', 'Filename contains null bytes', 400)
+        );
+      });
+
+      it('should reject filenames with invalid characters', async () => {
+        const buffer = Buffer.from('test');
+
+        await expect(
+          service.uploadFile(uploadsDir, buffer, 'test<file>.txt')
+        ).rejects.toThrow(
+          new CUIError('INVALID_FILENAME', 'Filename contains invalid characters', 400)
+        );
+      });
+
+      it('should reject hidden files', async () => {
+        const buffer = Buffer.from('test');
+
+        await expect(
+          service.uploadFile(uploadsDir, buffer, '.hidden')
+        ).rejects.toThrow(
+          new CUIError('INVALID_FILENAME', 'Hidden files are not allowed', 400)
+        );
+      });
+
+      it('should reject upload to non-directory path', async () => {
+        // Create a file instead of directory
+        const filePath = path.join(testDir, 'notadir');
+        await fs.writeFile(filePath, 'content');
+
+        const buffer = Buffer.from('test');
+
+        await expect(
+          service.uploadFile(filePath, buffer, 'test.txt')
+        ).rejects.toThrow(
+          new CUIError('NOT_A_DIRECTORY', expect.stringContaining('not a directory'), 400)
+        );
+      });
+
+      it('should reject upload to non-existent path', async () => {
+        const buffer = Buffer.from('test');
+        const nonExistentPath = path.join(testDir, 'does-not-exist');
+
+        await expect(
+          service.uploadFile(nonExistentPath, buffer, 'test.txt')
+        ).rejects.toThrow(
+          new CUIError('PATH_NOT_FOUND', expect.stringContaining('not found'), 404)
+        );
+      });
+
+      it('should handle various file extensions correctly', async () => {
+        const testFiles = [
+          'document.pdf',
+          'image.png',
+          'script.js',
+          'data.json',
+          'archive.zip'
+        ];
+
+        for (const filename of testFiles) {
+          const buffer = Buffer.from('content');
+          const result = await service.uploadFile(uploadsDir, buffer, filename);
+
+          expect(result.path).toBe(path.join(uploadsDir, filename));
+          expect(result.size).toBe(buffer.length);
+        }
+      });
+    });
+  });
 });

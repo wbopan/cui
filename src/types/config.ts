@@ -6,6 +6,11 @@ import { RouterConfiguration } from './router-config.js';
 export interface ServerConfig {
   host: string;
   port: number;
+  /**
+   * Maximum file size for downloads in bytes
+   * Default: 10485760 (10MB)
+   */
+  maxDownloadSize?: number;
 }
 
 export interface GeminiConfig {
@@ -77,7 +82,8 @@ export interface CUIConfig {
 export const DEFAULT_CONFIG: Omit<CUIConfig, 'machine_id' | 'authToken'> = {
   server: {
     host: 'localhost',
-    port: 3001
+    port: 3001,
+    maxDownloadSize: 10 * 1024 * 1024 // 10MB default
   },
   interface: {
     colorScheme: 'system',
