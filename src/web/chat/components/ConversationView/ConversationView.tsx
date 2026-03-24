@@ -3,8 +3,11 @@ import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { MessageList } from '../MessageList/MessageList';
 import { Composer, ComposerRef } from '@/web/chat/components/Composer';
 import { ConversationHeader } from '../ConversationHeader/ConversationHeader';
+import { SwarmOrchestrationPanel } from '../SwarmOrchestration/SwarmOrchestrationPanel';
+import { SwarmHealthMonitor } from '../SwarmHealth';
+import { SwarmTemplateSelector } from '../SwarmTemplates';
 import { api } from '../../services/api';
-import { useStreaming, useConversationMessages } from '../../hooks';
+import { useStreaming, useConversationMessages, useSwarmOrchestration } from '../../hooks';
 import type { ChatMessage, ConversationDetailsResponse, ConversationMessage, ConversationSummary } from '../../types';
 
 export function ConversationView() {
@@ -155,6 +158,9 @@ export function ConversationView() {
     },
   });
 
+  // Track swarm orchestration state
+  const swarmState = useSwarmOrchestration(messages);
+
   const handleSendMessage = async (message: string, workingDirectory?: string, model?: string, permissionMode?: string) => {
     if (!sessionId) return;
 
@@ -273,7 +279,7 @@ export function ConversationView() {
       />
       
       {error && (
-        <div 
+        <div
           className="bg-red-500/10 border-b border-red-500 text-red-600 dark:text-red-400 px-4 py-2 text-sm text-center animate-in slide-in-from-top duration-300"
           role="alert"
           aria-label="Error message"
@@ -282,7 +288,21 @@ export function ConversationView() {
         </div>
       )}
 
-      <MessageList 
+      {/* Swarm Orchestration Panel */}
+      {swarmState.isActive && (
+        <div className="px-4 pt-4 space-y-4">
+          <div className="flex gap-4">
+            <div className="flex-1">
+              <SwarmOrchestrationPanel swarmState={swarmState} />
+            </div>
+            <div className="w-80">
+              <SwarmHealthMonitor swarmState={swarmState} compact={false} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      <MessageList
         messages={messages}
         toolResults={toolResults}
         childrenMessages={childrenMessages}
@@ -292,11 +312,23 @@ export function ConversationView() {
         isStreaming={!!streamingId}
       />
 
-      <div 
+      <div
         className="sticky bottom-0 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm z-10 w-full flex justify-center px-2 pb-6"
         aria-label="Message composer section"
       >
         <div className="w-full max-w-3xl">
+          {/* Swarm Template Selector - Show when no active swarm */}
+          {!swarmState.isActive && !isConnected && (
+            <div className="mb-3">
+              <SwarmTemplateSelector
+                onSelectTemplate={(template) => {
+                  // When a template is selected, populate the composer with the prompt
+                  composerRef.current?.focusInput();
+                }}
+              />
+            </div>
+          )}
+
           <Composer
             ref={composerRef}
             onSubmit={handleSendMessage}

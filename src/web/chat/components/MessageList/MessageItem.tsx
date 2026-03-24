@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Copy, Check, Code, Globe, Settings, FileText, Edit, Terminal, Search, List, CheckSquare, ExternalLink, Play, FileEdit, ClipboardList, Maximize2, Minimize2 } from 'lucide-react';
+import { Copy, Check, Code, Globe, Settings, FileText, Edit, Terminal, Search, List, CheckSquare, ExternalLink, Play, FileEdit, ClipboardList, Maximize2, Minimize2, Users, Brain, Zap, Database } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { JsonViewer } from '../JsonViewer/JsonViewer';
 import { ToolUseRenderer } from '../ToolRendering/ToolUseRenderer';
@@ -19,6 +19,23 @@ interface MessageItemProps {
 }
 
 function getToolIcon(toolName: string) {
+  // Remove MCP prefix for matching
+  const cleanName = toolName.replace(/^mcp__claude-flow__/, '');
+
+  // Claude-flow orchestration tools
+  if (cleanName.startsWith('swarm_') || cleanName === 'hive_mind_spawn') {
+    return <Users size={15} className="text-blue-500" />;
+  }
+  if (cleanName.startsWith('agent_')) {
+    return <Brain size={15} className="text-purple-500" />;
+  }
+  if (cleanName.startsWith('memory_')) {
+    return <Database size={15} className="text-green-500" />;
+  }
+  if (cleanName.startsWith('neural_') || cleanName.startsWith('task_orchestrate')) {
+    return <Zap size={15} className="text-yellow-500" />;
+  }
+
   switch (toolName) {
     case 'Read':
       return <FileText size={15} />;

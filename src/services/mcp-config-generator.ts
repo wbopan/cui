@@ -92,6 +92,13 @@ export class MCPConfigGenerator {
             CUI_SERVER_PORT: String(port),
             LOG_LEVEL: process.env.LOG_LEVEL || 'info'
           }
+        },
+        'claude-flow': {
+          command: 'npx',
+          args: ['claude-flow@alpha', 'mcp', 'start'],
+          env: {
+            LOG_LEVEL: process.env.LOG_LEVEL || 'info'
+          }
         }
       }
     };

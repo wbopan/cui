@@ -6,6 +6,7 @@ import { Button } from '@/web/chat/components/ui/button';
 import { Input } from '@/web/chat/components/ui/input';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/web/chat/components/ui/tooltip';
 import { MoreOptionsMenu } from '../MoreOptionsMenu';
+import { SwarmNotificationCenter } from '../SwarmNotifications';
 
 interface ConversationHeaderProps {
   title: string;
@@ -163,6 +164,9 @@ export function ConversationHeader({ title, sessionId, isArchived = false, isPin
         </div>
 
         <div className="flex items-center gap-1.5">
+          {/* Swarm Notification Center */}
+          <SwarmNotificationCenter />
+
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -181,7 +185,7 @@ export function ConversationHeader({ title, sessionId, isArchived = false, isPin
               <p>{isArchived ? 'Unarchive Task' : 'Archive Task'}</p>
             </TooltipContent>
           </Tooltip>
-          
+
           {sessionId && (
             <MoreOptionsMenu
               sessionId={sessionId}
