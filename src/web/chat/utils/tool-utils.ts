@@ -6,18 +6,21 @@
  * Convert absolute path to relative path if it's a subpath of working directory
  */
 export function formatFilePath(path: string, workingDirectory?: string): string {
-  
   if (!path) {
     return path;
   }
-  
-  // If we have a working directory and the path starts with it, make it relative
-  if (workingDirectory && path.startsWith(workingDirectory)) {
-    const relativePath = path.slice(workingDirectory.length);
-    // Remove leading slash if present
-    const cleaned = relativePath.startsWith('/') ? relativePath.slice(1) : relativePath;
-    const result = cleaned ? `./${cleaned}` : './';
-    return result;
+
+  if (workingDirectory) {
+    const normalizedWorkingDir = workingDirectory.replace(/[\\/]+$/, '');
+    const comparisonPath = path.replace(/[\\/]+$/, '');
+
+    const isSamePath = comparisonPath === normalizedWorkingDir;
+    const isSubPath = comparisonPath.startsWith(`${normalizedWorkingDir}/`) || comparisonPath.startsWith(`${normalizedWorkingDir}\\`);
+
+    if (isSamePath || isSubPath) {
+      const relativePath = path.slice(normalizedWorkingDir.length).replace(/^[\\/]+/, '');
+      return relativePath ? `./${relativePath}` : './';
+    }
   }
   
   // If it starts with user home directory, show as ~
