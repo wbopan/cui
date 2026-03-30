@@ -3,20 +3,16 @@ import { ChevronDown, Mic, Send, Loader2, Sparkles, Laptop, Square, Check, X, Mi
 import { DropdownSelector, DropdownOption } from '../DropdownSelector';
 import { PermissionDialog } from '../PermissionDialog';
 import { WaveformVisualizer } from '../WaveformVisualizer';
+import { DirectoryPicker } from '../DirectoryPicker';
 import { Button } from '../ui/button';
 import { Textarea } from '../ui/textarea';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
-import type { PermissionRequest, Command } from '../../types';
+import type { PermissionRequest, Command, FileSystemEntry } from '../../types';
 import { useLocalStorage } from '../../hooks/useLocalStorage';
 import { useAudioRecording } from '../../hooks/useAudioRecording';
 import { api } from '../../../chat/services/api';
 import { cn } from "../../lib/utils";
 
-export interface FileSystemEntry {
-  name: string;
-  type: 'file' | 'directory';
-  depth: number;
-}
 
 interface AutocompleteState {
   isActive: boolean;
@@ -78,12 +74,14 @@ interface DirectoryDropdownProps {
   selectedDirectory: string;
   recentDirectories: Record<string, { lastDate: string; shortname: string }>;
   onDirectorySelect: (directory: string) => void;
+  onBrowseClick?: () => void;
 }
 
 function DirectoryDropdown({ 
   selectedDirectory, 
   recentDirectories, 
-  onDirectorySelect 
+  onDirectorySelect,
+  onBrowseClick
 }: DirectoryDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -116,6 +114,7 @@ function DirectoryDropdown({
       onOpenChange={setIsOpen}
       placeholder="Enter a directory..."
       showFilterInput={true}
+      onBrowseClick={onBrowseClick}
       filterPredicate={(option, searchText) => {
         // Allow filtering by path
         if (option.value.toLowerCase().includes(searchText.toLowerCase())) {
@@ -340,6 +339,7 @@ export const Composer = forwardRef<ComposerRef, ComposerProps>(function Composer
   const [selectedModel, setSelectedModel] = useState(model);
   const [selectedPermissionMode, setSelectedPermissionMode] = useState<string>(cachedState.selectedPermissionMode);
   const [isPermissionDropdownOpen, setIsPermissionDropdownOpen] = useState(false);
+  const [showDirectoryPicker, setShowDirectoryPicker] = useState(false);
   const [localFileSystemEntries, setLocalFileSystemEntries] = useState<FileSystemEntry[]>(fileSystemEntries);
   const [localCommands, setLocalCommands] = useState<Command[]>(availableCommands);
   const [autocomplete, setAutocomplete] = useState<AutocompleteState>({
@@ -899,6 +899,7 @@ export const Composer = forwardRef<ComposerRef, ComposerProps>(function Composer
                       selectedDirectory={selectedDirectory}
                       recentDirectories={recentDirectories}
                       onDirectorySelect={handleDirectorySelect}
+                      onBrowseClick={() => setShowDirectoryPicker(true)}
                     />
                   )}
 
@@ -1119,6 +1120,17 @@ export const Composer = forwardRef<ComposerRef, ComposerProps>(function Composer
           isVisible={true}
         />
       )}
+      
+      {/* Directory Picker Modal */}
+      <DirectoryPicker
+        isOpen={showDirectoryPicker}
+        onClose={() => setShowDirectoryPicker(false)}
+        onSelect={(path) => {
+          handleDirectorySelect(path);
+          setShowDirectoryPicker(false);
+        }}
+        initialPath={workingDirectory}
+      />
     </form>
   );
 });

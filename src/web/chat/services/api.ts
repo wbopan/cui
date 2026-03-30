@@ -156,6 +156,10 @@ class ApiService {
     return this.apiCall(`/api/filesystem/list?${searchParams}`);
   }
 
+  async getHomeDirectory(): Promise<{ homeDirectory: string }> {
+    return this.apiCall('/api/filesystem/home');
+  }
+
   async getCommands(workingDirectory?: string): Promise<CommandsResponse> {
     const searchParams = new URLSearchParams();
     if (workingDirectory) {

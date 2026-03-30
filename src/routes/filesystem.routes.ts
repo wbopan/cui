@@ -1,4 +1,5 @@
 import { Router, Request } from 'express';
+import * as os from 'os';
 import { 
   CUIError,
   FileSystemListQuery,
@@ -98,6 +99,29 @@ export function createFileSystemRoutes(
       logger.debug('Read file failed', {
         requestId,
         path: req.query.path,
+        error: error instanceof Error ? error.message : String(error)
+      });
+      next(error);
+    }
+  });
+
+  // Get home directory
+  router.get('/home', async (req: RequestWithRequestId, res, next) => {
+    const requestId = req.requestId;
+    logger.debug('Home directory request', { requestId });
+    
+    try {
+      const homeDirectory = os.homedir();
+      
+      logger.debug('Home directory retrieved', {
+        requestId,
+        homeDirectory
+      });
+      
+      res.json({ homeDirectory });
+    } catch (error) {
+      logger.error('Failed to get home directory', {
+        requestId,
         error: error instanceof Error ? error.message : String(error)
       });
       next(error);
