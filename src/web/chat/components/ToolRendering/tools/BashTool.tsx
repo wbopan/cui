@@ -1,5 +1,6 @@
 import React from 'react';
 import { CodeHighlight } from '../../CodeHighlight';
+import { ToolCollapse } from '../ToolCollapse';
 
 interface BashToolProps {
   input: any;
@@ -9,13 +10,17 @@ interface BashToolProps {
 
 export function BashTool({ input, result }: BashToolProps) {
   return (
-    <div className="flex flex-col gap-1 -mt-0.5">
+    <ToolCollapse 
+      summaryText="Command output"
+      defaultExpanded={true}
+      ariaLabel="Toggle command output"
+    >
       <CodeHighlight
         code={result || '(No content)'}
         language="text"
         showLineNumbers={false}
         className="bg-neutral-950 rounded-xl overflow-hidden"
       />
-    </div>
+    </ToolCollapse>
   );
 }

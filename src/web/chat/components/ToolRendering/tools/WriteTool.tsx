@@ -1,6 +1,7 @@
 import React from 'react';
 import { detectLanguageFromPath } from '../../../utils/language-detection';
 import { DiffViewer } from './DiffViewer';
+import { ToolCollapse } from '../ToolCollapse';
 
 interface WriteToolProps {
   input: any;
@@ -14,12 +15,16 @@ export function WriteTool({ input, result, workingDirectory }: WriteToolProps) {
   const language = detectLanguageFromPath(filePath);
 
   return (
-    <div className="flex flex-col gap-1 -mt-0.5">
+    <ToolCollapse 
+      summaryText="New file created"
+      defaultExpanded={true}
+      ariaLabel="Toggle new file content"
+    >
       <DiffViewer
         oldValue=""
         newValue={content}
         language={language}
       />
-    </div>
+    </ToolCollapse>
   );
 }

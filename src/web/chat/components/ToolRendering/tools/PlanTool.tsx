@@ -1,5 +1,6 @@
 import React from 'react';
 import ReactMarkdown from 'react-markdown';
+import { ToolCollapse } from '../ToolCollapse';
 
 interface PlanToolProps {
   input: any;
@@ -11,7 +12,11 @@ export function PlanTool({ input, result }: PlanToolProps) {
   const planContent = input.plan || result || 'No plan provided';
 
   return (
-    <div className="flex flex-col gap-1 -mt-0.5">
+    <ToolCollapse 
+      summaryText="Implementation plan"
+      defaultExpanded={true}
+      ariaLabel="Toggle implementation plan"
+    >
       <div className="bg-secondary rounded-xl p-4 mt-1 border-l-3 border-accent prose prose-sm prose-neutral dark:prose-invert max-w-none">
         <ReactMarkdown
           components={{
@@ -30,6 +35,6 @@ export function PlanTool({ input, result }: PlanToolProps) {
           {planContent}
         </ReactMarkdown>
       </div>
-    </div>
+    </ToolCollapse>
   );
 }
